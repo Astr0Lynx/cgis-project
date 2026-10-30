@@ -1,0 +1,11 @@
+{
+  "dataset_id": "synthetic-worldpop-2001",
+  "version": 1,
+  "title": "SYNTHETIC population raster (2001)",
+  "kind": "raster",
+  "product_level": "source",
+  "year": 2001,
+  "units": "people_per_cell",
+  "source": "deterministic-fixture",
+  "file": "/data/fixtures/synthetic_2001.tif"
+}

@@ -1,0 +1,13 @@
+{
+  "dataset_id": "synthetic-towns",
+  "version": 1,
+  "title": "SYNTHETIC towns (Town A, Town B)",
+  "kind": "vector",
+  "product_level": "source",
+  "year": null,
+  "source": "deterministic-fixture",
+  "file": "/data/fixtures/synthetic_towns.geojson",
+  "id_property": "unit_id",
+  "name_property": "name",
+  "level_property": "level"
+}
