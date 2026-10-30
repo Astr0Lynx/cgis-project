@@ -1,0 +1,63 @@
+# Static part of the pygeoapi configuration. `resources` is generated from
+# catalog.current_datasets by `python -m cgis_ogc.publish`; never list datasets here.
+server:
+  bind:
+    host: 0.0.0.0
+    port: 5000
+  # Public base URL as seen by clients through the gateway (used in every link).
+  url: ${OGC_PUBLIC_URL:-http://localhost:8080/ogc}
+  mimetype: application/json; charset=UTF-8
+  encoding: utf-8
+  gzip: false
+  languages:
+    - en-US
+  cors: true
+  pretty_print: true
+  limits:
+    default_items: 10
+    max_items: 1000
+  templates:
+    path: /cgis/templates
+  map:
+    url: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+  admin: false
+
+logging:
+  level: ${PYGEOAPI_LOG_LEVEL:-ERROR}
+
+metadata:
+  identification:
+    title:
+      en: CyberGIS Phase 2 OGC API (SYNTHETIC development data)
+    description:
+      en: >-
+        OGC API - Features and OGC API - Tiles publication of datasets registered in the
+        CyberGIS PostGIS catalog. Phase 2 runs on deterministic SYNTHETIC fixtures; values
+        are not real population data.
+    keywords:
+      en:
+        - cybergis
+        - ogcapi
+        - synthetic
+    keywords_type: theme
+    terms_of_service: https://creativecommons.org/licenses/by/4.0/
+    url: https://github.com/Astr0Lynx/cgis-project
+  license:
+    name: CC-BY 4.0 license
+    url: https://creativecommons.org/licenses/by/4.0/
+  provider:
+    name: CyberGIS course project (IIIT Hyderabad)
+    url: https://github.com/Astr0Lynx/cgis-project
+  contact:
+    name: CyberGIS project team
+    position: Maintainers
+    address: IIIT Hyderabad
+    city: Hyderabad
+    stateorprovince: Telangana
+    postalcode: '500032'
+    country: India
+    url: https://github.com/Astr0Lynx/cgis-project
+    role: pointOfContact
+
+resources: {}

@@ -1,0 +1,43 @@
+# ogc-services/scripts/test-all.sh transcript (clean start: stack and volumes removed first)
+# date: 2026-10-30T18:53:17Z  host: Linux 6.18.58-1-lts  docker: 29.9.2  compose: 5.6.1
+db running healthy
+gateway running healthy
+ogc running healthy
+tiles running healthy
+== unit + integration (external HTTP via gateway stub)
+........................................................................ [ 33%]
+........................................................................ [ 66%]
+.......................................................................  [100%]
+=============================== warnings summary ===============================
+tests/unit/test_assets.py::test_driver_check_rejects_disguised_vrt
+  /usr/local/lib/python3.12/site-packages/rasterio/__init__.py:367: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+    dataset = DatasetReader(path, driver=driver, sharing=sharing, thread_safe=thread_safe, **kwargs)
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+215 passed, 1 warning in 76.93s (0:01:16)
+== adapter/provider unit tests inside the pygeoapi image
+...............................................                          [100%]
+47 passed in 2.23s
+== OGC CITE (TEAM Engine)
+/out/cite-ogcapi-features-1.0.xml: total=179 passed=173 failed=0 skipped=6
+  SKIP validateFeaturesOperation_QueryParamUnknown: Free-form parameters are supported for collection with id synthetic-towns
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+/out/cite-ogcapi-tiles-1.0.xml: total=16 passed=15 failed=0 skipped=1
+  SKIP landingPageRetrieval: Skipped because Conformance Class http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/dataset-tilesets is not implemented.
+== headless QGIS interoperability check
+QGIS 
+PASS OAPIF layer valid (ok)
+PASS OAPIF features ['Town A', 'Town B']
+PASS OAPIF layer CRS OGC:CRS84
+PASS geometry types [<WkbType.MultiPolygon: 6>, <WkbType.MultiPolygon: 6>] are MultiPolygon
+PASS Town A extent 78.0100000000000051,17.9800000000000004 : 78.0199999999999960,17.9899999999999984
+PASS spatially filtered request returned ['Town A']
+PASS XYZ layer on the OGC tile template valid (ok)
+PASS rendered valid cell RGB (253, 231, 36) (viridis maximum)
+PASS NoData strips transparent (background visible: (255, 0, 255, 255), (255, 0, 255, 255))
+PASS NoData/valid boundary at 78.004 E (4 cells x 0.001 deg)
+RESULT OK (0 failure(s))
+exit=0

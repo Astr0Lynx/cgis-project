@@ -1,0 +1,97 @@
+# Self-contained TEST stack for ogc-services (Agent 4). Not the project deployment:
+# the root compose.yaml/gateway belong to Agent 1 and integration to Agent 6.
+# The db uses a stub schema (stub_catalog.sql) mirroring the frozen v1 contract.
+#
+#   docker compose -f ogc-services/tests/stack/compose.yaml up -d --build --wait
+#   docker compose -f ogc-services/tests/stack/compose.yaml run --rm tests
+#   docker compose -f ogc-services/tests/stack/compose.yaml down -v
+name: cgis-ogc-test
+
+x-db-env: &db-env
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: cgis
+  POSTGRES_USER: cgis
+  # Throwaway credential for this disposable local test database only.
+  POSTGRES_PASSWORD: ${CGIS_TEST_DB_PASSWORD:-cgis-test-only}
+
+services:
+  db:
+    image: postgis/postgis:17-3.5@sha256:01a6a70e41e6c4467c8f55f6063555ed72db2d6662cd0d571040d42eadaeb6f6
+    environment:
+      POSTGRES_DB: cgis
+      POSTGRES_USER: cgis
+      POSTGRES_PASSWORD: ${CGIS_TEST_DB_PASSWORD:-cgis-test-only}
+    volumes:
+      - ./stub_catalog.sql:/docker-entrypoint-initdb.d/20-stub-catalog.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U cgis -d cgis -tAc 'SELECT 1 FROM catalog.current_datasets LIMIT 1' >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  fixtures:
+    build: {context: ../.., dockerfile: tests/Dockerfile}
+    image: cgis-ogc-tests:dev
+    command: ["python", "tests/stack/make_stub_rasters.py", "/data/assets"]
+    volumes:
+      - ../..:/work:ro
+      - assets:/data/assets
+    restart: "no"
+
+  tiles:
+    build: {context: ../../tiler}
+    image: cgis-tiles:dev
+    environment:
+      <<: *db-env
+      TILES_ROOT_PATH: /tiles
+      CGIS_CATALOG_CACHE_TTL: "2"
+    volumes:
+      - assets:/data/assets:ro
+    depends_on:
+      db: {condition: service_healthy}
+      fixtures: {condition: service_completed_successfully}
+
+  ogc:
+    build: {context: ../../pygeoapi}
+    image: cgis-ogc:dev
+    environment:
+      <<: *db-env
+      OGC_PUBLIC_URL: http://gateway:8080/ogc
+      TILES_PUBLIC_URL: http://gateway:8080/tiles
+      CGIS_TILER_INTERNAL_URL: http://tiles:8000
+      OGC_REFRESH_INTERVAL: "3"
+      WSGI_WORKERS: "2"
+    depends_on:
+      db: {condition: service_healthy}
+      tiles: {condition: service_healthy}
+
+  gateway:
+    image: nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+    volumes:
+      - ./gateway.nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "127.0.0.1:${CGIS_TEST_GATEWAY_PORT:-18080}:8080"
+    depends_on:
+      ogc: {condition: service_healthy}
+      tiles: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ogc/conformance?f=json >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  tests:
+    image: cgis-ogc-tests:dev
+    profiles: [tests]
+    environment:
+      <<: *db-env
+      CGIS_GATEWAY_URL: http://gateway:8080
+      CGIS_TILES_INTERNAL_URL: http://tiles:8000
+    volumes:
+      - ../..:/work:ro
+    depends_on:
+      gateway: {condition: service_healthy}
+
+volumes:
+  assets:

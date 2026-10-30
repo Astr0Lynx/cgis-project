@@ -1,0 +1,13 @@
+QGIS 3.44.15-Solothurn
+PASS OAPIF layer valid (ok)
+PASS OAPIF features ['Town A', 'Town B']
+PASS OAPIF layer CRS OGC:CRS84
+PASS geometry types [<WkbType.MultiPolygon: 6>, <WkbType.MultiPolygon: 6>] are MultiPolygon
+PASS Town A extent 78.0100000000000051,17.9800000000000004 : 78.0199999999999960,17.9899999999999984
+PASS spatially filtered request returned ['Town A']
+PASS XYZ layer on the OGC tile template valid (ok)
+PASS rendered valid cell RGB (253, 231, 36) (viridis maximum)
+PASS NoData strips transparent (background visible: (255, 0, 255, 255), (255, 0, 255, 255))
+PASS NoData/valid boundary at 78.004 E (4 cells x 0.001 deg)
+RESULT OK (0 failure(s))
+exit=0
