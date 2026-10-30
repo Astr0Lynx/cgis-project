@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cgis-db"
+version = "0.1.0"
+description = "CyberGIS Phase 2 PostGIS schema, migrations and spatial query primitives"
+requires-python = ">=3.10"
+dependencies = ["psycopg[binary]>=3.1,<4"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+cgis-db = "cgis_db.cli:main"
+
+[tool.setuptools]
+packages = ["cgis_db"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
