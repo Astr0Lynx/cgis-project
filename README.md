@@ -20,4 +20,25 @@ processing) developed against **deterministic synthetic fixtures** — not real 
 See `contracts/GIT_AND_MERGE_POLICY.md` and `contracts/RUN_ORDER.md`. All feature branches start from the
 frozen `phase2/base` commit; only Agent 6 merges.
 
-Startup instructions are added by the infrastructure branch.
+## Quick start
+
+Requires Docker with Compose v2.24+ (Docker Desktop on Windows/macOS). On Windows, run the `sh`
+scripts in Git Bash. Full details, raw commands and troubleshooting: [`infra/README.md`](infra/README.md).
+
+```sh
+sh infra/scripts/init-env.sh              # create .env with random local passwords (never committed)
+docker compose up -d --build --wait       # build and start; waits for health checks (make up)
+docker compose run --rm ingestion seed    # generate + import the SYNTHETIC fixtures (make seed)
+sh infra/scripts/smoke.sh                 # every gateway route reaches a ready service (make smoke)
+```
+
+Everything is served through one gateway on `http://localhost:8080`:
+
+| Path | Service |
+|---|---|
+| `/viewer/` | Diagnostic map viewer |
+| `/ogc/` | OGC API: Features and Tiles (pygeoapi) |
+| `/tiles/` | TiTiler raster routes (vendor-specific, not an OGC API) |
+| `/api/` | Processing API: clip, zonal statistics, jobs, downloads (`/api/docs`) |
+
+Stop with `docker compose down`; this keeps the data. `docker compose down -v` deletes all volumes.

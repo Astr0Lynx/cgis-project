@@ -1,0 +1,39 @@
+# Gateway routing test with stand-in upstreams (no service modules required).
+#   docker compose -p cgis-gateway-test -f compose.yaml -f infra/tests/compose.mock.yaml up -d --build --wait gateway
+#   sh infra/tests/test_gateway_routes.sh
+#   docker compose -p cgis-gateway-test -f compose.yaml -f infra/tests/compose.mock.yaml down -v
+# Always pass -p: COMPOSE_PROJECT_NAME in .env would otherwise reuse the real stack's volumes.
+x-mock: &mock
+  image: python:3.12.12-slim@sha256:f3fa41d74a768c2fce8016b98c191ae8c1bacd8f1152870a3f9f87d350920b7c
+  command: ["python", "/mock/echo_server.py"]
+  volumes: !override
+    - ./infra/tests/echo_server.py:/mock/echo_server.py:ro
+
+services:
+  migrate:
+    build: !reset null
+    image: busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+    command: ["true"]
+  tiles:
+    <<: *mock
+    build: !reset null
+    environment: !override {MOCK_NAME: tiles, MOCK_PORT: "8000"}
+    healthcheck: &mock-health
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/')"]
+      interval: 2s
+      retries: 20
+  ogc:
+    <<: *mock
+    build: !reset null
+    environment: !override {MOCK_NAME: ogc, MOCK_PORT: "5000"}
+    healthcheck:
+      <<: *mock-health
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/')"]
+  processing:
+    <<: *mock
+    build: !reset null
+    environment: !override {MOCK_NAME: processing, MOCK_PORT: "8000"}
+    healthcheck: *mock-health
+  gateway:
+    ports: !override
+      - "127.0.0.1:${CGIS_TEST_GATEWAY_PORT:-18080}:8080"
