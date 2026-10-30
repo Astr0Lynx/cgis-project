@@ -1,0 +1,43 @@
+{
+  "manifest_version": 1,
+  "_comment": "TEMPLATE for the future Phase 1 handoff. Placeholder values in <angle brackets> must be replaced; see ingestion/docs/PHASE1_HANDOFF.md.",
+  "datasets": [
+    {
+      "dataset_id": "worldpop-<region>-<year>",
+      "version": 1,
+      "title": "WorldPop <region> unconstrained population counts <year> (processed, Phase 1)",
+      "description": "<processing summary>",
+      "kind": "raster",
+      "product_level": "source",
+      "year": 2011,
+      "units": "people_per_cell",
+      "source": "WorldPop (processed by Phase 1)",
+      "file": "rasters/<file>.tif",
+      "band": 1,
+      "checksum_sha256": "<64 hex chars of the delivered file>",
+      "expect": {"crs": "EPSG:<code>", "nodata": -99999, "dtype": "float32"},
+      "provenance": {
+        "upstream_url": "<doi or url>",
+        "upstream_license": "<license>",
+        "phase1_commit": "<git sha of the preprocessing code>",
+        "processing_steps": ["<step>"]
+      }
+    },
+    {
+      "dataset_id": "<region>-admin-<level>",
+      "version": 1,
+      "title": "<Region> <level> boundaries",
+      "kind": "vector",
+      "product_level": "source",
+      "year": 2011,
+      "source": "<boundary source>",
+      "file": "vectors/<file>.geojson",
+      "id_property": "<unique id field>",
+      "name_property": "<name field>",
+      "level_property": "<level field>",
+      "unit_id_prefix": "<region>-<level>-",
+      "checksum_sha256": "<64 hex chars>",
+      "provenance": {"upstream_url": "<url>", "upstream_license": "<license>"}
+    }
+  ]
+}

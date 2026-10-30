@@ -1,0 +1,8 @@
+# Runtime dependencies of the ingestion service (pinned; rasterio wheels bundle GDAL 3.9.3).
+rasterio==1.4.3
+numpy==2.2.6
+affine==2.4.0
+shapely==2.0.6
+pyproj==3.8.0
+psycopg[binary]==3.2.3
+rio-cogeo==5.4.1
