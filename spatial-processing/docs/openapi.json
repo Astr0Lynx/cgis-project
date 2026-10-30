@@ -1,0 +1,1118 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CyberGIS Spatial Processing API (custom, non-OGC)",
+    "description": "\nProject-specific processing API for CyberGIS Phase 2 (**not** an OGC API standard endpoint).\n\n* Datasets are referenced by catalog `dataset_id` only; raster files are resolved server-side from\n  the PostGIS catalog (`catalog.current_datasets`, status `ready`). Paths and URLs are never accepted.\n* AOIs are GeoJSON Polygon/MultiPolygon in x/y (lon/lat) order with an explicit `aoi_crs` (`EPSG:<code>`).\n* **Pixel selection:** a pixel is included iff its **center** lies inside the AOI (`all_touched=false`).\n  NoData pixels are excluded and reported (`nodata_excluded`), never treated as zero.\n* Operations run synchronously but are recorded as jobs (`queued \u2192 running \u2192 completed|failed`).\n* Errors are `{\"error\": {\"code\", \"message\", \"details\"?}}`.\n",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/operations/clip": {
+      "post": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Clip a catalogued raster to an AOI and export GeoTIFF/COG",
+        "operationId": "clip_operations_clip_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClipRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse",
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Clip Operations Clip Post"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/zonal-statistics": {
+      "post": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Zonal statistics (sum, mean, count of valid pixels) over an AOI",
+        "operationId": "zonal_statistics_operations_zonal_statistics_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZonalStatisticsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZonalStatisticsResponse",
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Zonal Statistics Operations Zonal Statistics Post"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/{job_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Job status, result and error",
+        "operationId": "get_job_operations__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Job Operations  Job Id  Get",
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        }
+      }
+    },
+    "/downloads/{job_id}": {
+      "get": {
+        "tags": [
+          "downloads"
+        ],
+        "summary": "Download the GeoTIFF produced by a completed clip job",
+        "operationId": "download_downloads__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GeoTIFF/COG file",
+            "content": {
+              "image/tiff": {}
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        }
+      }
+    },
+    "/downloads/{job_id}/metadata": {
+      "get": {
+        "tags": [
+          "downloads"
+        ],
+        "summary": "Metadata sidecar (JSON) for a completed clip job",
+        "operationId": "download_metadata_downloads__job_id__metadata_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness: the process is up",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness: catalog, job store and storage reachable",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClipRequest": {
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Dataset Id",
+            "description": "Catalog dataset ID (not a path or URL)."
+          },
+          "aoi": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Aoi",
+            "description": "GeoJSON Polygon or MultiPolygon (or a Feature wrapping one), x/y (lon/lat) order."
+          },
+          "aoi_crs": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Aoi Crs",
+            "description": "CRS of `aoi` as 'EPSG:<code>' (e.g. 'EPSG:4326')."
+          },
+          "output_crs": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Crs",
+            "description": "Output CRS 'EPSG:<code>'. Omit (or use the native CRS) for an exact native-grid clip; a different CRS triggers nearest-neighbour reprojection (totals not preserved)."
+          },
+          "format": {
+            "type": "string",
+            "maxLength": 16,
+            "title": "Format",
+            "description": "'GTiff' or 'COG'.",
+            "default": "GTiff"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dataset_id",
+          "aoi",
+          "aoi_crs"
+        ],
+        "title": "ClipRequest",
+        "example": {
+          "aoi": {
+            "coordinates": [
+              [
+                [
+                  78.01,
+                  17.98
+                ],
+                [
+                  78.02,
+                  17.98
+                ],
+                [
+                  78.02,
+                  17.99
+                ],
+                [
+                  78.01,
+                  17.99
+                ],
+                [
+                  78.01,
+                  17.98
+                ]
+              ]
+            ],
+            "type": "Polygon"
+          },
+          "aoi_crs": "EPSG:4326",
+          "dataset_id": "synthetic-worldpop-2001",
+          "format": "GTiff",
+          "output_crs": "EPSG:4326"
+        }
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "JobLinks": {
+        "properties": {
+          "self": {
+            "type": "string",
+            "title": "Self"
+          },
+          "download": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "self"
+        ],
+        "title": "JobLinks"
+      },
+      "JobResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "clip",
+              "zonal-statistics"
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "input": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "links": {
+            "$ref": "#/components/schemas/JobLinks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "kind",
+          "status",
+          "created_at",
+          "updated_at",
+          "input",
+          "links"
+        ],
+        "title": "JobResponse"
+      },
+      "PixelSelection": {
+        "properties": {
+          "rule": {
+            "type": "string",
+            "const": "pixel_center",
+            "title": "Rule"
+          },
+          "all_touched": {
+            "type": "boolean",
+            "title": "All Touched"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule",
+          "all_touched",
+          "description"
+        ],
+        "title": "PixelSelection"
+      },
+      "ZonalStatisticsRequest": {
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Dataset Id",
+            "description": "Catalog dataset ID (not a path or URL)."
+          },
+          "aoi": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Aoi",
+            "description": "GeoJSON Polygon or MultiPolygon (or a Feature wrapping one), x/y (lon/lat) order."
+          },
+          "aoi_crs": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Aoi Crs",
+            "description": "CRS of `aoi` as 'EPSG:<code>' (e.g. 'EPSG:4326')."
+          },
+          "operations": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operations",
+            "description": "Subset of 'sum', 'mean', 'count'. Default: all."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dataset_id",
+          "aoi",
+          "aoi_crs"
+        ],
+        "title": "ZonalStatisticsRequest",
+        "example": {
+          "aoi": {
+            "coordinates": [
+              [
+                [
+                  78.01,
+                  17.98
+                ],
+                [
+                  78.02,
+                  17.98
+                ],
+                [
+                  78.02,
+                  17.99
+                ],
+                [
+                  78.01,
+                  17.99
+                ],
+                [
+                  78.01,
+                  17.98
+                ]
+              ]
+            ],
+            "type": "Polygon"
+          },
+          "aoi_crs": "EPSG:4326",
+          "dataset_id": "synthetic-worldpop-2001",
+          "operations": [
+            "sum",
+            "mean",
+            "count"
+          ]
+        }
+      },
+      "ZonalStatisticsResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          },
+          "dataset_version": {
+            "type": "integer",
+            "title": "Dataset Version"
+          },
+          "count_valid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count Valid",
+            "description": "Number of non-NoData pixels whose centers fall in the AOI."
+          },
+          "sum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sum",
+            "description": "Sum of valid pixel values; see `sum_semantics`."
+          },
+          "mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          },
+          "sum_semantics": {
+            "type": "string",
+            "enum": [
+              "total_count",
+              "not_applicable_density",
+              "sum_of_cell_values"
+            ],
+            "title": "Sum Semantics"
+          },
+          "pixels_in_aoi": {
+            "type": "integer",
+            "title": "Pixels In Aoi"
+          },
+          "nodata_excluded": {
+            "type": "integer",
+            "title": "Nodata Excluded",
+            "description": "Pixels in the AOI that were NoData/masked and excluded."
+          },
+          "nodata_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nodata Value"
+          },
+          "aoi_crs": {
+            "type": "string",
+            "title": "Aoi Crs"
+          },
+          "raster_crs": {
+            "type": "string",
+            "title": "Raster Crs"
+          },
+          "pixel_selection": {
+            "$ref": "#/components/schemas/PixelSelection"
+          },
+          "operations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Operations"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "dataset": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Dataset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "dataset_id",
+          "dataset_version",
+          "count_valid",
+          "sum",
+          "mean",
+          "units",
+          "sum_semantics",
+          "pixels_in_aoi",
+          "nodata_excluded",
+          "nodata_value",
+          "aoi_crs",
+          "raster_crs",
+          "pixel_selection",
+          "operations",
+          "warnings",
+          "dataset"
+        ],
+        "title": "ZonalStatisticsResponse"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ]
+}

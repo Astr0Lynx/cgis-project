@@ -1,0 +1,32 @@
+[
+  {
+    "dataset_id": "synthetic-worldpop-2001",
+    "version": 1,
+    "title": "SYNTHETIC population raster (2001)",
+    "kind": "raster",
+    "product_level": "source",
+    "year": 2001,
+    "crs": "EPSG:4326",
+    "units": "people_per_cell",
+    "nodata": -9999,
+    "asset_path": "synthetic_2001.tif",
+    "source": "deterministic-fixture",
+    "provenance": {"synthetic": true, "note": "SYNTHETIC deterministic-fixture; not real population"},
+    "status": "ready"
+  },
+  {
+    "dataset_id": "synthetic-worldpop-2011",
+    "version": 1,
+    "title": "SYNTHETIC population raster (2011)",
+    "kind": "raster",
+    "product_level": "source",
+    "year": 2011,
+    "crs": "EPSG:4326",
+    "units": "people_per_cell",
+    "nodata": -9999,
+    "asset_path": "synthetic_2011.tif",
+    "source": "deterministic-fixture",
+    "provenance": {"synthetic": true, "note": "SYNTHETIC deterministic-fixture; not real population"},
+    "status": "ready"
+  }
+]

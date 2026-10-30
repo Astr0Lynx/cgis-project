@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cgis-spatial-processing"
+version = "0.1.0"
+description = "CyberGIS Phase 2 custom spatial processing API (clip, zonal statistics, GeoTIFF export, job status). Not an OGC API."
+requires-python = ">=3.11"
+# Exact pins for reproducible builds (ARCHITECTURE.md "Operational requirements").
+# rasterio wheels bundle GDAL 3.12.2 / PROJ 9.8.1, so no system GDAL is required.
+dependencies = [
+    "fastapi==0.162.0",
+    "starlette==1.10.0",
+    "uvicorn==0.54.0",
+    "pydantic==2.14.2",
+    "numpy==2.5.4",
+    "rasterio==1.5.2",
+    "shapely==2.2.0",
+    "pyproj==3.8.0",
+    "psycopg[binary]==3.3.6",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.2.0",
+    "httpx==0.28.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "postgis: integration tests that need a PostGIS database (set TEST_DATABASE_URL)",
+]
+filterwarnings = [
+    # starlette's TestClient (test-only) warns about httpx; not relevant to the service
+    "ignore:Using .httpx. with .starlette.testclient. is deprecated",
+]
