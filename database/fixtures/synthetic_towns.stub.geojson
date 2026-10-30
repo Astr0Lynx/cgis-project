@@ -1,0 +1,33 @@
+{
+  "type": "FeatureCollection",
+  "name": "SYNTHETIC towns (deterministic-fixture) - database TEST STUB",
+  "x_cgis_note": "Lightweight stub following contracts/SYNTHETIC_DATA.md for database tests only. NOT real boundaries. Agent 3's generator owns the authoritative synthetic_towns.geojson; load it with `python -m cgis_db fixtures load --geojson <path>`.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "unit_id": "town-a",
+        "name": "Town A",
+        "level": "synthetic_town",
+        "source": "deterministic-fixture"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[78.010, 17.980], [78.020, 17.980], [78.020, 17.990], [78.010, 17.990], [78.010, 17.980]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "unit_id": "town-b",
+        "name": "Town B",
+        "level": "synthetic_town",
+        "source": "deterministic-fixture"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[78.030, 17.950], [78.035, 17.950], [78.035, 17.955], [78.030, 17.955], [78.030, 17.950]]]
+      }
+    }
+  ]
+}
