@@ -1,0 +1,4 @@
+# Top-level pins; the full resolved set is frozen in requirements.lock
+titiler.core==2.4.0
+psycopg[binary]==3.3.6
+uvicorn[standard]==0.54.0
