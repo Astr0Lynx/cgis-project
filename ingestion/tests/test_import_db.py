@@ -189,7 +189,7 @@ def test_identical_leftover_asset_is_adopted(importer, db, fresh_fixtures, asset
     importer.import_dataset(s)
     rel = str(asset_relpath("raster", s.dataset_id, 1))
     keep = (assets_dir / rel).read_bytes()
-    db.execute("TRUNCATE catalog.datasets")
+    db.execute("TRUNCATE catalog.datasets, geo.admin_units")   # integration: admin_units has an FK to datasets
     (assets_dir / rel).write_bytes(keep)
     assert importer.import_dataset(s).outcome == "imported"
 
@@ -234,8 +234,14 @@ def test_projected_raster_imports_without_synthetic_assumptions(importer, db, tm
 
 
 def test_optional_admin_unit_columns_are_populated(db_conn, importer, db, fresh_fixtures):
-    db.execute("ALTER TABLE geo.admin_units ADD COLUMN dataset_id TEXT, ADD COLUMN dataset_version INTEGER, "
-               "ADD COLUMN properties JSONB")
+    # Integration (Agent 6): Agent 2's schema already has these columns; add/drop them only on the
+    # contract stand-in schema, never drop the real ones.
+    existing = {r["column_name"] for r in db.execute(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema='geo' AND table_name='admin_units'")}
+    added = not {"dataset_id", "dataset_version", "properties"} <= existing
+    if added:
+        db.execute("ALTER TABLE geo.admin_units ADD COLUMN dataset_id TEXT, ADD COLUMN dataset_version INTEGER, "
+                   "ADD COLUMN properties JSONB")
     try:
         from ingestion.catalog import Catalog
         importer.catalog = Catalog(db)
@@ -252,8 +258,9 @@ def test_optional_admin_unit_columns_are_populated(db_conn, importer, db, fresh_
         assert db.execute("SELECT count(*) AS n FROM geo.admin_units WHERE dataset_id='synthetic-towns'"
                           ).fetchone()["n"] == 2
     finally:
-        db.execute("ALTER TABLE geo.admin_units DROP COLUMN dataset_id, DROP COLUMN dataset_version, "
-                   "DROP COLUMN properties")
+        if added:
+            db.execute("ALTER TABLE geo.admin_units DROP COLUMN dataset_id, DROP COLUMN dataset_version, "
+                       "DROP COLUMN properties")
 
 
 def test_concurrent_import_is_locked(importer, db, fresh_fixtures):

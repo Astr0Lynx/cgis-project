@@ -8,6 +8,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
+# Integration fix (Agent 6): the GDAL bundled in the rasterio wheel needs libexpat, which slim
+# images lack (ImportError: libexpat.so.1). Same fix as ingestion/ and ogc-services/tiler/.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml ./
 COPY src ./src
 RUN pip install . \

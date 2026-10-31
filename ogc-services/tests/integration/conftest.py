@@ -4,6 +4,7 @@ Run via ``docker compose -f tests/stack/compose.yaml run --rm tests``. The
 catalog fixtures (SYNTHETIC) come from tests/stack/stub_catalog.sql.
 """
 
+import hashlib
 import io
 import json
 import os
@@ -78,16 +79,19 @@ def tile_pixel(tms_id, lon, lat, zoom):
 
 def insert_dataset(db, dataset_id, kind, asset_path=None, status="ready", version=1, provenance=None,
                    bbox=RASTER_BBOX, title=None):
+    # Integration fix (Agent 6): Agent 2's schema requires checksum_sha256 on every ready row
+    # (constraint datasets_ready_complete), so test rows carry a deterministic dummy checksum.
+    checksum = hashlib.sha256(f"{dataset_id}:{version}".encode()).hexdigest()
     with db.cursor() as cur:
         cur.execute(
             """INSERT INTO catalog.datasets (dataset_id, version, title, kind, product_level, crs, bbox,
-                   resolution_x, resolution_y, units, nodata, asset_path, source, provenance, status)
+                   resolution_x, resolution_y, units, nodata, asset_path, checksum_sha256, source, provenance, status)
                VALUES (%s, %s, %s, %s, 'other', 'EPSG:4326', ST_MakeEnvelope(%s, %s, %s, %s, 4326),
-                   %s, %s, %s, %s, %s, 'integration-test', %s, %s)""",
+                   %s, %s, %s, %s, %s, %s, 'integration-test', %s, %s)""",
             (dataset_id, version, title or f"TEST {dataset_id}", kind, *bbox,
              0.001 if kind == "raster" else None, 0.001 if kind == "raster" else None,
              "people_per_cell" if kind == "raster" else None, -9999 if kind == "raster" else None,
-             asset_path, json.dumps(provenance or {"synthetic": True}), status))
+             asset_path, checksum, json.dumps(provenance or {"synthetic": True}), status))
 
 
 def asset_path_of(db, dataset_id):

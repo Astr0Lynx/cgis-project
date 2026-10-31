@@ -94,12 +94,14 @@ def db():
         ]
         for dataset_id, version, status, path in rows:
             conn.execute(
+                # Integration (Agent 6): Agent 2's schema requires a 64-hex checksum and, for ready
+                # rasters, resolution_x/resolution_y (constraints datasets_checksum_format/_ready_complete).
                 "INSERT INTO catalog.datasets (dataset_id, version, title, kind, product_level, year, crs, bbox, "
-                "units, nodata, asset_path, checksum_sha256, source, provenance, status) VALUES "
-                "(%s, %s, %s, 'raster', 'source', 2001, 'EPSG:4326', "
-                "ST_MakeEnvelope(78.0, 17.936, 78.064, 18.0, 4326), 'people_per_cell', -9999, %s, %s, "
+                "resolution_x, resolution_y, units, nodata, asset_path, checksum_sha256, source, provenance, status) "
+                "VALUES (%s, %s, %s, 'raster', 'source', 2001, 'EPSG:4326', "
+                "ST_MakeEnvelope(78.0, 17.936, 78.064, 18.0, 4326), 0.001, 0.001, 'people_per_cell', -9999, %s, %s, "
                 "'deterministic-fixture', '{\"synthetic\": true}', %s)",
-                (dataset_id, version, f"SYNTHETIC {dataset_id}", path, uuid.uuid4().hex, status),
+                (dataset_id, version, f"SYNTHETIC {dataset_id}", path, uuid.uuid4().hex * 2, status),
             )
         yield conn
         conn.execute("DELETE FROM catalog.datasets WHERE dataset_id LIKE %s", (f"{PREFIX}%",))

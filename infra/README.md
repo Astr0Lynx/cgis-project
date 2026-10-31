@@ -66,7 +66,9 @@ Routing rules:
 - **Host header.** The client's `Host` is forwarded, so upstreams build links back through the
   gateway. `PUBLIC_BASE_URL` must match how clients reach the gateway, because OGC links are built
   from it.
-- **Redirects.** They are relative, so they work on any host port.
+- **Redirects.** `/ogc` → `/ogc/` and the other prefix redirects are absolute, built from the
+  client's own `Host` header, so they keep whatever host port the gateway is published on. QGIS's
+  OGC API - Features provider does not follow a relative `Location` when a user enters `.../ogc`.
 - **Refused requests.** Dot-segment paths (`/../`, `%2e%2e`) get a 400. Writes to the read-only
   prefixes get a 403.
 - **Logs.** Access logs are JSON lines on stdout. They omit query strings.
@@ -107,7 +109,7 @@ re-applies the passwords on every run, so changing one in `.env` takes effect on
 | Create `.env` | `make env` | `sh infra/scripts/init-env.sh` |
 | Validate config | `make config` | `docker compose config --quiet` |
 | Build everything | `make build` | `docker compose --profile tools build` |
-| Start, wait for healthy | `make up` | `docker compose up -d --build --wait` |
+| Start, wait for healthy | `make up` | `docker compose --profile tools build && docker compose up -d --wait` |
 | Status | `make ps` | `docker compose ps -a` |
 | Logs | `make logs SERVICE=ogc` | `docker compose logs -f --tail=200 ogc` |
 | Migrations + roles | `make migrate` | `docker compose run --rm migrate` |
@@ -117,6 +119,8 @@ re-applies the passwords on every run, so changing one in `.env` takes effect on
 | Route smoke test | `make smoke` | `sh infra/scripts/smoke.sh http://localhost:8080` |
 | Restart, keep data | `make restart` | `docker compose restart` |
 | Stop, keep data | `make down` | `docker compose down` |
+| End-to-end acceptance run | `make e2e` | `sh tests/e2e/run_e2e.sh [--browser]` |
+| Module suites on the integrated stack | `make test-modules ARGS="--cite --qgis"` | `sh tests/e2e/run_module_suites.sh --cite --qgis` |
 | **Delete all data** | `make reset CONFIRM=1` | `docker compose down -v` |
 
 `make check-modules` (run by `build` and `up`) fails with a clear message if a module Dockerfile or
@@ -163,6 +167,8 @@ Always pass `-p` for test stacks: `COMPOSE_PROJECT_NAME` in `.env` takes precede
 | `migrate` exits 1 with `provision_roles: ERROR` | A service password is still `CHANGE_ME`, too short, or a user name clashes. Fix `.env` and run `docker compose up -d` again. |
 | `exec /cgis/entrypoint.sh: no such file or directory` | CRLF line endings from an old Windows checkout; see Windows above. |
 | `fixture_write_failed` | `./data/fixtures` is not writable by uid 10001; `volume-init` normally fixes this. On SELinux hosts, add `:z`. |
+| In Git Bash, `/data/fixtures/...` arguments become `C:/Program Files/Git/data/...` | MSYS path conversion; prefix the command with `MSYS_NO_PATHCONV=1` (the scripts in `tests/e2e/` already do). |
+| `migrate` fails with `POSTGRES_USER=cgis equals a project schema name` | The owner role must not share a name with a project schema, because PostgreSQL's default `search_path` (`"$user", public`) would put unqualified objects in that schema. Use the default `cgis_admin`, then `docker compose down -v`. |
 | Port 8080 already in use | Set `GATEWAY_PORT` (and `PUBLIC_BASE_URL`) in `.env`. |
 | Gateway returns 502 after recreating one backend | nginx resolves upstream names at start-up; run `docker compose restart gateway`. |
 | Password changed in `.env` but `db` refuses it | The owner password is set only when `pgdata` is first created. Change it with `ALTER ROLE`, or reset the volumes. Service passwords are re-applied automatically. |

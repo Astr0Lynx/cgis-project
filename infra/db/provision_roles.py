@@ -27,6 +27,9 @@ SERVICE_ROLES = (
 GROUP_ROLES = {group for _, _, group, _ in SERVICE_ROLES}
 ROLE_NAME = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
 PLACEHOLDER = re.compile(r"change[-_]?me", re.IGNORECASE)
+# Schemas created by database/migrations. A role with one of these names would get that schema
+# first in the default search_path ("$user", public), so unqualified CREATEs would land in it.
+PROJECT_SCHEMAS = {"cgis", "catalog", "geo", "ops", "cgis_meta", "raster_demo"}
 
 
 def fail(message: str) -> None:
@@ -38,12 +41,15 @@ def read_config() -> list[tuple[str, str, str, bool]]:
     roles = []
     seen = set()
     owner = os.environ.get("PGUSER", "")
+    if owner in PROJECT_SCHEMAS:
+        fail(f"POSTGRES_USER={owner} equals a project schema name; choose another owner name "
+             "(for example cgis_admin) and recreate the db volume")
     for user_var, password_var, group, read_only in SERVICE_ROLES:
         user = os.environ.get(user_var, "")
         password = os.environ.get(password_var, "")
         if not ROLE_NAME.match(user):
             fail(f"{user_var} must match {ROLE_NAME.pattern}")
-        if user in GROUP_ROLES or user == owner or user in seen:
+        if user in GROUP_ROLES or user in PROJECT_SCHEMAS or user == owner or user in seen:
             fail(f"{user_var}={user} must differ from the owner, the group roles and the other service users")
         if len(password) < 12 or PLACEHOLDER.search(password):
             fail(f"{password_var} is missing, shorter than 12 characters or still a placeholder; "

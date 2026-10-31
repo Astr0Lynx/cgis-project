@@ -59,6 +59,11 @@ class PublishSettings:
         self.vector_table = env.get("OGC_VECTOR_TABLE", "admin_units")
         self.vector_id_field = env.get("OGC_VECTOR_ID_FIELD", "unit_id")
         self.vector_geom_field = env.get("OGC_VECTOR_GEOM_FIELD", "geom")
+        # Feature properties to publish (integration default: the frozen v1 contract columns of
+        # geo.admin_units). Additive internal columns (provenance, timestamps, the JSONB
+        # ``properties`` copy of source attributes) stay unpublished. Empty value = every column.
+        self.vector_properties = [p.strip() for p in env.get("OGC_VECTOR_PROPERTIES", "unit_id,name,level").split(",")
+                                  if p.strip()]
         self.tile_schemes = [s for s in env.get("OGC_TILE_SCHEMES", "WebMercatorQuad,WorldCRS84Quad").split(",") if s]
         self.tile_colormap = env.get("OGC_TILE_COLORMAP", "viridis")
         self.tiles_public_url = env.get("TILES_PUBLIC_URL", "http://localhost:8080/tiles").rstrip("/")
@@ -147,6 +152,11 @@ def vector_resource(ds: CatalogDataset, settings: PublishSettings, table_columns
         "storage_crs": CRS84,  # PostGIS geometry(…,4326) is stored lon/lat
         "crs": list(FEATURE_CRS),
     }
+    published = [c for c in settings.vector_properties if c in table_columns]
+    if published:
+        if settings.vector_id_field not in published:
+            published.insert(0, settings.vector_id_field)
+        provider["properties"] = published
     static_filter = vector_static_filter(ds, table_columns)
     if static_filter:
         provider["static_filter"] = static_filter

@@ -56,6 +56,18 @@ class CatalogPostgreSQLProvider(PostgreSQLProvider):
             raise ProviderConnectionError(f"static_filter columns not in table: {unknown}")
         self.static_filter = static_filter
 
+    def get_fields(self):
+        # Integration fix (Agent 6): pygeoapi's ``properties`` option limits the selected columns but
+        # not ``fields``, which drive queryables and the OpenAPI query parameters. Agent 2's additive
+        # admin_units columns include a JSONB column named ``properties``; published as a field it
+        # duplicates the standard ``properties`` query parameter and makes /openapi invalid.
+        fields = super().get_fields()
+        if self.properties:
+            keep = set(self.properties) | {self.id_field}
+            for name in [n for n in fields if n not in keep]:
+                del fields[name]
+        return fields
+
     def _static_clause(self):
         if not self.static_filter:
             return true()

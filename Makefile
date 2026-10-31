@@ -7,7 +7,7 @@ MODULES := database/pyproject.toml ingestion/Dockerfile ogc-services/tiler/Docke
            ogc-services/pygeoapi/Dockerfile spatial-processing/Dockerfile
 
 .DEFAULT_GOAL := help
-.PHONY: help env check-modules config build up down ps logs migrate fixtures import seed smoke restart reset
+.PHONY: help env check-modules config build up down ps logs migrate fixtures import seed smoke restart reset e2e test-modules
 
 help: ## List targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -27,8 +27,8 @@ config: ## Validate and print the resolved Compose configuration
 build: check-modules ## Build all images, including the ingestion tool image
 	$(COMPOSE) --profile tools build
 
-up: check-modules ## Build and start the stack, waiting until every service is healthy
-	$(COMPOSE) up -d --build --wait
+up: build ## Build every image (incl. the ingestion tool) and start the stack, waiting for health
+	$(COMPOSE) up -d --wait
 
 down: ## Stop the stack (keeps volumes: database, assets, outputs)
 	$(COMPOSE) down
@@ -56,6 +56,12 @@ seed: ## Generate and import the SYNTHETIC fixtures (idempotent)
 
 smoke: ## Check every gateway route reaches a ready service
 	@sh infra/scripts/smoke.sh $(BASE_URL)
+
+e2e: check-modules ## Full end-to-end acceptance run (tests/e2e/run_e2e.sh; add ARGS=--browser)
+	sh tests/e2e/run_e2e.sh $(ARGS)
+
+test-modules: check-modules ## Module owners' suites on a separate integrated stack (ARGS="--cite --qgis")
+	sh tests/e2e/run_module_suites.sh $(ARGS)
 
 reset: ## DESTROY all volumes (database, assets, outputs); requires CONFIRM=1
 	@[ "$(CONFIRM)" = "1" ] || { echo "refusing: this deletes all data volumes; run: make reset CONFIRM=1"; exit 1; }

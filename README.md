@@ -27,10 +27,16 @@ scripts in Git Bash. Full details, raw commands and troubleshooting: [`infra/REA
 
 ```sh
 sh infra/scripts/init-env.sh              # create .env with random local passwords (never committed)
-docker compose up -d --build --wait       # build and start; waits for health checks (make up)
+docker compose --profile tools build      # build every image, including the ingestion tool (make build)
+docker compose up -d --wait               # start; waits for health checks (make up = build + up)
 docker compose run --rm ingestion seed    # generate + import the SYNTHETIC fixtures (make seed)
 sh infra/scripts/smoke.sh                 # every gateway route reaches a ready service (make smoke)
+sh tests/e2e/run_e2e.sh                   # full end-to-end acceptance run (make e2e)
 ```
+
+The reproducible runbook, test evidence and Phase 3/4 handoff are in
+[`docs/integration/`](docs/integration/), starting with
+[`FINAL_REPORT.md`](docs/integration/FINAL_REPORT.md).
 
 Everything is served through one gateway on `http://localhost:8080`:
 

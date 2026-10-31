@@ -104,6 +104,9 @@ services:
     volumes:
       - assets:/data/assets                 # read-write ONLY here
       - ./data/fixtures:/data/fixtures      # generated, git-ignored
+      # Phase 1 deliveries (ingestion/docs/PHASE1_HANDOFF.md): put <delivery>/manifest.json under
+      # ./data/incoming/ and run `docker compose run --rm ingestion import --manifest /data/incoming/<delivery>/manifest.json`
+      - ./data/incoming:/data/incoming:ro
     depends_on:
       volume-init:
         condition: service_completed_successfully

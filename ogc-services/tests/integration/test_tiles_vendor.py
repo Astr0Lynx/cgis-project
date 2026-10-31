@@ -1,5 +1,6 @@
 """Vendor-specific TiTiler routes under /tiles/ and their access restrictions."""
 
+import psycopg
 import pytest
 from conftest import (
     OGC,
@@ -98,7 +99,15 @@ def test_malformed_dataset_ids(http, raw):
     "synthetic/missing.tif",
 ])
 def test_hostile_catalog_asset_paths_are_refused(http, temp_dataset, asset_path):
-    dataset_id = temp_dataset("raster", asset_path=asset_path)
+    # Integration note (Agent 6): on the integrated schema, Agent 2's CHECK constraint
+    # datasets_asset_path_safe refuses absolute, traversal, URL and /vsi* paths at INSERT, so such a
+    # row can never reach the tiler. That earlier refusal is accepted; paths the DB allows
+    # (symlink escape, disguised VRT, missing file) are still checked against the tiler below.
+    try:
+        dataset_id = temp_dataset("raster", asset_path=asset_path)
+    except psycopg.errors.CheckViolation as exc:
+        assert exc.diag.constraint_name == "datasets_asset_path_safe", exc
+        return
     resp = http.get(f"{TILES}/datasets/{dataset_id}/tiles/WebMercatorQuad/13/5871/3680.png")
     assert resp.status_code == 404
     body = resp.json()["error"]
