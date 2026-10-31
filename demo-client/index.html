@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CyberGIS diagnostic viewer</title>
+  <!-- MapLibre GL JS 4.7.1, pinned with Subresource Integrity. The viewer needs this CDN; the
+       data itself comes only from this gateway. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+        integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"
+          integrity="sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside id="panel">
+    <header>
+      <h1>CyberGIS Phase 2 — diagnostic viewer</h1>
+      <p class="warn"><strong>SYNTHETIC test data.</strong> Values are deterministic fixtures, not population estimates.</p>
+    </header>
+
+    <section>
+      <h2>Raster layer</h2>
+      <label for="raster">Dataset</label>
+      <select id="raster" data-testid="raster-select"></select>
+      <fieldset>
+        <legend>Tile source</legend>
+        <label><input type="radio" name="source" value="ogc" checked> OGC API – Tiles <code>/ogc/…/tiles</code></label>
+        <label><input type="radio" name="source" value="vendor"> TiTiler <code>/tiles/</code> <em>(vendor-specific, not OGC)</em></label>
+      </fieldset>
+      <label><input type="checkbox" id="raster-visible" checked> Show raster</label>
+      <label for="opacity">Opacity</label>
+      <input type="range" id="opacity" min="0" max="1" step="0.05" value="0.8">
+    </section>
+
+    <section>
+      <h2>Boundaries (OGC API – Features)</h2>
+      <div id="vectors" data-testid="vector-list"></div>
+    </section>
+
+    <section>
+      <h2>Area of interest</h2>
+      <p id="aoi-label">Click a boundary on the map, or use the current view.</p>
+      <button id="aoi-view" type="button">Use current map view as AOI</button>
+      <h2>Operations (custom API <code>/api/</code>)</h2>
+      <div class="buttons">
+        <button id="zonal" type="button" disabled>Zonal statistics</button>
+        <button id="clip" type="button" disabled>Clip → GeoTIFF</button>
+      </div>
+      <p id="download"></p>
+    </section>
+
+    <section>
+      <h2>Output</h2>
+      <p id="pixel">Pixel value: click the map.</p>
+      <pre id="output" data-testid="output">Loading collections…</pre>
+    </section>
+
+    <footer>
+      <a href="../ogc/">OGC API landing</a> ·
+      <a href="../ogc/conformance">conformance</a> ·
+      <a href="../api/docs">processing API docs</a> ·
+      <a href="../tiles/datasets">TiTiler datasets</a>
+    </footer>
+  </aside>
+  <main id="map" aria-label="Map"></main>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Adds the end-to-end test runner to the stack (profile "e2e"; never started by `up`).
+#   docker compose -f compose.yaml -f tests/e2e/compose.e2e.yaml run --rm e2e
+# tests/e2e/run_e2e.sh drives the full sequence (seed twice, negative imports, restart).
+services:
+  e2e:
+    build:
+      context: ./tests/e2e
+    image: cgis-e2e:local
+    profiles: ["e2e"]
+    environment:
+      CGIS_GATEWAY_URL: http://gateway:8080
+      CGIS_PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+      CGIS_FIXTURES_DIR: /data/fixtures
+      CGIS_E2E_STATE_DIR: /data/fixtures/e2e
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      INGEST_DB_USER: ${INGEST_DB_USER}
+      OGC_DB_USER: ${OGC_DB_USER}
+      PROCESSING_DB_USER: ${PROCESSING_DB_USER}
+    volumes:
+      - ./data/fixtures:/data/fixtures
+    depends_on:
+      gateway:
+        condition: service_healthy
