@@ -117,7 +117,7 @@ re-applies the passwords on every run, so changing one in `.env` takes effect on
 | Import manifest | `make import` | `docker compose run --rm ingestion import --manifest /data/fixtures/manifest.json` |
 | Generate + import | `make seed` | `docker compose run --rm ingestion seed` |
 | Route smoke test | `make smoke` | `sh infra/scripts/smoke.sh http://localhost:8080` |
-| Restart, keep data | `make restart` | `docker compose restart` |
+| Restart, keep data | `make restart` | `docker compose down && docker compose up -d --wait` |
 | Stop, keep data | `make down` | `docker compose down` |
 | End-to-end acceptance run | `make e2e` | `sh tests/e2e/run_e2e.sh [--browser]` |
 | Module suites on the integrated stack | `make test-modules ARGS="--cite --qgis"` | `sh tests/e2e/run_module_suites.sh --cite --qgis` |

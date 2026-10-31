@@ -33,8 +33,9 @@ up: build ## Build every image (incl. the ingestion tool) and start the stack, w
 down: ## Stop the stack (keeps volumes: database, assets, outputs)
 	$(COMPOSE) down
 
-restart: ## Restart all services without deleting volumes
-	$(COMPOSE) restart
+restart: ## Recreate all containers without deleting volumes (down + up --wait)
+	$(COMPOSE) down
+	$(COMPOSE) up -d --wait
 
 ps: ## Show service status and health
 	$(COMPOSE) ps -a

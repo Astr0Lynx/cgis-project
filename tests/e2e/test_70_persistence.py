@@ -1,6 +1,6 @@
-"""After `docker compose restart` (volumes kept): data and earlier results are still served (TEST_PLAN 9).
+"""After `docker compose down` + `up` (volumes kept): data and earlier results are still served (TEST_PLAN 9).
 
-run_e2e.sh runs these with `-m persistence` after restarting every service.
+run_e2e.sh runs these with `-m persistence` after recreating every container.
 """
 
 from __future__ import annotations

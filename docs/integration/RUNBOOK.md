@@ -56,7 +56,7 @@ Both scripts exit 0 only if every step passed. Evidence goes to `./data/fixtures
 |---|---|
 | Status / health | `docker compose ps -a` |
 | Logs | `docker compose logs -f --tail=200 <service>`. The gateway logs JSON lines. |
-| Restart, keeping data | `docker compose restart`, then `docker compose up -d --wait` |
+| Restart, keeping data | `docker compose down && docker compose up -d --wait`. Avoid a bare `docker compose restart`: it also restarts the one-shot `migrate`. That now waits for the database, but `down` + `up` keeps the start order. |
 | Stop, keeping data | `docker compose down` |
 | Re-run migrations and roles | `docker compose run --rm migrate` (idempotent) |
 | Re-publish the OGC catalog now | `docker compose exec ogc /cgis/entrypoint.sh refresh` (otherwise every `OGC_REFRESH_INTERVAL` s) |
@@ -64,8 +64,8 @@ Both scripts exit 0 only if every step passed. Evidence goes to `./data/fixtures
 | **Delete everything** | `docker compose down -v` |
 
 Data lives in three named volumes: `pgdata`, `assets` and `processing-outputs`. `docker compose
-down` and `restart` keep them. The e2e suite checks that the catalog, features, tiles, statistics
-and an earlier export (same SHA-256) survive a restart.
+down` keeps them. The e2e suite recreates every container this way and checks that the catalog,
+features, tiles, statistics and an earlier export (same SHA-256) survive.
 
 ## 5. Loading real Phase 1 outputs (no code changes)
 

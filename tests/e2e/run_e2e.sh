@@ -101,8 +101,10 @@ case " $* " in *" --browser "*)
     ;;
 esac
 
-step "restart every service (volumes kept) and wait for health"
-$C restart </dev/null > "$EV/restart.log" 2>&1 && $C up -d --wait </dev/null >> "$EV/restart.log" 2>&1
+step "restart: remove every container (volumes kept), start again and wait for health"
+# `down` without -v recreates all containers and the network, so only the named volumes carry
+# state across. (`docker compose restart` would also restart the one-shot migrate alongside db.)
+$C down </dev/null > "$EV/restart.log" 2>&1 && $C up -d --wait </dev/null >> "$EV/restart.log" 2>&1
 check restart $?
 
 step "pytest: persistence after restart"

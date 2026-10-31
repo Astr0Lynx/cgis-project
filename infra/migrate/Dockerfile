@@ -17,4 +17,4 @@ RUN pip install ./database \
     && useradd --system --uid 10001 --home-dir /opt/cgis migrate
 USER migrate
 # Migrations are applied by the owner role from the environment (PG* variables).
-CMD ["sh", "-c", "python -m cgis_db migrate up && python /opt/cgis/infra-db/provision_roles.py"]
+CMD ["sh", "-c", "python /opt/cgis/infra-db/wait_for_db.py && python -m cgis_db migrate up && python /opt/cgis/infra-db/provision_roles.py"]

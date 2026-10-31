@@ -27,7 +27,8 @@ sh tests/e2e/run_module_suites.sh --cite --qgis   # module owners' suites + OGC 
 5. Runs `gdalinfo -stats` on the exported Town A clip, using the host GDAL or the
    `osgeo/gdal` image.
 6. *(with `--browser`)* Runs the headless-Chromium viewer check.
-7. `docker compose restart`, waits for health, then runs `pytest -m persistence`.
+7. `docker compose down` (volumes kept) and `up -d --wait` recreate every container. Then it runs
+   `pytest -m persistence`.
 8. Records `docker compose ps`, scans the logs, evidence files and tracked files for the `.env`
    passwords, and counts 5xx responses in the gateway's JSON access log.
 
