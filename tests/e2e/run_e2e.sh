@@ -1,8 +1,9 @@
 #!/bin/sh
 # Full end-to-end acceptance run against the Compose stack in this checkout.
 #
-#   sh tests/e2e/run_e2e.sh [--browser]
+#   sh tests/e2e/run_e2e.sh [--browser] [--qgis]
 #
+# --qgis opens the exported clip GeoTIFF in headless QGIS 3.44 (qgis/qgis image, ~0.9 GB).
 # --browser also drives the diagnostic viewer in headless Chromium (Playwright container, ~2 GB
 # image, needs internet for the pinned MapLibre CDN script): tests/e2e/browser/check_viewer.py.
 #
@@ -90,6 +91,15 @@ if [ -f "$EV/clip_town_a_2001.tif" ]; then
 else
     check gdalinfo 1
 fi
+
+case " $* " in *" --qgis "*)
+    step "QGIS: open the exported Town A clip in headless QGIS 3.44"
+    docker run --rm -e QT_QPA_PLATFORM=offscreen -v "$(pwd)/tests/e2e/qgis:/q:ro" -v "$(pwd)/$EV:/e2e:ro"         qgis/qgis:3.44.15@sha256:9c4afddd8eb4d03275e161b732d57ea402a1a5237eb5766957427530fd38afe0         python3 /q/check_geotiff_qgis.py /e2e/clip_town_a_2001.tif </dev/null 2>&1         | grep -E '^(PASS|FAIL|RESULT)' > "$EV/qgis-geotiff.txt"
+    cat "$EV/qgis-geotiff.txt"
+    grep -q '^RESULT OK' "$EV/qgis-geotiff.txt"
+    check qgis_geotiff $?
+    ;;
+esac
 
 case " $* " in *" --browser "*)
     step "browser: drive the diagnostic viewer in headless Chromium"

@@ -12,6 +12,7 @@ inspect the catalog, in a read-only session. Expected values come from
 ```sh
 sh tests/e2e/run_e2e.sh              # full acceptance run (see below); exit 0 = all steps passed
 sh tests/e2e/run_e2e.sh --browser    # also drive the viewer in headless Chromium (~2 GB image)
+sh tests/e2e/run_e2e.sh --qgis       # also open the exported clip GeoTIFF in headless QGIS 3.44
 sh tests/e2e/run_module_suites.sh --cite --qgis   # module owners' suites + OGC CITE + headless QGIS
 ```
 
@@ -52,6 +53,7 @@ arguments are not rewritten into Windows paths.
 | `test_70_persistence.py` | After a restart: catalog, features, tiles, zonal values and the earlier export (same SHA-256) |
 | `test_80_performance.py` | Median/p95 latencies on the fixtures, written to `perf.json` (informational) |
 | `browser/check_viewer.py` | Headless-Chromium run of the viewer |
+| `qgis/check_geotiff_qgis.py` | Opens the exported clip in headless QGIS: CRS, size, extent, NoData, statistics |
 
 ## Module suites against the integrated stack
 
