@@ -1,0 +1,21 @@
+PASS  /ogc/ prefix stripped, query kept
+PASS  /ogc/ forwards client Host
+PASS  /ogc/ percent-encoding preserved
+PASS  /tiles/ prefix stripped
+PASS  /api/ prefix stripped, POST ok
+PASS  POST to /ogc/ refused
+PASS  DELETE to /tiles/ refused
+PASS  HEAD to /ogc/ allowed
+PASS  /api/ body over 1 MiB refused
+PASS  /ogc redirects to /ogc/ (same host:port)
+PASS  /tiles redirects to /tiles/
+PASS  / redirects to /viewer/
+PASS  /viewer/ served by viewer
+PASS  raw dot-segment refused
+PASS  encoded dot-segment refused
+PASS  /viewer/ path stripped
+PASS  /healthz ok
+PASS  unknown route is JSON 404
+PASS  no nginx version banner
+gateway routing: all checks passed
+routes_exit=0

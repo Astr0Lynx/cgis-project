@@ -1,0 +1,54 @@
+ Container cgis-fresh-viewer-1 Running 
+ Container cgis-fresh-db-1 Running 
+ Container cgis-fresh-tiles-1 Running 
+ Container cgis-fresh-ogc-1 Running 
+ Container cgis-fresh-processing-1 Running 
+ Container cgis-fresh-gateway-1 Running 
+ Container cgis-fresh-volume-init-1 Starting 
+ Container cgis-fresh-db-1 Waiting 
+ Container cgis-fresh-volume-init-1 Started 
+ Container cgis-fresh-db-1 Healthy 
+ Container cgis-fresh-migrate-1 Starting 
+ Container cgis-fresh-migrate-1 Started 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-volume-init-1 Waiting 
+ Container cgis-fresh-volume-init-1 Waiting 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-volume-init-1 Exited 
+ Container cgis-fresh-volume-init-1 Exited 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-tiles-1 Waiting 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-tiles-1 Healthy 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-viewer-1 Waiting 
+ Container cgis-fresh-ogc-1 Waiting 
+ Container cgis-fresh-tiles-1 Waiting 
+ Container cgis-fresh-processing-1 Waiting 
+ Container cgis-fresh-tiles-1 Healthy 
+ Container cgis-fresh-ogc-1 Healthy 
+ Container cgis-fresh-viewer-1 Healthy 
+ Container cgis-fresh-processing-1 Healthy 
+ Container cgis-fresh-gateway-1 Waiting 
+ Container cgis-fresh-gateway-1 Healthy 
+ Container cgis-fresh-e2e-run-da2d4198cbb7 Creating 
+ Container cgis-fresh-e2e-run-da2d4198cbb7 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.2.0, pluggy-1.7.0
+rootdir: /e2e
+configfile: pytest.ini
+testpaths: .
+plugins: anyio-4.15.1
+collected 107 items / 5 deselected / 102 selected
+
+test_10_catalog.py ............                                          [ 11%]
+test_20_ogc_features.py ................                                 [ 27%]
+test_30_tiles.py ...............                                         [ 42%]
+test_40_processing.py ..............                                     [ 55%]
+test_50_negative.py ........................................             [ 95%]
+test_60_viewer.py ....                                                   [ 99%]
+test_80_performance.py .                                                 [100%]
+
+------------ generated xml file: /data/fixtures/e2e/junit-main.xml -------------
+====================== 102 passed, 5 deselected in 4.01s =======================

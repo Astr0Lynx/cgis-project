@@ -1,0 +1,2 @@
+exit 1
+{"dataset_id": "e2e-neg-corrupt-tiff", "entry": 0, "error": {"code": "corrupt_raster", "message": "cannot read raster corrupt.tif: corrupt.tif: TIFFReadDirectory:Failed to read directory at offset 50462976"}, "kind": "raster", "outcome": "failed", "version": 1}

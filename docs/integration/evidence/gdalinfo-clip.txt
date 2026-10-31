@@ -1,0 +1,55 @@
+Warning 1: PROJ: proj_create_from_database: C:\Program Files\PostgreSQL\18\share\contrib\postgis-3.6\proj\proj.db contains DATABASE.LAYOUT.VERSION.MINOR = 2 whereas a number >= 6 is expected. It comes from another PROJ installation.
+Warning 1: PROJ: proj_create_from_name: C:\Program Files\PostgreSQL\18\share\contrib\postgis-3.6\proj\proj.db contains DATABASE.LAYOUT.VERSION.MINOR = 2 whereas a number >= 6 is expected. It comes from another PROJ installation.
+Driver: GTiff/GeoTIFF
+Files: data/fixtures/e2e/clip_town_a_2001.tif
+Size is 10, 10
+Coordinate System is:
+GEOGCRS["WGS 84",
+    DATUM["World Geodetic System 1984",
+        ELLIPSOID["WGS 84",6378137,298.257223563,
+            LENGTHUNIT["metre",1,
+                ID["EPSG",9001]]]],
+    PRIMEM["Greenwich",0,
+        ANGLEUNIT["degree",0.0174532925199433,
+            ID["EPSG",9122]]],
+    CS[ellipsoidal,2],
+        AXIS["latitude",north,
+            ORDER[1],
+            ANGLEUNIT["degree",0.0174532925199433,
+                ID["EPSG",9122]]],
+        AXIS["longitude",east,
+            ORDER[2],
+            ANGLEUNIT["degree",0.0174532925199433,
+                ID["EPSG",9122]]]]
+Data axis to CRS axis mapping: 2,1
+Origin = (78.010000000000005,17.989999999999998)
+Pixel Size = (0.001000000000000,-0.001000000000000)
+Metadata:
+  DATASET_ID=synthetic-worldpop-2001
+  DATASET_VERSION=1
+  PIXEL_SELECTION=pixel_center (all_touched=false)
+  PROCESSING=cgis-spatial-processing 0.1.0 clip job 022246c3-e707-412e-918a-0c76eedf2944
+  SOURCE=deterministic-fixture
+  UNITS=people_per_cell
+  AREA_OR_POINT=Area
+Image Structure Metadata:
+  COMPRESSION=DEFLATE
+  INTERLEAVE=BAND
+  PREDICTOR=3
+Corner Coordinates:
+Upper Left  (  78.0100000,  17.9900000) ( 78d 0'36.00"E, 17d59'24.00"N)
+Lower Left  (  78.0100000,  17.9800000) ( 78d 0'36.00"E, 17d58'48.00"N)
+Upper Right (  78.0200000,  17.9900000) ( 78d 1'12.00"E, 17d59'24.00"N)
+Lower Right (  78.0200000,  17.9800000) ( 78d 1'12.00"E, 17d58'48.00"N)
+Center      (  78.0150000,  17.9850000) ( 78d 0'54.00"E, 17d59' 6.00"N)
+Band 1 Block=256x256 Type=Float32, ColorInterp=Gray
+  Description = SYNTHETIC people_per_cell (2001 label)
+  Minimum=1.000, Maximum=1.000, Mean=1.000, StdDev=0.000
+  NoData Value=-9999
+  Unit Type: people_per_cell
+  Metadata:
+    STATISTICS_MINIMUM=1
+    STATISTICS_MAXIMUM=1
+    STATISTICS_MEAN=1
+    STATISTICS_STDDEV=0
+    STATISTICS_VALID_PERCENT=100

@@ -1,0 +1,4 @@
+{"command": "generate-fixtures", "out_dir": "/data/fixtures", "synthetic": true}
+{"asset_path": "rasters/synthetic-worldpop-2001/v1/synthetic-worldpop-2001_v1.tif", "checksum_sha256": "92b0df5675c8d9c8e19b39456030595ccbe3387adeff59ee95a715bcf461bcd5", "dataset_id": "synthetic-worldpop-2001", "kind": "raster", "outcome": "unchanged", "version": 1}
+{"asset_path": "rasters/synthetic-worldpop-2011/v1/synthetic-worldpop-2011_v1.tif", "checksum_sha256": "6940c9ada53a2a25e4762b84b4c4e6105c8712b5cfe7d0f62bdc9016ff377691", "dataset_id": "synthetic-worldpop-2011", "kind": "raster", "outcome": "unchanged", "version": 1}
+{"asset_path": "vectors/synthetic-towns/v1/synthetic-towns_v1.geojson", "checksum_sha256": "5af30731beb92ba73ead1c0043a9927bce1dba157a339ef336792d026807c65e", "dataset_id": "synthetic-towns", "kind": "vector", "outcome": "unchanged", "version": 1}

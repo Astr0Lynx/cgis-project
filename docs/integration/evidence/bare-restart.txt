@@ -1,0 +1,73 @@
+ Container cgis-fresh-processing-1 Restarting 
+ Container cgis-fresh-volume-init-1 Restarting 
+ Container cgis-fresh-ogc-1 Restarting 
+ Container cgis-fresh-viewer-1 Restarting 
+ Container cgis-fresh-tiles-1 Restarting 
+ Container cgis-fresh-gateway-1 Restarting 
+ Container cgis-fresh-db-1 Restarting 
+ Container cgis-fresh-migrate-1 Restarting 
+ Container cgis-fresh-volume-init-1 Started 
+ Container cgis-fresh-db-1 Started 
+ Container cgis-fresh-viewer-1 Started 
+ Container cgis-fresh-migrate-1 Started 
+ Container cgis-fresh-gateway-1 Started 
+ Container cgis-fresh-processing-1 Started 
+ Container cgis-fresh-tiles-1 Started 
+ Container cgis-fresh-ogc-1 Started 
+ Container cgis-fresh-viewer-1 Running 
+ Container cgis-fresh-db-1 Running 
+ Container cgis-fresh-migrate-1 Running 
+ Container cgis-fresh-tiles-1 Running 
+ Container cgis-fresh-processing-1 Running 
+ Container cgis-fresh-ogc-1 Running 
+ Container cgis-fresh-gateway-1 Running 
+ Container cgis-fresh-volume-init-1 Starting 
+ Container cgis-fresh-db-1 Waiting 
+ Container cgis-fresh-volume-init-1 Started 
+ Container cgis-fresh-db-1 Healthy 
+ Container cgis-fresh-volume-init-1 Waiting 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-volume-init-1 Waiting 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-volume-init-1 Exited 
+ Container cgis-fresh-volume-init-1 Exited 
+ Container cgis-fresh-tiles-1 Waiting 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-tiles-1 Healthy 
+ Container cgis-fresh-ogc-1 Waiting 
+ Container cgis-fresh-tiles-1 Waiting 
+ Container cgis-fresh-processing-1 Waiting 
+ Container cgis-fresh-viewer-1 Waiting 
+ Container cgis-fresh-ogc-1 Healthy 
+ Container cgis-fresh-tiles-1 Healthy 
+ Container cgis-fresh-processing-1 Healthy 
+ Container cgis-fresh-viewer-1 Healthy 
+ Container cgis-fresh-volume-init-1 Waiting 
+ Container cgis-fresh-processing-1 Waiting 
+ Container cgis-fresh-db-1 Waiting 
+ Container cgis-fresh-tiles-1 Waiting 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-ogc-1 Waiting 
+ Container cgis-fresh-gateway-1 Waiting 
+ Container cgis-fresh-viewer-1 Waiting 
+ Container cgis-fresh-volume-init-1 Exited 
+ Container cgis-fresh-viewer-1 Healthy 
+ Container cgis-fresh-db-1 Healthy 
+ Container cgis-fresh-gateway-1 Healthy 
+ Container cgis-fresh-processing-1 Healthy 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-tiles-1 Healthy 
+ Container cgis-fresh-ogc-1 Healthy 
+bare_restart_exit=0
+PASS  200 /healthz                           gateway liveness
+PASS  302 /                                  root redirects to viewer
+PASS  200 /viewer/healthz                    viewer (static)
+PASS  200 /ogc/conformance?f=json            OGC API conformance (pygeoapi)
+PASS  301 /ogc                               prefix without slash redirects
+PASS  200 /tiles/readyz                      tiles readiness (TiTiler, vendor routes)
+PASS  200 /api/ready                         processing readiness
+PASS  404 /nope                              unknown route is 404
+smoke: all checks passed (http://127.0.0.1:8089)

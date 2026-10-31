@@ -1,0 +1,8 @@
+db running Up 34 seconds (healthy)
+gateway running Up 16 seconds (healthy)
+migrate exited Exited (0) 4 seconds ago
+ogc running Up 22 seconds (healthy)
+processing running Up 27 seconds (healthy)
+tiles running Up 27 seconds (healthy)
+viewer running Up 34 seconds (healthy)
+volume-init exited Exited (0) 5 seconds ago

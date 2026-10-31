@@ -1,0 +1,2 @@
+exit 1
+{"dataset_id": "e2e-neg-missing-file", "entry": 0, "error": {"code": "file_not_found", "details": {"file": "does_not_exist.tif"}, "message": "source file not found for e2e-neg-missing-file@v1: does_not_exist.tif"}, "kind": "raster", "outcome": "failed", "version": 1}

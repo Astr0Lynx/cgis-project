@@ -1,0 +1,2 @@
+exit 1
+{"dataset_id": "e2e-neg-missing-crs", "entry": 0, "error": {"code": "missing_crs", "message": "no_crs.tif has no CRS; a georeferenced raster is required"}, "kind": "raster", "outcome": "failed", "version": 1}

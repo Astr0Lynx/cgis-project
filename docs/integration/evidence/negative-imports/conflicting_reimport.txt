@@ -1,0 +1,2 @@
+exit 1
+{"dataset_id": "synthetic-worldpop-2001", "entry": 0, "error": {"code": "checksum_conflict", "details": {"existing_checksum": "92b0df5675c8d9c8e19b39456030595ccbe3387adeff59ee95a715bcf461bcd5", "new_checksum": "033d49e995ff006d0492f853e0a2d277cb4cffaccafee93c087be88e8a13d6a8"}, "message": "synthetic-worldpop-2001@v1 is already ready with checksum 92b0df5675c8\u2026; the new file (033d49e995ff\u2026) differs. Publish it as a new version instead."}, "kind": "raster", "outcome": "failed", "version": 1}

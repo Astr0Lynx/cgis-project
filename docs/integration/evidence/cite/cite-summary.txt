@@ -1,0 +1,9 @@
+/out/cite-ogcapi-features-1.0.xml: total=179 passed=173 failed=0 skipped=6
+  SKIP validateFeaturesOperation_QueryParamUnknown: Free-form parameters are supported for collection with id synthetic-towns
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+  SKIP validateFeaturesWithBoundingBoxResponse: No features were returned for collection.
+/out/cite-ogcapi-tiles-1.0.xml: total=16 passed=15 failed=0 skipped=1
+  SKIP landingPageRetrieval: Skipped because Conformance Class http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/dataset-tilesets is not implemented.

@@ -1,0 +1,2 @@
+exit 1
+{"dataset_id": "e2e-neg-invalid-geometry", "entry": 0, "error": {"code": "invalid_geometry", "message": "bowtie.geojson feature #0 (e2e-bowtie) geometry is invalid: Self-intersection[78.015 17.985]"}, "kind": "vector", "outcome": "failed", "version": 1}

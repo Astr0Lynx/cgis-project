@@ -1,0 +1,2 @@
+exit 1
+{"dataset_id": "e2e-neg-unsupported-crs", "entry": 0, "error": {"code": "unsupported_crs", "message": "custom_crs.tif CRS cannot be identified as an EPSG code (PROJCS[\"unknown\",GEOGCS[\"unknown\",DATUM[\"Unknown based on WGS 84 ellipsoid\",SPHE)"}, "kind": "raster", "outcome": "failed", "version": 1}

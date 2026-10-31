@@ -1,0 +1,9 @@
+NAME                       IMAGE                                                                                            COMMAND                  SERVICE       CREATED          STATUS                     PORTS
+cgis-fresh-db-1            postgis/postgis:17-3.5@sha256:01a6a70e41e6c4467c8f55f6063555ed72db2d6662cd0d571040d42eadaeb6f6   "docker-entrypoint.s…"   db            35 seconds ago   Up 34 seconds (healthy)    5432/tcp
+cgis-fresh-gateway-1       cgis-gateway:local                                                                               "/docker-entrypoint.…"   gateway       35 seconds ago   Up 16 seconds (healthy)    127.0.0.1:8089->8080/tcp
+cgis-fresh-migrate-1       cgis-migrate:local                                                                               "sh -c 'python /opt/…"   migrate       35 seconds ago   Exited (0) 4 seconds ago   
+cgis-fresh-ogc-1           cgis-ogc:local                                                                                   "/cgis/entrypoint.sh…"   ogc           35 seconds ago   Up 21 seconds (healthy)    5000/tcp
+cgis-fresh-processing-1    cgis-processing:local                                                                            "uvicorn --factory s…"   processing    35 seconds ago   Up 27 seconds (healthy)    8000/tcp
+cgis-fresh-tiles-1         cgis-tiles:local                                                                                 "sh -c 'exec uvicorn…"   tiles         35 seconds ago   Up 27 seconds (healthy)    8000/tcp
+cgis-fresh-viewer-1        cgis-viewer:local                                                                                "/docker-entrypoint.…"   viewer        35 seconds ago   Up 34 seconds (healthy)    80/tcp
+cgis-fresh-volume-init-1   busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec           "sh -c 'set -e; mkdi…"   volume-init   35 seconds ago   Exited (0) 5 seconds ago   

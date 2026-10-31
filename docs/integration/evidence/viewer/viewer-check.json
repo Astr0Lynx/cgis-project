@@ -1,0 +1,71 @@
+{
+  "url": "http://gateway:8080/viewer/",
+  "checks": {
+    "raster collections discovered": {
+      "ok": true,
+      "detail": [
+        "synthetic-worldpop-2001",
+        "synthetic-worldpop-2011"
+      ]
+    },
+    "boundary collection loaded via OGC API Features": {
+      "ok": true,
+      "detail": "SYNTHETIC towns (Town A, Town B) (2 features)"
+    },
+    "raster uses OGC API - Tiles template": {
+      "ok": true,
+      "detail": "http://gateway:8080/ogc/collections/synthetic-worldpop-2001/tiles/WebMercatorQuad/{z}/{y}/{x}?f=png"
+    },
+    "raster zoom range taken from tileMatrixSetLimits": {
+      "ok": true,
+      "detail": [
+        0,
+        13
+      ]
+    },
+    "clicking Town A selects it as AOI": {
+      "ok": true,
+      "detail": "AOI: Town A (synthetic-towns/town-a)"
+    },
+    "pixel readout via TiTiler /point": {
+      "ok": true,
+      "detail": "Pixel value at 78.0149, 17.9851: [1] (TiTiler /point, vendor-specific)"
+    },
+    "zonal statistics Town A 2001 = 100": {
+      "ok": true,
+      "detail": {
+        "count_valid": 100,
+        "sum": 100,
+        "mean": 1,
+        "units": "people_per_cell"
+      }
+    },
+    "zonal statistics Town A synthetic-worldpop-2011 = 200": {
+      "ok": true,
+      "detail": 200
+    },
+    "clip download is a GeoTIFF": {
+      "ok": true,
+      "detail": {
+        "href": "/api/downloads/b310f1f4-ebdc-425e-bb5a-91c6d46721b6",
+        "file": "clip_synthetic-worldpop-2011_v1_b310f1f4ebdc.tif",
+        "bytes": 1709
+      }
+    },
+    "vendor TiTiler source switch works": {
+      "ok": true,
+      "detail": "http://gateway:8080/tiles/datasets/synthetic-worldpop-2011/tiles/WebMercatorQuad/{z}/{x}/{y}.png?rescale=0,2&colormap_name=viridis"
+    },
+    "no console errors": {
+      "ok": true,
+      "detail": []
+    },
+    "no failed HTTP requests": {
+      "ok": true,
+      "detail": []
+    }
+  },
+  "console_errors": [],
+  "failed_requests": [],
+  "ok": true
+}

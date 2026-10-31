@@ -1,0 +1,53 @@
+== [11:40:04] summary
+agent2-database.txt                      136 passed in 13.96s
+agent3-db-create.txt                     
+agent3-ingestion.txt                     84 passed in 2.16s
+agent3-migrate.txt                       
+agent4-build.txt                         
+agent4-ogc-pygeoapi.txt                  47 passed in 1.29s
+agent4-ogc.txt                           215 passed, 1 warning in 57.10s
+agent4-stub-assets.txt                   
+agent5-build-test-stage.txt              
+agent5-processing-postgis.txt            5 passed, 151 deselected in 0.77s
+stack_up 0
+seed 0
+agent2_database 0
+agent3_ingestion 0
+agent4_ogc_http 0
+agent4_ogc_pygeoapi_unit 0
+agent5_processing_test_stage 0
+agent5_processing_postgis 0
+qgis_headless 0
+ogc_cite 0
+MODULE SUITES: PASS
+modules_exit=0
+== agent2-database.txt
+........................................................................ [ 52%]
+................................................................         [100%]
+136 passed in 13.96s
+== agent3-db-create.txt
+NOTICE:  database "cgis_ingest_test" does not exist, skipping
+== agent3-ingestion.txt
+........................................................................ [ 85%]
+............                                                             [100%]
+84 passed in 2.16s
+== agent3-migrate.txt
+provision_roles: updated login role cgis_ogc_svc (member of cgis_reader, read-only sessions)
+provision_roles: updated login role cgis_processing_svc (member of cgis_processing)
+provision_roles: ok
+== agent4-build.txt
+sha256:24aeacd0dd8eb67a81879bb53ee41c12b1d0ac5d11c3207e941d26aade6ae865
+== agent4-ogc-pygeoapi.txt
+...............................................                          [100%]
+47 passed in 1.29s
+== agent4-ogc.txt
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+215 passed, 1 warning in 57.10s
+== agent4-stub-assets.txt
+stub rasters written under /data/assets
+== agent5-build-test-stage.txt
+sha256:430211bba21f1027ad734fff3e1ea9df6d5acae71073d6221de7cf32f7885970
+== agent5-processing-postgis.txt
+.....                                                                    [100%]
+5 passed, 151 deselected in 0.77s

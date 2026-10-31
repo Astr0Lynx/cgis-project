@@ -1,0 +1,22 @@
+compose_up 0
+startup_seconds 32
+seed_1 0
+seed_2 0
+e2e_build 0
+negative_inputs 0
+pytest_main 0
+gdalinfo 0
+qgis_geotiff 0
+browser_viewer 0
+restart 0
+pytest_persistence 0
+no_secret_leaks 0
+log_errors db 0
+log_errors migrate 0
+log_errors tiles 0
+log_errors ogc 0
+log_errors processing 0
+log_errors gateway 0
+log_errors viewer 0
+gateway_5xx_responses 0
+no_server_errors 0

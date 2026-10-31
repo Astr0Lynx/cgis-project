@@ -1,0 +1,48 @@
+ Container cgis-fresh-db-1 Running 
+ Container cgis-fresh-viewer-1 Running 
+ Container cgis-fresh-processing-1 Running 
+ Container cgis-fresh-tiles-1 Running 
+ Container cgis-fresh-ogc-1 Running 
+ Container cgis-fresh-gateway-1 Running 
+ Container cgis-fresh-volume-init-1 Starting 
+ Container cgis-fresh-db-1 Waiting 
+ Container cgis-fresh-volume-init-1 Started 
+ Container cgis-fresh-db-1 Healthy 
+ Container cgis-fresh-migrate-1 Starting 
+ Container cgis-fresh-migrate-1 Started 
+ Container cgis-fresh-volume-init-1 Waiting 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-volume-init-1 Waiting 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-volume-init-1 Exited 
+ Container cgis-fresh-volume-init-1 Exited 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-tiles-1 Waiting 
+ Container cgis-fresh-migrate-1 Waiting 
+ Container cgis-fresh-tiles-1 Healthy 
+ Container cgis-fresh-migrate-1 Exited 
+ Container cgis-fresh-ogc-1 Waiting 
+ Container cgis-fresh-tiles-1 Waiting 
+ Container cgis-fresh-processing-1 Waiting 
+ Container cgis-fresh-viewer-1 Waiting 
+ Container cgis-fresh-ogc-1 Healthy 
+ Container cgis-fresh-viewer-1 Healthy 
+ Container cgis-fresh-processing-1 Healthy 
+ Container cgis-fresh-tiles-1 Healthy 
+ Container cgis-fresh-gateway-1 Waiting 
+ Container cgis-fresh-gateway-1 Healthy 
+ Container cgis-fresh-e2e-run-fecede079e84 Creating 
+ Container cgis-fresh-e2e-run-fecede079e84 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.2.0, pluggy-1.7.0
+rootdir: /e2e
+configfile: pytest.ini
+testpaths: .
+plugins: anyio-4.15.1
+collected 107 items / 102 deselected / 5 selected
+
+test_70_persistence.py .....                                             [100%]
+
+--------- generated xml file: /data/fixtures/e2e/junit-persistence.xml ---------
+====================== 5 passed, 102 deselected in 0.79s =======================

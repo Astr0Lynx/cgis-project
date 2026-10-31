@@ -1,0 +1,38 @@
+{
+  "ogc_items_all": {
+    "runs": 15,
+    "median_ms": 6.2,
+    "p95_ms": 8.1,
+    "max_ms": 9.2
+  },
+  "ogc_items_bbox": {
+    "runs": 15,
+    "median_ms": 19.2,
+    "p95_ms": 19.8,
+    "max_ms": 20.3
+  },
+  "ogc_tile_png_deepest": {
+    "runs": 15,
+    "median_ms": 13.3,
+    "p95_ms": 15.3,
+    "max_ms": 34.1
+  },
+  "vendor_tile_png_same_tile": {
+    "runs": 15,
+    "median_ms": 9.7,
+    "p95_ms": 13.0,
+    "max_ms": 14.6
+  },
+  "zonal_statistics_town_a": {
+    "runs": 15,
+    "median_ms": 32.5,
+    "p95_ms": 35.6,
+    "max_ms": 37.0
+  },
+  "clip_town_a_geotiff": {
+    "runs": 15,
+    "median_ms": 37.5,
+    "p95_ms": 42.9,
+    "max_ms": 44.0
+  }
+}
