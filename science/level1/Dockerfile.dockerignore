@@ -1,0 +1,6 @@
+# Build context allow-list for science/level1/Dockerfile (never send data/ to the daemon)
+*
+!ingestion/
+!science/level1/
+**/__pycache__
+**/.pytest_cache

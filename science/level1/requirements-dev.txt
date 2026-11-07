@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest==9.0.2
+# tests also import the repository's ingestion package (contract check): psycopg is imported there
+psycopg[binary]==3.2.3
+pyproj==3.7.2

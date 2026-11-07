@@ -1,0 +1,60 @@
+# SYNTHETIC end-to-end configuration (proves software, not science).
+# Generate inputs first:  python -m cgis_level1 make-synthetic --out data/level1-synthetic/inputs
+[paths]
+root = "../../.."                      # repository root (relative to this file)
+work_dir = "data/level1-synthetic/work"
+out_dir = "data/level1-synthetic/outputs"
+
+[run]
+name = "synthetic"
+synthetic = true
+years = [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011]
+tile_size = 100                        # small tiles so the fixture spans several tiles + partial edges
+workers = 2
+max_rss_gb = 4
+
+[parent]
+block = 10
+zero_weight_fallback = "worldpop"
+
+[inputs.worldpop]
+pattern = "data/level1-synthetic/inputs/worldpop/ind_ppp_{year}.tif"
+
+[inputs.ghsl]
+total_glob = "data/level1-synthetic/inputs/ghsl/total_E{epoch}/*.tif"
+nres_glob = "data/level1-synthetic/inputs/ghsl/nres_E{epoch}/*.tif"
+epochs = [2000, 2005, 2010]
+
+[inputs.ghs_pop]
+glob = "data/level1-synthetic/inputs/ghsl/pop_E{epoch}/*.tif"
+epochs = [2000, 2005, 2010, 2015]
+
+[temporal]
+policy_2011 = "interpolate_2015"
+policy_2011_approval = "pending"       # SYNTHETIC run; real approval is recorded in METHODOLOGY_DECISION.md
+compare_2011_policies = true
+
+[output]
+nodata = -99999.0
+dataset_prefix = "synthetic-india-l1-pop-"
+version = 1
+
+[evaluation]
+supports = [1, 10, 50]
+sample_step = 3
+
+[evaluation.zoom_regions]
+town_a = [77.03, 12.87, 77.09, 12.95]
+
+[evaluation.zones.synthetic_districts]
+path = "data/level1-synthetic/inputs/zones/synthetic_districts.geojson"
+id_property = "zid"
+name_property = "name"
+citation = "SYNTHETIC zones"
+
+[qa]
+mass_rel_tol = 1e-6
+mass_abs_tol = 1e-3
+
+[provenance]
+zoom_years = [2001, 2011]
