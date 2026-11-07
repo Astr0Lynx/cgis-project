@@ -68,14 +68,19 @@ def main() -> int:
     a = ap.parse_args()
     wp = rasterio.open(ROOT / f"data/incoming/worldpop/ind_ppp_{a.year}.tif")
     l1 = rasterio.open(ROOT / f"data/outputs/level1/cog/india-l1-pop-{a.year}.tif")
-    assert wp.transform == l1.transform and wp.shape == l1.shape, "grid mismatch"
+    # the year's WorldPop file may be a whole-pixel-offset window of the reference (output) grid
+    dcf = (l1.transform.c - wp.transform.c) / l1.transform.a
+    drf = (wp.transform.f - l1.transform.f) / -l1.transform.e
+    dc, dr = round(dcf), round(drf)
+    assert abs(dcf - dc) < 1e-3 and abs(drf - dr) < 1e-3, "WorldPop file not on the output lattice"
     rng = random.Random(a.seed)
     checked, worst_cell, worst_parent, skipped = 0, 0.0, 0.0, 0
     fails = []
     while checked < a.n:
-        br, bc = rng.randrange(wp.height // K), rng.randrange(wp.width // K)
+        br, bc = rng.randrange(l1.height // K), rng.randrange(l1.width // K)
         win = Window(bc * K, br * K, K, K)
-        p = wp.read(1, window=win).astype(np.float64)
+        p = wp.read(1, window=Window(bc * K + dc, br * K + dr, K, K), boundless=True,
+                    fill_value=wp.nodata).astype(np.float64)
         valid = p != wp.nodata
         if not valid.any() or p[valid].sum() <= 0:
             skipped += 1
@@ -89,7 +94,7 @@ def main() -> int:
         for i in range(K):
             for j in range(K):
                 if valid[i, j]:
-                    lon, lat = wp.xy(br * K + i, bc * K + j)      # cell centre
+                    lon, lat = l1.xy(br * K + i, bc * K + j)      # cell centre
                     Rw[i, j] = weight(a.year, (2000, 2005, 2010), lon, lat, a.policy)
         S = float(Rw.sum())
         expect = np.full((K, K), np.nan)
