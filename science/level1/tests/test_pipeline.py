@@ -173,3 +173,18 @@ def test_evaluation_bundle(base_run, tmp_path):
     assert b3["reference"]["reference_temporal"] == "interpolated"
     assert b3["reference"]["terms"] == [(2000, pytest.approx(0.8)), (2005, pytest.approx(0.2))] or \
         [tuple(t) for t in b3["reference"]["terms"]] == [(2000, pytest.approx(0.8)), (2005, pytest.approx(0.2))]
+
+
+def test_inventory_and_evidence(base_run, tmp_path):
+    from cgis_level1.evidence import collect
+    from cgis_level1.inventory import build_inventory
+    cfg, _ = base_run
+    inv = build_inventory(cfg, cfg.out_dir / "inputs_inventory.json")
+    assert not inv["missing"] and inv["n_files"] > 11
+    assert all(len(f["sha256"]) == 64 for f in inv["files"])
+    evaluate_year(cfg, 2011, None)
+    b = collect(cfg, "t", dest=tmp_path)
+    assert len(b["years"]) == len(cfg.years) and all(r["status"] == "ok" for r in b["years"])
+    assert (tmp_path / "eval" / "t" / "policy_2011_comparison.json").exists()
+    assert (tmp_path / "provenance" / "inputs_inventory.t.json").exists()
+    assert b["totals"]["max_peak_rss_gib"] > 0

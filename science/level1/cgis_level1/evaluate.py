@@ -264,7 +264,10 @@ def evaluate_year(cfg: Config, year: int, figures_dir: Path | None = None) -> di
                                 "not ground truth; agreement measures consistency between two models.",
                       "regridding": "exact area-overlap sub-pixel shift of counts onto the WorldPop grid"},
         "units": "people_per_cell (sum over support)",
-        "coverage": {"reference_total_in_extent": ref_total,
+        "coverage": {"note": "'*_in_extent' terms cover the rectangular processing extent, which includes "
+                             "neighbouring countries where WorldPop-India is NoData; use 'within_<zones>' "
+                             "for national coverage.",
+                     "reference_total_in_extent": ref_total,
                      "reference_outside_level1_valid_mask": ref_out,
                      "reference_cells_with_pop_outside_mask": ref_out_cells,
                      "reference_fraction_outside_mask": ref_out / ref_total if ref_total else None},
@@ -294,6 +297,16 @@ def evaluate_year(cfg: Config, year: int, figures_dir: Path | None = None) -> di
         rows = [{"zone_id": L["_ids"][i - 1], "name": L["_names"][i - 1], "level1": float(z["l1"][i]),
                  "worldpop": float(z["wp"][i]), "ghs_pop": float(z["ref"][i]),
                  "level1_minus_worldpop": float(z["l1"][i] - z["wp"][i])} for i in idx]
+        ref_in = float(z["ref_all"][idx].sum())
+        ref_in_mask = float(z["ref"][idx].sum())
+        bundle["coverage"][f"within_{L['name']}"] = {
+            "reference_total_inside_zones": ref_in,
+            "reference_inside_zones_and_level1_mask": ref_in_mask,
+            "reference_inside_zones_outside_level1_mask": ref_in - ref_in_mask,
+            "fraction_outside_mask": (ref_in - ref_in_mask) / ref_in if ref_in else None,
+            "level1_total_inside_zones": float(z["l1"][idx].sum()),
+            "level1_outside_all_zones": float(z["l1"][0]),
+        }
         diff = np.abs(z["l1"][idx] - z["wp"][idx])
         bundle["supports"][f"zone_{L['name']}"] = {
             "source": L.get("citation"), "n_zones": int(L["_n"]),

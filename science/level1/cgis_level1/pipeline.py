@@ -481,7 +481,8 @@ def build_manifest_entry(cfg: Config, year: int, cog: Path, stats: dict, report:
                 "counts_resampled": False,
             },
             "grid": {"crs": stats["crs"], "transform": stats["transform"], "nodata": cfg.output_nodata,
-                     "pixel": "WorldPop native ~3 arc-second (~100 m) grid"},
+                     "pixel": "WorldPop native ~3 arc-second (~100 m) grid",
+                     "extent_is_full_worldpop_grid": report["grid"]["extent_is_full_worldpop_grid"]},
             "upstream": report["upstream"],
             "mass_balance": report["mass_balance"],
             "generated_at": report["finished_at"],
@@ -638,7 +639,7 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
         "no_nonfinite": stats["nonfinite_cells"] == 0,
         "is_cog": bool(cogv.get("is_cog", False)),
         "rss_within_budget": not (compute_res["budget_exceeded"] or assemble_res["budget_exceeded"]),
-        "full_extent": max_tiles is None,
+        "all_planned_tiles_processed": max_tiles is None,
     }
     status = "ok" if all(checks.values()) else "failed"
     sw = git_commit(Path(__file__).resolve().parent)
@@ -651,7 +652,9 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
         "grid": {"full": target.signature(), "extent_row0": target.row0, "extent_col0": target.col0,
                  "extent_height": target.height, "extent_width": target.width,
                  "tile_size": cfg.tile_size, "tile_cols": cfg.tile_cols, "block": cfg.block, "tiles": len(tiles),
-                 "nonempty_tiles": sum(not d.get("empty") for d in results)},
+                 "nonempty_tiles": sum(not d.get("empty") for d in results),
+                 "extent_is_full_worldpop_grid": (target.row0, target.col0, target.height, target.width) ==
+                                                 (0, 0, target.full_height, target.full_width)},
         "temporal": {str(p): {"kind": r.kind, "terms": r.terms, "description": r.description}
                      for p, r in rules.items()},
         "main_policy": next(iter(rules)),

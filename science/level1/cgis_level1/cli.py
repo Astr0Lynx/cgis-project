@@ -7,6 +7,7 @@ Commands
   manifest         rebuild manifest.json from per-year entries
   summary          print a compact table of run/eval results
   inventory        list every input with size, SHA-256, grid and licence
+  evidence         copy eval bundles, figures, run reports, benchmarks into science/level1 (committable)
 """
 
 from __future__ import annotations
@@ -28,7 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("make-synthetic")
     s.add_argument("--out", required=True)
-    for name in ("run", "evaluate", "manifest", "summary", "inventory"):
+    for name in ("run", "evaluate", "manifest", "summary", "inventory", "evidence"):
         p = sub.add_parser(name)
         p.add_argument("--config", required=True)
         p.add_argument("--years", type=int, nargs="*")
@@ -36,6 +37,8 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--force", action="store_true", help="discard checkpoints and recompute")
             p.add_argument("--keep-chunks", action="store_true")
             p.add_argument("--max-tiles", type=int, help="debug: only the first N tiles (never a PASS)")
+        if name == "evidence":
+            p.add_argument("--label", required=True, help="e.g. india-full, sample-delhi, synthetic")
         if name == "inventory":
             p.add_argument("--out", default=None, help="default: <out_dir>/inputs_inventory.json")
         if name == "evaluate":
@@ -75,6 +78,11 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"year": y, "pearson_100m": s1.get("pearson"),
                               "baseline_pearson_100m": b["supports"]["s1"]["worldpop_baseline"].get("pearson"),
                               "mae_100m": s1.get("mae")}))
+        return 0
+    if a.cmd == "evidence":
+        from .evidence import collect
+        b = collect(cfg, a.label)
+        print(json.dumps(b["totals"]))
         return 0
     if a.cmd == "inventory":
         from .inventory import build_inventory
