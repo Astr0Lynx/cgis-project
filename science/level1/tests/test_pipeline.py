@@ -126,7 +126,7 @@ def test_grid_mismatch_between_years_refused(synthetic_inputs, tmp_path):
     p = inp / "worldpop" / "ind_ppp_2005.tif"
     with rasterio.open(p) as ds:
         arr, prof = ds.read(1), ds.profile
-    prof["transform"] = prof["transform"] * rasterio.Affine.translation(1, 0)
+    prof["transform"] = prof["transform"] * rasterio.Affine.translation(0.5, 0)   # half pixel: not on the lattice
     with rasterio.open(p, "w", **prof) as ds:
         ds.write(arr, 1)
     cfg = load_config(write_config(tmp_path / "c.toml", inp, tmp_path))
@@ -188,3 +188,40 @@ def test_inventory_and_evidence(base_run, tmp_path):
     assert (tmp_path / "eval" / "t" / "policy_2011_comparison.json").exists()
     assert (tmp_path / "provenance" / "inputs_inventory.t.json").exists()
     assert b["totals"]["max_peak_rss_gib"] > 0
+
+
+def _shifted_copy(synthetic_inputs, tmp_path, year, extra_cols_west=1, fill_value=0.0):
+    """Copy of the inputs where one year's file has `extra_cols_west` extra west columns (like real WorldPop 2010)."""
+    inp = tmp_path / "in"
+    shutil.copytree(synthetic_inputs, inp)
+    p = inp / "worldpop" / f"ind_ppp_{year}.tif"
+    with rasterio.open(p) as ds:
+        arr, prof = ds.read(1), ds.profile
+    pad = np.full((arr.shape[0], extra_cols_west), -99999.0, dtype=arr.dtype)
+    if fill_value is not None:
+        pad[5:8, :] = fill_value
+    wide = np.hstack([pad, arr])
+    prof.update(width=wide.shape[1], transform=prof["transform"] * rasterio.Affine.translation(-extra_cols_west, 0))
+    with rasterio.open(p, "w", **prof) as ds:
+        ds.write(wide, 1)
+    return inp, arr
+
+
+def test_whole_pixel_extent_difference_is_registered(base_run, synthetic_inputs, tmp_path):
+    cfg, _ = base_run
+    inp, orig = _shifted_copy(synthetic_inputs, tmp_path, 2005, fill_value=0.0)   # extra valid cells hold 0 people
+    cfg2 = load_config(write_config(tmp_path / "c.toml", inp, tmp_path))
+    rep = pipeline.run_year(cfg2, 2005)
+    assert rep["status"] == "ok"
+    assert rep["grid"]["registration_to_reference"]["dc"] == 1
+    assert rep["grid"]["outside_reference_grid"] == {"dropped_valid_cells": 3, "dropped_sum": 0.0}
+    a, _, _ = _read(cfg, 2005)           # same pixels as the run on the unshifted file
+    b, _, _ = _read(cfg2, 2005)
+    assert a.tobytes() == b.tobytes()
+
+
+def test_population_outside_reference_grid_fails_qa(synthetic_inputs, tmp_path):
+    inp, _ = _shifted_copy(synthetic_inputs, tmp_path, 2005, fill_value=50.0)     # 150 people outside the grid
+    cfg = load_config(write_config(tmp_path / "c.toml", inp, tmp_path))
+    with pytest.raises(pipeline.RunError, match="no_population_outside_reference_grid"):
+        pipeline.run_year(cfg, 2005)

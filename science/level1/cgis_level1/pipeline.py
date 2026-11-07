@@ -33,8 +33,8 @@ from rasterio.windows import Window
 
 from . import __version__, core
 from .config import POLICIES_2011, Config, load_config
-from .grid import (TargetGrid, WeightSource, build_mosaic_vrt, ensure_proj_data, grid_from_raster,
-                   replace_retry)
+from .grid import (Registration, TargetGrid, WeightSource, build_mosaic_vrt, ensure_proj_data,
+                   grid_from_raster, outside_reference_stats, read_registered, register_to, replace_retry)
 from .monitor import ResourceMonitor
 
 log = logging.getLogger("cgis_level1")
@@ -193,6 +193,18 @@ def _target(cfg: Config) -> TargetGrid:
                                                       _first_existing_wp(cfg), cfg.block, cfg.bbox))
 
 
+def _registration(cfg: Config, year: int) -> Registration:
+    return _src(("reg", year), lambda: register_to(
+        grid_from_raster(_first_existing_wp(cfg), cfg.block, None), cfg.worldpop_path(year)))
+
+
+def read_worldpop(cfg: Config, year: int, r: int, c: int, h: int, w: int) -> np.ndarray:
+    """WorldPop counts of ``year`` on extent-window (r, c, h, w) of the REFERENCE grid (NoData where outside)."""
+    wp = _src(("wp", year), lambda: rasterio.open(cfg.worldpop_path(year)))
+    nod = wp.nodata if wp.nodata is not None else -99999.0
+    return read_registered(wp, _registration(cfg, year), _target(cfg), r, c, h, w, nod)
+
+
 def _first_existing_wp(cfg: Config) -> Path:
     for y in cfg.years:
         if cfg.worldpop_path(y).exists():
@@ -262,8 +274,7 @@ def process_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
     target = _target(cfg)
     tif, js = chunk_paths(cfg, year, r, c)
     wp = _src(("wp", year), lambda: rasterio.open(cfg.worldpop_path(year)))
-    win = Window(target.col0 + c, target.row0 + r, w, h)
-    pop = wp.read(1, window=win).astype(np.float64)
+    pop = read_worldpop(cfg, year, r, c, h, w)
     nod = wp.nodata
     valid = np.isfinite(pop)
     if nod is not None:
@@ -532,12 +543,22 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
         if terms:
             prepare_vrts(cfg, [("pop", e) for e, _ in terms])
 
-    target = grid_from_raster(wp_path, cfg.block, cfg.bbox)
-    ref_target = grid_from_raster(_first_existing_wp(cfg), cfg.block, cfg.bbox)
-    if target.signature() != ref_target.signature() or (target.row0, target.col0, target.height, target.width) != \
-            (ref_target.row0, ref_target.col0, ref_target.height, ref_target.width):
-        raise RunError(f"WorldPop {year} grid differs from the reference year grid: {target.signature()} vs "
-                       f"{ref_target.signature()}")
+    # Reference grid = first configured year with an input; every year is registered onto it.
+    target = grid_from_raster(_first_existing_wp(cfg), cfg.block, cfg.bbox)
+    full_ref = grid_from_raster(_first_existing_wp(cfg), cfg.block, None)
+    try:
+        reg = register_to(full_ref, wp_path)
+    except ValueError as exc:
+        raise RunError(f"WorldPop {year} grid differs from the reference year grid: {exc}") from exc
+    extent_full = (target.row0, target.col0, target.height, target.width) == \
+                  (0, 0, full_ref.full_height, full_ref.full_width)
+    dropped = None
+    if extent_full:
+        with rasterio.open(wp_path) as _ds:
+            dropped = outside_reference_stats(_ds, reg, full_ref)
+        if dropped["dropped_valid_cells"]:
+            log.warning("%s: %d valid WorldPop cells (sum %.6g) lie outside the reference grid and are not "
+                        "represented in the output", year, dropped["dropped_valid_cells"], dropped["dropped_sum"])
     tiles = target.tiles(cfg.tile_size, cfg.tile_cols)
     if max_tiles is not None:
         tiles = tiles[:max_tiles]
@@ -642,6 +663,7 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
         "is_cog": bool(cogv.get("is_cog", False)),
         "rss_within_budget": not (compute_res["budget_exceeded"] or assemble_res["budget_exceeded"]),
         "all_planned_tiles_processed": max_tiles is None,
+        "no_population_outside_reference_grid": dropped is None or abs(dropped["dropped_sum"]) <= cfg.mass_abs_tol,
     }
     status = "ok" if all(checks.values()) else "failed"
     report = {
@@ -650,7 +672,8 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
         "finished_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "software": {**sw, "cgis_level1": __version__, "rasterio": rasterio.__version__,
                      "gdal": rasterio.__gdal_version__, "numpy": np.__version__},
-        "grid": {"full": target.signature(), "extent_row0": target.row0, "extent_col0": target.col0,
+        "grid": {"full": target.signature(), "registration_to_reference": reg.to_dict(),
+                 "outside_reference_grid": dropped, "extent_row0": target.row0, "extent_col0": target.col0,
                  "extent_height": target.height, "extent_width": target.width,
                  "tile_size": cfg.tile_size, "tile_cols": cfg.tile_cols, "block": cfg.block, "tiles": len(tiles),
                  "nonempty_tiles": sum(not d.get("empty") for d in results),

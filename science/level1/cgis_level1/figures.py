@@ -74,9 +74,8 @@ def zoom_figure(cfg, year: int, target, name: str, bbox, out_dir: Path) -> Path 
     with rasterio.open(cfg.out_dir / "cog" / f"{cfg.dataset_id(year)}.tif") as ds:
         l1 = ds.read(1, window=Window(c0, r0, w, h)).astype(float)
         l1[l1 == ds.nodata] = np.nan
-    with rasterio.open(cfg.worldpop_path(year)) as ds:
-        wp = ds.read(1, window=Window(target.col0 + c0, target.row0 + r0, w, h)).astype(float)
-        wp[wp == ds.nodata] = np.nan
+    wp = P.read_worldpop(cfg, year, r0, c0, h, w)
+    wp[wp == -99999.0] = np.nan
     ref = P.read_reference(cfg, year, r0, c0, h, w)
     ref = np.where(np.isnan(l1), np.nan, ref)
     t = target.transform

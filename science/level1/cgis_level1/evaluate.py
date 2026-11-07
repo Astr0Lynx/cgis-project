@@ -138,7 +138,7 @@ def eval_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
     if not valid.any():
         out["empty"] = True
         return out
-    b = wp.read(1, window=Window(target.col0 + c, target.row0 + r, w, h)).astype(np.float64)
+    b = P.read_worldpop(cfg, year, r, c, h, w)
     x = np.where(valid, a, 0.0)
     xb = np.where(valid, b, 0.0)
     y = np.where(valid, ref, 0.0)

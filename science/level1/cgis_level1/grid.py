@@ -115,6 +115,74 @@ def grid_from_raster(path: Path, block: int, bbox: tuple[float, float, float, fl
         return TargetGrid(ds.crs.to_wkt(), epsg, t, W, H, r0, c0, h, w)
 
 
+@dataclass(frozen=True)
+class Registration:
+    """Whole-pixel registration of one year's WorldPop file onto the reference grid.
+
+    Reference cell (R, C) is file cell (R + dr, C + dc). WorldPop files of different years share the 3
+    arc-second lattice but their *extents* can differ by whole pixels (e.g. the 2010 file has one extra
+    west column). Anything but an integer offset on an identical lattice is refused.
+    """
+
+    dc: int
+    dr: int
+    width: int
+    height: int
+
+    def to_dict(self) -> dict:
+        return {"dc": self.dc, "dr": self.dr, "file_width": self.width, "file_height": self.height}
+
+
+def register_to(ref: TargetGrid, path: Path) -> Registration:
+    with rasterio.open(path) as ds:
+        if ds.crs is None or (ds.crs.to_epsg() != ref.epsg and ds.crs.to_wkt() != ref.crs_wkt):
+            raise ValueError(f"{path.name}: CRS differs from the reference grid")
+        t, rt = ds.transform, ref.full_transform
+        if t.b or t.d:
+            raise ValueError(f"{path.name}: rotated grid")
+        span = max(ds.width, ds.height, ref.full_width, ref.full_height)
+        if abs(t.a - rt.a) / rt.a * span > SAME_RES_TOL_PX or abs(t.e - rt.e) / abs(rt.e) * span > SAME_RES_TOL_PX:
+            raise ValueError(f"{path.name}: cell size differs from the reference grid")
+        dcf = (rt.c - t.c) / rt.a
+        drf = (t.f - rt.f) / -rt.e
+        if abs(dcf - round(dcf)) > 1e-3 or abs(drf - round(drf)) > 1e-3:
+            raise ValueError(f"{path.name}: not on the reference lattice (offset {dcf:.4f}, {drf:.4f} px)")
+        return Registration(int(round(dcf)), int(round(drf)), ds.width, ds.height)
+
+
+def read_registered(ds, reg: Registration, ref: TargetGrid, r: int, c: int, h: int, w: int,
+                    fill: float) -> np.ndarray:
+    """Read extent-window (r, c, h, w) of the reference grid from a registered file (float64).
+    Cells outside the file read as ``fill`` (the file's NoData)."""
+    win = Window(ref.col0 + c + reg.dc, ref.row0 + r + reg.dr, w, h)
+    return ds.read(1, window=win, boundless=True, fill_value=fill).astype(np.float64)
+
+
+def outside_reference_stats(ds, reg: Registration, ref: TargetGrid) -> dict:
+    """Valid cell count and sum of file cells that fall OUTSIDE the full reference grid (would be dropped)."""
+    nod = ds.nodata
+    n, tot = 0, 0.0
+    c0, c1 = reg.dc, reg.dc + ref.full_width
+    r0, r1 = reg.dr, reg.dr + ref.full_height
+    strips = []
+    if c0 > 0:
+        strips.append((0, 0, min(c0, ds.width), ds.height))
+    if c1 < ds.width:
+        strips.append((max(c1, 0), 0, ds.width - max(c1, 0), ds.height))
+    if r0 > 0:
+        strips.append((0, 0, ds.width, min(r0, ds.height)))
+    if r1 < ds.height:
+        strips.append((0, max(r1, 0), ds.width, ds.height - max(r1, 0)))
+    for (x, y, w_, h_) in strips:
+        for yy in range(y, y + h_, 2000):
+            hh = min(2000, y + h_ - yy)
+            a = ds.read(1, window=Window(x, yy, w_, hh)).astype(np.float64)
+            m = np.isfinite(a) & (a != nod) if nod is not None else np.isfinite(a)
+            n += int(m.sum())
+            tot += float(a[m].sum())
+    return {"dropped_valid_cells": n, "dropped_sum": tot}
+
+
 # --------------------------------------------------------------------------------------------------
 # GHSL tile mosaic
 # --------------------------------------------------------------------------------------------------
