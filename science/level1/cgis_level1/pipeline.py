@@ -542,6 +542,7 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
     if max_tiles is not None:
         tiles = tiles[:max_tiles]
     started = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    sw = git_commit(Path(__file__).resolve().parent)   # recorded at START: the code that actually runs
     runlog.event(event="year_start", year=year, tiles=len(tiles), policy=next(iter(rules)), force=force)
     if force:
         shutil.rmtree(cfg.work_dir / "chunks" / str(year), ignore_errors=True)
@@ -643,7 +644,6 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
         "all_planned_tiles_processed": max_tiles is None,
     }
     status = "ok" if all(checks.values()) else "failed"
-    sw = git_commit(Path(__file__).resolve().parent)
     report = {
         "status": status, "year": year, "dataset_id": cfg.dataset_id(year), "synthetic": cfg.synthetic,
         "config": str(cfg.path), "config_sha256": cfg.sha256, "started_at": started,
