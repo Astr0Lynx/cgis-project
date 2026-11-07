@@ -1,12 +1,14 @@
 # Methodology decisions requiring human sign-off — Level 1
 
 Status legend: **PENDING** (requested, not approved), **APPROVED** (name, date, option recorded below).
-Until a decision is APPROVED, every affected output is labelled `PROVISIONAL` in its catalog title and
+While a decision is PENDING, every affected output is labelled `PROVISIONAL` in its catalog title and
 records `post_last_epoch_policy_approval = "pending"` in provenance.
+
+**Summary (2026-11-07): D-L1-01 APPROVED (option C), D-L1-02 APPROVED (10 × 10), D-L1-03 default kept.**
 
 ---
 
-## D-L1-01 — Residential weights for 2011 (after the last required GHSL epoch, 2010) — **PENDING**
+## D-L1-01 — Residential weights for 2011 (after the last required GHSL epoch, 2010) — **APPROVED: option C**
 
 **Why a decision is needed.** The flowchart says "interpolate to target year", with GHSL epochs
 2000/2005/2010. 2011 lies outside [2000, 2010], so no interpolation is possible from the required
@@ -28,10 +30,12 @@ tiled pass. The authoritative numbers are in `eval/policy_2011_comparison.json`,
 report `data/outputs/level1/reports/india-l1-pop-2011.run.json` (`policy_comparison_2011`), and are
 summarised in `HANDOFF_REPORT.md`.
 
-**Current state.** The 2011 product `india-l1-pop-2011` was produced **provisionally with option C**,
-labelled `[PROVISIONAL: post-2010 policy awaiting human sign-off]` in its title, and recorded with
-`post_last_epoch_policy_approval: "pending"`. If A or B is chosen instead, re-run only 2011. 2001–2010 are
-unaffected.
+**Current state (2026-11-07).** Option C was **approved by the project owner** ("do the recommended
+thing", in reply to the D-L1-01 decision request). The approval is recorded in config as
+`policy_2011_approval = "approved:maitz18:2026-11-07"`, and `india-l1-pop-2011` is produced with option C,
+carrying `post_last_epoch_policy_approval: "approved:maitz18:2026-11-07"` in its manifest provenance. It
+is no longer labelled PROVISIONAL. The GHSL 2015 epoch (GHS-BUILT-S and NRES R2023A 4326_3ss) is thereby
+an authorised additional input, used **only** for 2011. 2001–2010 do not use it.
 
 **Exact human action required.** Fill in and commit the block below on branch
 `completion/agent2-level1` (or tell Agent 2/Agent 7 the choice), then run:
@@ -45,13 +49,13 @@ PYTHONPATH=science/level1 python -m cgis_level1 evaluate --config science/level1
 ```
 
 ```
-Decision D-L1-01:  [ ] A hold_2010   [ ] B extrapolate_linear   [ ] C interpolate_2015 (additional epoch authorised)
-Approved by: ____________________   Role: ____________________   Date: __________
+Decision D-L1-01:  [ ] A hold_2010   [ ] B extrapolate_linear   [x] C interpolate_2015 (additional epoch authorised)
+Approved by: maitz18 (maithilybhala1803@gmail.com)   Role: project owner / human operator   Date: 2026-11-07
 ```
 
 ---
 
-## D-L1-02 — Parent support for `P_{d,x}` — **PENDING (default in use: 10 × 10 WorldPop cells)**
+## D-L1-02 — Parent support for `P_{d,x}` — **APPROVED: 10 × 10 WorldPop cells**
 
 The output grid is the WorldPop grid, so a one-cell parent would make the formula the identity. The
 implementation uses a 10 × 10-cell (30″, ~0.9 km) block lattice anchored at the WorldPop origin.
@@ -66,8 +70,8 @@ Default proposed because it is the smallest support that makes the formula non-t
 discarding WorldPop's ~1 km information. A reviewer may prefer zones. Sign-off:
 
 ```
-Decision D-L1-02:  [ ] 10x10 block   [ ] other block: ___   [ ] admin zones: ________
-Approved by: ____________________   Date: __________
+Decision D-L1-02:  [x] 10x10 block   [ ] other block: ___   [ ] admin zones: ________
+Approved by: maitz18 (project owner, "do the recommended thing")   Date: 2026-11-07
 ```
 
 ## D-L1-03 — Zero-weight parents — default **keep WorldPop distribution** (informational)

@@ -33,7 +33,7 @@ epochs = [2000, 2005, 2010, 2015]
 
 [temporal]
 policy_2011 = "interpolate_2015"
-policy_2011_approval = "pending"
+policy_2011_approval = "approved:maitz18:2026-11-07"   # D-L1-01 option C signed off by the project owner (METHODOLOGY_DECISION.md)
 compare_2011_policies = true
 
 [output]
