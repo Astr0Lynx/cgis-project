@@ -104,3 +104,21 @@ def test_bbox_snaps_to_parent_lattice(tmp_path):
             for cc in range(c, c + w):
                 assert (rr, cc) not in cells                     # no double counting
                 cells.add((rr, cc))
+
+
+def test_replace_retry_survives_transient_lock(tmp_path, monkeypatch):
+    import os as _os
+    from cgis_level1 import grid as g
+    src, dst = tmp_path / "a", tmp_path / "b"
+    src.write_text("x")
+    calls = {"n": 0}
+    real = _os.replace
+
+    def flaky(a, b):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise PermissionError("WinError 5")
+        return real(a, b)
+    monkeypatch.setattr(g.os, "replace", flaky)
+    g.replace_retry(src, dst)
+    assert dst.read_text() == "x" and calls["n"] == 3

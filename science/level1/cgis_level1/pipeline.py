@@ -33,7 +33,8 @@ from rasterio.windows import Window
 
 from . import __version__, core
 from .config import POLICIES_2011, Config, load_config
-from .grid import TargetGrid, WeightSource, build_mosaic_vrt, ensure_proj_data, grid_from_raster
+from .grid import (TargetGrid, WeightSource, build_mosaic_vrt, ensure_proj_data, grid_from_raster,
+                   replace_retry)
 from .monitor import ResourceMonitor
 
 log = logging.getLogger("cgis_level1")
@@ -72,7 +73,7 @@ def cached_sha256(p: Path, cache_file: Path) -> str:
         cache_file.parent.mkdir(parents=True, exist_ok=True)
         tmp = cache_file.with_suffix(".tmp")
         tmp.write_text(json.dumps(cache, indent=1, sort_keys=True))
-        os.replace(tmp, cache_file)
+        replace_retry(tmp, cache_file)
     return cache[key]
 
 
@@ -92,7 +93,7 @@ def atomic_json(p: Path, obj: dict) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     tmp = p.with_name(p.name + ".tmp")
     tmp.write_text(json.dumps(obj, indent=2, sort_keys=True, default=_json_default))
-    os.replace(tmp, p)
+    replace_retry(tmp, p)
 
 
 def _json_default(o):
@@ -338,7 +339,7 @@ def process_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
     with rasterio.open(tmp, "w", **prof) as dst:
         dst.write(data, 1)
         dst.update_tags(1, UNITS="people_per_cell")
-    os.replace(tmp, tif)
+    replace_retry(tmp, tif)
     res["chunk_sha256"] = sha256_file(tif)
     res["elapsed_s"] = round(time.perf_counter() - t0, 3)
     atomic_json(js, res)
@@ -619,7 +620,7 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
         tmp_cog = cog.with_name(cog.stem + ".part.tif")
         with rasterio.Env(GDAL_CACHEMAX=512):
             rasterio.shutil.copy(str(vrt), str(tmp_cog), driver="COG", **COG_OPTIONS)
-        os.replace(tmp_cog, cog)   # band unit comes from the VRT <UnitType>; never update a COG in place
+        replace_retry(tmp_cog, cog)   # band unit comes from the VRT <UnitType>; never update a COG in place
         stats = raster_stats(cog)
         cogv = validate_cog(cog)
         cog_sha = sha256_file(cog)

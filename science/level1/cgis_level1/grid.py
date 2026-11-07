@@ -22,6 +22,20 @@ SAME_RES_TOL_PX = 0.01
 SNAP_PX = 1e-3
 
 
+def replace_retry(src, dst, attempts: int = 8) -> None:
+    """``os.replace`` with backoff: on Windows, antivirus/indexer can briefly lock a just-written file
+    (WinError 5/32). The rename stays atomic; only transient PermissionErrors are retried."""
+    import time
+    for i in range(attempts):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if i == attempts - 1:
+                raise
+            time.sleep(0.1 * 2 ** i)
+
+
 def ensure_proj_data() -> None:
     """Point PROJ at rasterio's bundled database (avoid foreign proj.db, e.g. from a PostGIS install)."""
     pd = Path(rasterio.__file__).parent / "proj_data"
@@ -145,7 +159,7 @@ def build_mosaic_vrt(pattern: str, vrt_path: Path) -> Path:
     vrt_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = vrt_path.with_suffix(".tmp")
     tmp.write_text("\n".join(parts), encoding="utf-8")
-    os.replace(tmp, vrt_path)
+    replace_retry(tmp, vrt_path)
     return vrt_path
 
 

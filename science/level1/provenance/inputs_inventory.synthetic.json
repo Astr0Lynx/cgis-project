@@ -1,0 +1,979 @@
+{
+  "config": "synthetic.toml",
+  "config_sha256": "c9d8dbcc0b781b43ba64ced9b5357fd2624040a1ddd7a842047674b19af0b202",
+  "files": [
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2001",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2001.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "3430a2907aeefe269a70e9412bbcbd4e5110ee5314d96d61d513817689c24cf3",
+      "size_bytes": 187790,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2001
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2002",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2002.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "9f2eace6b1e58413a0e265c0c23b2f9bf45072f3105dd57f2f18c3c0da9d519e",
+      "size_bytes": 187733,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2002
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2003",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2003.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "2a9b792504fc4ee24b23429013ca7c38357921c08ef85ee0068167bfa236d8a7",
+      "size_bytes": 187750,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2003
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2004",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2004.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "e9d938c08a215f6111ee7c4d48384cc085c44dbeaadfccece86798a789c0d516",
+      "size_bytes": 187796,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2004
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2005",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2005.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "b35f1c4ef1a3805248767c038c06fdfbb1fe0bd862d1d6bcb279eb3652c578f7",
+      "size_bytes": 187810,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2005
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2006",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2006.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "abe25bea2d989e4859f73e4283c5a6b4d8ea1f7b2b6ed968be03196c723b1dbf",
+      "size_bytes": 187723,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2006
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2007",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2007.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "3552cb6abaad21d06cda22f09feb0e346943c2dc0cc367bfd27d848327a97f73",
+      "size_bytes": 187725,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2007
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2008",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2008.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "db42b04e59ca18a15a2dbb57181e8e6e9a2ced9a57d114c611a3008a60381b90",
+      "size_bytes": 187725,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2008
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2009",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2009.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "57956ce8bc5d4011b9f0deed98eba7bd7a5b3734c3c48ab5c85480336a1d0817",
+      "size_bytes": 187734,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2009
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2010",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2010.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "ca5ca37814ddeee3f7709c96d7df976e3d8329acd6e1e7752bf85578e2ec69c7",
+      "size_bytes": 187720,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2010
+    },
+    {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2011",
+      "dtype": "float32",
+      "file": "data/level1-synthetic/inputs/worldpop/ind_ppp_2011.tif",
+      "height": 230,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "4da40c83e786c82451d9ff48c770515ad5e9162b2144e1127969018b6021bca4",
+      "size_bytes": 187731,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "width": 245,
+      "year": 2011
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/level1-synthetic/inputs/ghsl/total_E2000/total_E2000_C0.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "00b405ef8a8b646f4928702f8e5467a783a5bd79caaac4b5b9a6e21f9dd8e3ae",
+      "size_bytes": 7844,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/level1-synthetic/inputs/ghsl/total_E2000/total_E2000_C1.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "b8c2e84b9fd3d61405bf40a66769e939c33c380bfb93eedb1088e75fa39387a7",
+      "size_bytes": 3426,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/level1-synthetic/inputs/ghsl/total_E2005/total_E2005_C0.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "d760e8e77306abbdc73215b38344dbb4392a70ca774e9953894311c6e3f4ba97",
+      "size_bytes": 8146,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/level1-synthetic/inputs/ghsl/total_E2005/total_E2005_C1.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "059ccb8b41d4c15daf72357ccdeacb317585ef72d1178540df37ed9b0df8d45f",
+      "size_bytes": 3549,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/level1-synthetic/inputs/ghsl/total_E2010/total_E2010_C0.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "cd3b46b6b797c2f32967dd74e0bd4cbf63c5fe81026efd36f861c5e797bc89a9",
+      "size_bytes": 8333,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/level1-synthetic/inputs/ghsl/total_E2010/total_E2010_C1.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "fc9ce9e119c92b7cc228762ed6091b8083bb704282417db24dae836066ef5fa4",
+      "size_bytes": 3590,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/level1-synthetic/inputs/ghsl/total_E2015/total_E2015_C0.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "1dbe84dcd8a1fe9dc2de773a1d1e1c974a9c9b6f5cbd475f3ba36cd1e31fe8b3",
+      "size_bytes": 8524,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/level1-synthetic/inputs/ghsl/total_E2015/total_E2015_C1.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "8930aade45c315deb885c8edb10de09b862dc041247ec5000ead024b240cfd81",
+      "size_bytes": 3645,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/level1-synthetic/inputs/ghsl/nres_E2000/nres_E2000_C0.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "1b9166f05eb9e757e40306f11f080926ad3759094d489a713f12e0cca12a00e7",
+      "size_bytes": 5805,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/level1-synthetic/inputs/ghsl/nres_E2000/nres_E2000_C1.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "2ffb3bf10feaad2e1a493f90936d3158a2a8693909a2cc51d64020f7dba04671",
+      "size_bytes": 2644,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/level1-synthetic/inputs/ghsl/nres_E2005/nres_E2005_C0.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "9d27750c23b95bf6e5e437255e71871f35c03cc579e644226994d85bbf098fb0",
+      "size_bytes": 6094,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/level1-synthetic/inputs/ghsl/nres_E2005/nres_E2005_C1.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "49c29c13c7f3373da0483202702e79934753ce9fdf0fd1a8c046f47caae7d701",
+      "size_bytes": 2706,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/level1-synthetic/inputs/ghsl/nres_E2010/nres_E2010_C0.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "8bbb55be3559dd11ed60dc726fcf3aee42fc6001efb52919ae34a5c0630e2010",
+      "size_bytes": 6246,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/level1-synthetic/inputs/ghsl/nres_E2010/nres_E2010_C1.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "1770e7f115cb9de58193ab9d03e17f2a055c2c040ebc1459ac3ccca971241a6d",
+      "size_bytes": 2758,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/level1-synthetic/inputs/ghsl/nres_E2015/nres_E2015_C0.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "52de519c569a41ed95db81a03cbd47b46c7afaaffe657e373f6cca6db6114384",
+      "size_bytes": 6456,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/level1-synthetic/inputs/ghsl/nres_E2015/nres_E2015_C1.tif",
+      "height": 236,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "6bcc79b9b70e6776ef10e74fe271dc9a09b92923e4032fd16153f61eb146d45d",
+      "size_bytes": 2780,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "m2_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/level1-synthetic/inputs/ghsl/pop_E2000/pop_E2000_C0.tif",
+      "height": 236,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "2842ba3bad40cff04151b91bf4e0362f945e1be1a3b9ed7dd26e2f5b20e78daa",
+      "size_bytes": 21641,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "people_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/level1-synthetic/inputs/ghsl/pop_E2000/pop_E2000_C1.tif",
+      "height": 236,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "3b4bca6c320c4080a08330fe19cde287a1ce1da7c133a6bd5d611c37c0d3ec5c",
+      "size_bytes": 9649,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "people_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/level1-synthetic/inputs/ghsl/pop_E2005/pop_E2005_C0.tif",
+      "height": 236,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "b61638d84127a3c692dec6fe247267b62e731438672d7f6f04e0645c75484aef",
+      "size_bytes": 21966,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "people_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/level1-synthetic/inputs/ghsl/pop_E2005/pop_E2005_C1.tif",
+      "height": 236,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "93b24b39f851df1ac09c28d0ade86bf210941702088c974a699f0ec4b80ff16b",
+      "size_bytes": 9805,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "people_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/level1-synthetic/inputs/ghsl/pop_E2010/pop_E2010_C0.tif",
+      "height": 236,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "c64ab36d18081c28b3431a9589d442b16a558c4172708bdcfa94b1bb29ff166f",
+      "size_bytes": 22179,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "people_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/level1-synthetic/inputs/ghsl/pop_E2010/pop_E2010_C1.tif",
+      "height": 236,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "2bfe92b98fae68eeafd7e88f3539b4e7136a02e56db299e99d85010c256c997b",
+      "size_bytes": 9864,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "people_per_cell",
+      "width": 126
+    },
+    {
+      "bounds": [
+        76.99708333333334,
+        12.806249999999999,
+        77.10125000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/level1-synthetic/inputs/ghsl/pop_E2015/pop_E2015_C0.tif",
+      "height": 236,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "d53bcaeee8d02e170c477d841f32e32b686bf49b3269946daf8757cef1c6473e",
+      "size_bytes": 22213,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        76.99708333333334,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "people_per_cell",
+      "width": 125
+    },
+    {
+      "bounds": [
+        77.10125000000001,
+        12.806249999999999,
+        77.20625000000001,
+        13.002916666666666
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/level1-synthetic/inputs/ghsl/pop_E2015/pop_E2015_C1.tif",
+      "height": 236,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "3267762078f31d57707a33d9b268c6f7c5a267377c4e2bbf62969ff6c2ef737a",
+      "size_bytes": 9953,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.10125000000001,
+        0.0,
+        -0.0008333333333333334,
+        13.002916666666666
+      ],
+      "units": "people_per_cell",
+      "width": 126
+    },
+    {
+      "citation": "SYNTHETIC zones",
+      "file": "data/level1-synthetic/inputs/zones/synthetic_districts.geojson",
+      "kind": "zones",
+      "layer": "synthetic_districts",
+      "sha256": "5a999aeaec9e1a2b9f362759136e41dd7fce2d72d7056d060673741ae4bd6757",
+      "size_bytes": 612,
+      "units": "polygons"
+    }
+  ],
+  "free_disk_bytes_at_data_root": 49114468352,
+  "generated_at": "2026-11-07T17:22:53+00:00",
+  "licenses": {},
+  "missing": [],
+  "n_files": 36,
+  "synthetic": true,
+  "total_bytes": 2275665,
+  "upstream": {}
+}
