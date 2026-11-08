@@ -95,6 +95,12 @@ are written. Tolerances fixed *before* the real run: relative 1·10⁻⁵ (per p
 with the WorldPop input sum and the per-chunk sums. Any failure marks the year `failed` and no PASS is
 reported.
 
+**What is and is not conserved.** Exact per parent and nationally. At state/district support the totals are
+*not* exactly conserved, because administrative boundaries cut through parents. Measured deviations (2011):
+states median 0.04 %, max 2.7 %; districts median 0.11 %, 99th percentile 2.0 %, max 18 % (a tiny unit);
+Σ|Δ|/total 0.04 % (states), 0.15 % (districts). See `eval/README.md`. Exact admin-zone conservation needs
+the zone-parent mode with authoritative boundaries (D-L1-02 alternative).
+
 ## 6. Countrywide execution under a 16 GB budget
 
 * Deterministic tiles: full-width row bands of 200 rows (WorldPop GeoTIFFs store one row per strip). Tile

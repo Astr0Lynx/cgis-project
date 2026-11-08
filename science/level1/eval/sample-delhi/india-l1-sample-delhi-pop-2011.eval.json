@@ -1,0 +1,195 @@
+{
+  "config_sha256": "cb8709de2b641f0c9592b44fed84ad2dbf458a01d8463e2550a4448f061416ae",
+  "coverage": {
+    "note": "'*_in_extent' terms cover the rectangular processing extent, which includes neighbouring countries where WorldPop-India is NoData; use 'within_<zones>' for national coverage.",
+    "reference_cells_with_pop_outside_mask": 2854,
+    "reference_fraction_outside_mask": 0.0022428549509523124,
+    "reference_outside_level1_valid_mask": 71443.43302991276,
+    "reference_total_in_extent": 31853791.0797923
+  },
+  "dataset_id": "india-l1-sample-delhi-pop-2011",
+  "figures": [
+    "india-l1-sample-delhi-pop-2011_national_s100.png",
+    "india-l1-sample-delhi-pop-2011_zoom_delhi.png"
+  ],
+  "generated_at": "2026-11-07T21:26:41+00:00",
+  "level1_sha256": "44aa05d93d2b1f4e5c6aa8e72ad801d1907ee76f02a8e2612d16f6109e6d30bb",
+  "reference": {
+    "caveat": "GHS-POP is a modelled product (census disaggregated with GHSL built-up), not ground truth; agreement measures consistency between two models.",
+    "product": "GHS-POP R2023A (GHS_POP_E{epoch}_GLOBE_R2023A_4326_3ss V1-0)",
+    "reference_temporal": "interpolated",
+    "regridding": "exact area-overlap sub-pixel shift of counts onto the WorldPop grid",
+    "terms": [
+      [
+        2010,
+        0.8
+      ],
+      [
+        2015,
+        0.2
+      ]
+    ]
+  },
+  "resources": {
+    "budget_exceeded": false,
+    "elapsed_s": 3.8,
+    "max_worker_processes": 2,
+    "min_free_disk_gib": 36.0,
+    "peak_rss_bytes": 386707456,
+    "peak_rss_gib": 0.36,
+    "rss_budget_gib": 4.0,
+    "sampling_interval_s": 0.25
+  },
+  "supports": {
+    "s1": {
+      "cells_m": "~100 m native",
+      "level1": {
+        "bias_mean": -1.07111847421152,
+        "mae": 13.050959359173666,
+        "n": 1310222,
+        "pearson": 0.7912210411548364,
+        "r2_vs_reference": 0.6171096193615915,
+        "rel_bias_total": -0.04415668109593929,
+        "rmse": 43.025763580186826,
+        "sum_model": 30378944.65724402,
+        "sum_reference": 31782347.646762382
+      },
+      "level1_vs_worldpop": {
+        "bias_mean": -8.059899414547544e-10,
+        "mae": 14.854036552634774,
+        "n": 1310222,
+        "pearson": 0.7919021194348609,
+        "r2_vs_reference": 0.4098526381067612,
+        "rel_bias_total": -3.4761673058240004e-11,
+        "rmse": 37.55262272476488,
+        "sum_model": 30378944.65724402,
+        "sum_reference": 30378944.658300042
+      },
+      "sample": {
+        "design": "systematic: every 7th row and column of the WorldPop grid",
+        "level1": {
+          "bias_mean": -1.5510475852176122,
+          "mae": 12.896322878201177,
+          "median_abs_rel_residual_ref_gt0": 0.7953416376489709,
+          "median_abs_residual": 0.06851012849807739,
+          "n": 26618,
+          "p95_abs_residual": 72.78727941226958,
+          "pearson": 0.8237169979267103,
+          "pearson_log1p": 0.8958490198414774,
+          "r2_vs_reference": 0.6778891193105216,
+          "rel_bias_total": -0.0634013576051683,
+          "rmse": 39.897648942845926,
+          "spearman": 0.8978719476607755,
+          "sum_model": 609895.6124759241,
+          "sum_reference": 651181.3970992465
+        },
+        "worldpop_baseline": {
+          "bias_mean": -1.170431179469313,
+          "mae": 18.07332153826365,
+          "median_abs_rel_residual_ref_gt0": 1.7451944922004714,
+          "median_abs_residual": 6.108007195144892,
+          "n": 26618,
+          "p95_abs_residual": 84.91123890600186,
+          "pearson": 0.8192012005346009,
+          "pearson_log1p": 0.7635045323339222,
+          "r2_vs_reference": 0.6562274492708795,
+          "rel_bias_total": -0.047843100668869286,
+          "rmse": 41.2173632127391,
+          "spearman": 0.5974354068422095,
+          "sum_model": 620026.8599641323,
+          "sum_reference": 651181.3970992465
+        }
+      },
+      "worldpop_baseline": {
+        "bias_mean": -1.0711184734055301,
+        "mae": 17.81338917754873,
+        "n": 1310222,
+        "pearson": 0.8277506113446539,
+        "r2_vs_reference": 0.6693764560026689,
+        "rel_bias_total": -0.044156681062712574,
+        "rmse": 39.98142298327166,
+        "sum_model": 30378944.658300042,
+        "sum_reference": 31782347.646762382
+      }
+    },
+    "s10": {
+      "approx_size_m": 1000,
+      "block_cells": 10,
+      "level1": {
+        "bias_mean": -106.40708086423167,
+        "mae": 1208.205429168201,
+        "median_abs_rel_residual_ref_gt0": 3.2572348142462584,
+        "median_abs_residual": 521.2254936013818,
+        "n": 13189,
+        "p95_abs_residual": 4877.36383186755,
+        "pearson": 0.9232449371701169,
+        "pearson_log1p": 0.7369001424419906,
+        "r2_vs_reference": 0.8339186369984288,
+        "rel_bias_total": -0.04415668109593894,
+        "rmse": 2428.3708384394236,
+        "spearman": 0.7021444420366594,
+        "sum_model": 30378944.657244027,
+        "sum_reference": 31782347.64676238
+      },
+      "level1_minus_worldpop_max_abs": 0.0002570152282714844,
+      "n_blocks": 13189,
+      "worldpop_baseline": {
+        "bias_mean": -106.40708078416384,
+        "mae": 1208.2054289270266,
+        "median_abs_rel_residual_ref_gt0": 3.2572347957638463,
+        "median_abs_residual": 521.2254944917262,
+        "n": 13189,
+        "p95_abs_residual": 4877.36382053708,
+        "pearson": 0.9232449371724228,
+        "pearson_log1p": 0.7369001424378488,
+        "r2_vs_reference": 0.83391863699695,
+        "rel_bias_total": -0.04415668106271246,
+        "rmse": 2428.3708384502347,
+        "spearman": 0.7021444420366594,
+        "sum_model": 30378944.658300042,
+        "sum_reference": 31782347.64676238
+      }
+    },
+    "s100": {
+      "approx_size_m": 10000,
+      "block_cells": 100,
+      "level1": {
+        "bias_mean": -9814.006919708754,
+        "mae": 40889.86300585736,
+        "median_abs_rel_residual_ref_gt0": 0.2506398723352878,
+        "median_abs_residual": 17440.482344844626,
+        "n": 143,
+        "p95_abs_residual": 163810.58388406754,
+        "pearson": 0.9896979445564396,
+        "pearson_log1p": 0.9515606823129701,
+        "r2_vs_reference": 0.9695060823217102,
+        "rel_bias_total": -0.04415668109593894,
+        "rmse": 71526.58146292386,
+        "spearman": 0.9379575823237795,
+        "sum_model": 30378944.657244027,
+        "sum_reference": 31782347.64676238
+      },
+      "level1_minus_worldpop_max_abs": 0.0006273472681641579,
+      "n_blocks": 143,
+      "worldpop_baseline": {
+        "bias_mean": -9814.006912324034,
+        "mae": 40889.86300897696,
+        "median_abs_rel_residual_ref_gt0": 0.25063987139888516,
+        "median_abs_residual": 17440.482331167223,
+        "n": 143,
+        "p95_abs_residual": 163810.58381453005,
+        "pearson": 0.9896979445593772,
+        "pearson_log1p": 0.9515606822814334,
+        "r2_vs_reference": 0.9695060823373219,
+        "rel_bias_total": -0.04415668106271246,
+        "rmse": 71526.58144461439,
+        "spearman": 0.9379575823237795,
+        "sum_model": 30378944.658300042,
+        "sum_reference": 31782347.64676238
+      }
+    }
+  },
+  "synthetic": false,
+  "units": "people_per_cell (sum over support)",
+  "year": 2011
+}

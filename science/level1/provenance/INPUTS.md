@@ -23,8 +23,8 @@ committed.
 * **Lattice.** WorldPop-IND and GHSL 4326_3ss share one 3″ lattice (offset 0.000 px, verified in code),
   so no weight or count regridding is needed.
 * **Boundary semantics.** The geoBoundaries ADM1/ADM2 layers depict India's claimed boundary, including
-  areas where WorldPop-IND is NoData (parts of Jammu & Kashmir/Ladakh). That GHS-POP population is
-  reported as *outside the Level 1 mask*. It is a coverage-definition difference, not a model loss.
+  areas where WorldPop-IND is probably NoData (e.g. parts of Jammu & Kashmir/Ladakh; not verified cell by cell).
+  GHS-POP population there is reported as *outside the Level 1 mask*. It is a coverage-definition difference, not a model loss.
   These zones are diagnostic only and are not authoritative Census 2011 boundaries (requested from Agent 1).
 * **Year/epoch matching.** Level 1 year YYYY uses WorldPop YYYY. GHSL weights are interpolated from 5-year
   epochs (see METHOD.md). The reference is GHS-POP at the same year (exact for 2005/2010, otherwise
