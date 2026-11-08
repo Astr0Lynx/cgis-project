@@ -38,3 +38,26 @@ in `benchmarks/`. Observations from running the **unchanged** importer's validat
   cell, typically 0–2 000, with a heavy tail in dense urban cells).
 * Keep `product_level=level1` and `units=people_per_cell` as-is. `spatial-processing` already treats
   `people_per_cell` as a count, so zonal **sum** works.
+
+## 4. Defect found: `ingestion.importer._fsync_file` fails on Windows hosts (portability, low severity)
+
+`ingestion/importer.py:265-267`:
+
+```python
+def _fsync_file(path):
+    with open(path, "rb") as fh:
+        os.fsync(fh.fileno())
+```
+
+`os.fsync` on a **read-only** file descriptor works on Linux but raises `OSError: [Errno 9] Bad file descriptor`
+on Windows (the C runtime `_commit` needs a write handle). Every raster import then fails with
+`internal_error` after the COG has been written. Observed running the unchanged importer natively on Windows 11
+for `india-l1-pop-2001` and `-2002`. Whether the Linux container import succeeds is recorded in HANDOFF_REPORT (section 5).
+
+* **Impact:** expected none for Docker/Compose (the project's target, Linux; to be confirmed by the Linux import
+  result in HANDOFF_REPORT); breaks native Windows runs of the importer.
+* **Proposed fix (Agent 4's path, not changed by Agent 2):** open the file for update, e.g.
+  `with open(path, "r+b") as fh: os.fsync(fh.fileno())`, or catch `OSError` with `errno.EBADF` on `os.name == "nt"`.
+* **Backward compatibility:** none affected. **Test:** import any fixture on a Windows host, or unit-test with a
+  read-only temp file.
+* **How Agent 2 worked around it:** ran the unchanged importer inside the `cgis-level1` Linux container (see HANDOFF_REPORT).

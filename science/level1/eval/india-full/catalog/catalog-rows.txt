@@ -1,0 +1,11 @@
+india-l1-pop-2001|1|raster|level1|2001|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2002|1|raster|level1|2002|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2003|1|raster|level1|2003|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2004|1|raster|level1|2004|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2005|1|raster|level1|2005|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2006|1|raster|level1|2006|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2007|1|raster|level1|2007|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2008|1|raster|level1|2008|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2009|1|raster|level1|2009|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2010|1|raster|level1|2010|people_per_cell|EPSG:4326|-99999.0|ready
+india-l1-pop-2011|1|raster|level1|2011|people_per_cell|EPSG:4326|-99999.0|ready

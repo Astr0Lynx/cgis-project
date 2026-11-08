@@ -7,10 +7,10 @@
 - **Implementation tip SHA (the code that produced every output below):** `058889b179793d2649fd26ca5b4a10133b8071ed`.
   All 11 run reports record this commit with `dirty_worktree: false`. The final tip SHA of the branch (this report and
   evidence added on top of that commit) is sent to Agent 7 in the hand-over message and is `git rev-parse origin/completion/agent2-level1`.
-- **Changed paths:** only `science/level1/**` (75+ files; `git diff --name-only c4dac59..HEAD | grep -v '^science/level1/'` is empty).
+- **Changed paths:** only `science/level1/**` (about 180 files, mostly small JSON evidence and PNG figures, 16 MB total; `git diff --name-only c4dac59..HEAD | grep -v '^science/level1/'` is empty).
   Ownership confirmed: no Agent 1, 3, 4, 5, 6 or 7 path was touched. No PR, no force-push, no history rewrite, `main` untouched.
 - **Requirement IDs addressed:** S1, S2, S3 (A2). Status in the table at the end.
-- **Completion status: PARTIAL: everything is complete and verified except the catalog-import evidence (section 5), which was still running when this report was pushed. A follow-up commit on this branch records its result. Agent 7 should treat S1 as PARTIAL until that commit exists.**
+- **Completion status:** **PASS for Agent 2's scope (S1, S2, S3)**, with the limitations in section 12. Catalog registration was evidenced against a disposable PostGIS, not the project's Compose stack (Agent 7 repeats that in integration).
 
 ## 1. What was built
 
@@ -147,7 +147,22 @@ Mass balance per year: relative error ≤ 2.1·10⁻¹¹ nationally, ≤ 6.0·10
 * **Determinism:** forced re-runs reproduce identical SHA-256 (2003: same checksum before and after code changes that did not touch the maths); checkpoint corruption is detected and recomputed (test).
 * **Repository validator:** `python -m ingestion.cli validate --manifest data/outputs/level1/manifest.json` → 11 of 11 `validated` (every block read, `expect` block, checksum). Log: `eval/india-full/ingestion-validate.jsonl`.
 
-* **Catalog import (unchanged Agent 4 importer into a disposable PostGIS with Agent 4's migrations): NOT YET EVIDENCED.** The run was in progress when this report was written (the importer reads every pixel of each 1.2 GB COG, re-writes it and re-verifies it, about 1.5-2 h for 11 years). A first attempt failed for environmental reasons (a stale host `proj.db` made the importer report `unsupported_crs`, then a log-file race between two overlapping attempts of mine); neither is a data defect. Result will be added in a follow-up commit.
+* **Catalog import (real, unchanged Agent 4 migrations and importer):** all 11 datasets imported into a disposable PostGIS
+  (`postgis/postgis:17-3.5@sha256:01a6a70e…`, the repo's pinned image) from the `cgis-level1` Linux container (`--memory=16g`,
+  kernel 6.6 WSL2): **11 of 11 `imported`, 0 failed, import exit 0** (about 40 min, 06:31-07:11 UTC).
+  A second import of the same manifest returned **11 of 11 `unchanged`** (idempotent, nothing duplicated or overwritten).
+  `catalog.datasets` then holds 11 rows, all `kind=raster, product_level=level1, units=people_per_cell, crs=EPSG:4326,
+  nodata=-99999.0, status=ready`, 11 distinct checksums, **every checksum equals the manifest value and the SHA-256 in the table above**,
+  `provenance.synthetic = false` for all, and the 2011 row carries `post_last_epoch_policy_approval = approved:maitz18:2026-11-07`
+  with `model_commit 058889b…`. Valid-cell counts and population sums in the importer output equal the run reports
+  (e.g. 2011: 393,921,894 cells, 1,210,854,976.70 people; 2010: 395,036,259 cells). Evidence: `eval/india-full/catalog/`
+  (`catalog-import.jsonl`, `catalog-import-rerun.jsonl`, `catalog-rows.txt`, `catalog-status.txt`, `catalog-migrate.log`).
+  The importer wrote 13.07 GB of assets (about the same as the 13.18 GB inputs, so plan the assets volume accordingly).
+  The container's memory counter peaked at 9.4 GB after the import and 10.7 GB after the re-import; that counter includes filesystem
+  page cache from reading and writing 13 GB, so it is **not** the process RSS, but it stayed under the 16 GB cap.
+* **Attempts that failed before this, for the record:** several native-Windows attempts failed (first a stale host `proj.db` giving
+  `unsupported_crs`; then repeatedly the importer's Windows-only `fsync` defect, section 10); an overlapping-run log race corrupted another
+  attempt's log (kept as `catalog-import.attempt1-garbled.*` locally, not committed). None involved the data.
 
 
 ## 6. Scientific/model decisions and human approvals
@@ -166,7 +181,7 @@ at 100 m, Level 1 has about 30 % lower MAE and much higher Spearman (0.59–0.63
 
 Host: Windows 11, 31.4 GB RAM, 22 logical CPUs, Docker VM 16.4 GB. Enforced budget: 12 GiB for the whole process tree (`run.max_rss_gb`), sampled every 0.25 s. 4 worker processes, tile = 200 rows × full width.
 **Peak RSS: 4.27 GiB for production (max over 11 years), 6.55 GiB for evaluation.** Total elapsed: production compute 31.6 min + COG assembly 25.1 min, evaluation 23.4 min (11 years, per-year numbers above). Minimum free disk sampled during the final production runs: 35.5 GiB (earlier, while downloads and runs overlapped, the volume dipped to about 18 GB free). Disk: inputs 25.1 GB, final COGs 13.2 GB, transient chunks about 0.85 GB for the year being processed (deleted after a successful assembly), VRTs negligible. So the need beyond inputs is about 15 GB (13.2 GB COGs + chunks + one `.part` COG while assembling); the run is one year at a time and restartable. Delhi sample: 0.36 GiB peak, 1.9 min for 11 years including evaluation (`benchmarks/sample-delhi.json`).
-The memory budget is exercised by the real national runs, not extrapolated from a sample. It has **not** been run inside a 16 GB-limited container on the national data (the container ran the test suite only: 47 passed, `benchmarks/pytest-container.txt`).
+The memory budget is exercised by the real national runs, not extrapolated from a sample. The national *production* and *evaluation* ran natively on the Windows host (not inside a 16 GB-limited container). The unchanged *importer* did run national-size data in a `--memory=16g` Linux container (section 5), and the test suite ran there too (47 passed, `benchmarks/pytest-container.txt`).
 
 ## 9. Data and model findings worth knowing
 
@@ -183,6 +198,7 @@ The memory budget is exercised by the real national runs, not extrapolated from 
 * Request to **Agent 1** (`docs/change-requests/agent2-to-agent1-inputs.md`): adopt or replace the fallback inputs; keep the WorldPop native grid and GHSL `4326_3ss` product; supply the 2015 epoch and GHS-POP; authoritative Census-2011 boundaries (needed only for exact district conservation or the optional zone-parent mode).
 * Request to **Agent 4** (`docs/change-requests/agent2-to-agent4-platform.md`): optional `science` Compose profile; capacity for 11 national float32 COGs (13.2 GB; the importer writes its own COG copy per dataset into the assets volume, see the measured import size above, so allow about that much again); shared legend scale across years.
 * Windows note for integrators: a PostgreSQL install that sets `PROJ_LIB` can shadow rasterio's `proj.db`, which makes the **unmodified importer** report `unsupported_crs` for any raster. `cgis_level1` and the import launcher used here point PROJ at rasterio's bundled data. This is an environment issue, not a data defect, and it does not arise in the Linux containers.
+* **Importer defect on Windows hosts (Agent 4's code, not changed by Agent 2):** `ingestion/importer.py::_fsync_file` calls `os.fsync` on a read-only handle, which raises `OSError: [Errno 9] Bad file descriptor` on Windows after the COG is written (observed natively for 2001 and 2002). It works in the Linux container. Proposed fix and tests in `docs/change-requests/agent2-to-agent4-platform.md` section 4.
 
 ## 11. Exact commands and results
 
@@ -202,7 +218,7 @@ python -m cgis_level1 evidence  --config science/level1/config/india_full.toml -
 ## 12. Blockers, unresolved risks and limitations
 
 * **Blockers: none for Level 1.** All inputs were open, and the one human decision was approved.
-* **Not done by Agent 2 (by design):** import into the *project's* Compose stack (that is Agent 7's integration run; here the same importer was run against a disposable database); admin-zone parent mode with authoritative boundaries (needs Agent 1's boundaries); Level 2 (Agent 3).
+* **Not done by Agent 2 (by design):** import into the *project's* Compose stack (that is Agent 7's integration run; here the same importer and migrations were run against a disposable PostGIS container built from the repo's pinned image); admin-zone parent mode with authoritative boundaries (needs Agent 1's boundaries); Level 2 (Agent 3).
 * **Limitations:** GHS-POP is a model, not truth, interpolated for 9 of 11 years; state/district conservation is approximate (above); 2011 depends on the approved GHSL-2015 epoch; WorldPop 2010 has a different valid footprint; the national run was measured on one Windows host with 31 GB RAM, so "fits in 16 GB" rests on the measured 4.3 GiB production and 6.6 GiB evaluation peaks and the enforced 12 GiB budget, not on a run inside a 16 GB-limited machine; sampling interval 0.25 s can miss very short spikes.
 * **Hygiene:** `data/` (inputs, work, outputs) is git-ignored; no restricted data, secrets or COGs are committed.
 
@@ -218,7 +234,7 @@ python -m cgis_level1 evidence  --config science/level1/config/india_full.toml -
 
 | ID | Label | Evidence |
 |---|---|---|
-| S1: 11 real India-wide Level 1 COGs, georeferencing, NoData, checksums, provenance, catalog registration | **PARTIAL** | Section 4 table; unmodified validator 11/11; catalog import result pending (follow-up commit) |
+| S1: 11 real India-wide Level 1 COGs, georeferencing, NoData, checksums, provenance, catalog registration | **PASS** | Section 4 table; unmodified validator 11/11; catalog import 11/11 + idempotent re-import 11/11 `unchanged` + catalog rows verified (section 5); against a disposable catalog, project-stack import is Agent 7's |
 | S2: residential subtraction, 2001–2011 weighting, 2011 decision logged, mass-balance and seam tests | **PASS** | Methods and tests (47), run reports (`checks` all true for 11 years), spot-checks 11/11, seam test, D-L1-01 approved and logged |
 | S3: evaluation vs GHS-POP on matched support with maps, metrics, limitations; no fabricated score | **PASS** | `eval/` bundles for 11 years + figures + `eval/README.md`; honest reading includes the Pearson/RMSE weakness |
 
