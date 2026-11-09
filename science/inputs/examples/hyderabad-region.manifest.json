@@ -1,0 +1,277 @@
+{
+  "manifest_version": 1,
+  "datasets": [
+    {
+      "dataset_id": "india-worldpop-unconstrained-2011-hyderabad-region",
+      "version": 1,
+      "title": "WorldPop India unconstrained individual-countries population count 2011 (100 m)",
+      "description": "Estimated PEOPLE PER GRID CELL (counts), NOT density. Never reproject/resample with averaging; aggregate by summation only.",
+      "kind": "raster",
+      "product_level": "source",
+      "year": 2011,
+      "units": "people_per_cell",
+      "source": "WorldPop Global 2000-2020 (individual countries, unconstrained, 1 km/100 m release 2018-11)",
+      "file": "rasters/india-worldpop-unconstrained-2011-hyderabad-region.tif",
+      "band": 1,
+      "checksum_sha256": "0a1942137cd31f7c5324c5f9b75dca70a1a61451b9af6505d4c17c23493fddad",
+      "expect": {
+        "crs": "EPSG:4326",
+        "nodata": -99999.0,
+        "dtype": "float32",
+        "width": 1441,
+        "height": 1201
+      },
+      "provenance": {
+        "upstream_url": "https://data.worldpop.org/GIS/Population/Global_2000_2020/2011/IND/ind_ppp_2011.tif",
+        "upstream_license": "CC BY 4.0 (WorldPop; cite Tatem 2017 / WorldPop hub DOI per country page)",
+        "upstream_edition": "WorldPop Global 2000-2020 (individual countries, unconstrained, 1 km/100 m release 2018-11)",
+        "upstream_checksums": {
+          "ind_ppp_2011.tif": "ff6a2b3e57af9476523ce9ea0bbe457104cb6501cdbbf24349698e8d3ea362ef"
+        },
+        "geographic_target": "sample:hyderabad-region",
+        "processing_steps": [
+          "windowed crop (no resampling) to bbox (77.9, 16.9, 79.1, 17.9); counts, mask and NoData unchanged"
+        ],
+        "access_state": "available",
+        "retrieved_utc": "2026-11-08T19:59:19Z",
+        "phase1_commit": "c4dac59433f7aed90b8223ef6ba00cf4fef6449b",
+        "model": "none (source preparation only)",
+        "level": "source"
+      }
+    },
+    {
+      "dataset_id": "india-ghsl-built-total-2000-hyderabad-region",
+      "version": 1,
+      "title": "GHSL GHS-BUILT-S R2023A total built-up SURFACE 2000 (100 m, Mollweide)",
+      "description": "Built-up SURFACE area in square metres per 100 m cell (0..10000). Not GHS-BUILT-V volume. All built-up surface.",
+      "kind": "raster",
+      "product_level": "source",
+      "year": 2000,
+      "units": "m2_per_cell",
+      "source": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+      "file": "rasters/india-ghsl-built-total-2000-hyderabad-region.tif",
+      "band": 1,
+      "checksum_sha256": "7c91068f3f9c257f9298a17bac1f5df8114b12a3784e5d9a6b8a94b8e711b962",
+      "expect": {
+        "crs": "EPSG:4326",
+        "nodata": -99999.0,
+        "dtype": "float32",
+        "width": 1441,
+        "height": 1201
+      },
+      "provenance": {
+        "upstream_url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_54009_100/V1-0/GHS_BUILT_S_E2000_GLOBE_R2023A_54009_100_V1_0.zip",
+        "upstream_license": "CC BY 4.0 (European Union, JRC; attribution required)",
+        "upstream_edition": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+        "upstream_checksums": {},
+        "geographic_target": "sample:hyderabad-region",
+        "processing_steps": [
+          "extract GHSL tile zip (tile checksums in upstream_checksums)",
+          "windowed crop of native Mollweide ESRI:54009 100 m tile to bbox (77.9, 16.9, 79.1, 17.9)",
+          "m2/cell -> area fraction (/10000) -> area-weighted average warp (Resampling.average) onto the WorldPop EPSG:4326 3 arc-sec grid -> x geodesic cell area; NoData kept as NoData",
+          "area-conservation diagnostic: relative_diff=-0.00561"
+        ],
+        "access_state": "available",
+        "retrieved_utc": "2026-11-08T19:59:23Z",
+        "phase1_commit": "c4dac59433f7aed90b8223ef6ba00cf4fef6449b",
+        "model": "none (source preparation only)",
+        "level": "source"
+      }
+    },
+    {
+      "dataset_id": "india-ghsl-built-total-2005-hyderabad-region",
+      "version": 1,
+      "title": "GHSL GHS-BUILT-S R2023A total built-up SURFACE 2005 (100 m, Mollweide)",
+      "description": "Built-up SURFACE area in square metres per 100 m cell (0..10000). Not GHS-BUILT-V volume. All built-up surface.",
+      "kind": "raster",
+      "product_level": "source",
+      "year": 2005,
+      "units": "m2_per_cell",
+      "source": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+      "file": "rasters/india-ghsl-built-total-2005-hyderabad-region.tif",
+      "band": 1,
+      "checksum_sha256": "5b7a9185b69536298d18115c57608b295326a9063844ad5f8a8873e4a8af18fa",
+      "expect": {
+        "crs": "EPSG:4326",
+        "nodata": -99999.0,
+        "dtype": "float32",
+        "width": 1441,
+        "height": 1201
+      },
+      "provenance": {
+        "upstream_url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_54009_100/V1-0/GHS_BUILT_S_E2005_GLOBE_R2023A_54009_100_V1_0.zip",
+        "upstream_license": "CC BY 4.0 (European Union, JRC; attribution required)",
+        "upstream_edition": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+        "upstream_checksums": {},
+        "geographic_target": "sample:hyderabad-region",
+        "processing_steps": [
+          "extract GHSL tile zip (tile checksums in upstream_checksums)",
+          "windowed crop of native Mollweide ESRI:54009 100 m tile to bbox (77.9, 16.9, 79.1, 17.9)",
+          "m2/cell -> area fraction (/10000) -> area-weighted average warp (Resampling.average) onto the WorldPop EPSG:4326 3 arc-sec grid -> x geodesic cell area; NoData kept as NoData",
+          "area-conservation diagnostic: relative_diff=-0.005642"
+        ],
+        "access_state": "available",
+        "retrieved_utc": "2026-11-08T19:59:27Z",
+        "phase1_commit": "c4dac59433f7aed90b8223ef6ba00cf4fef6449b",
+        "model": "none (source preparation only)",
+        "level": "source"
+      }
+    },
+    {
+      "dataset_id": "india-ghsl-built-total-2010-hyderabad-region",
+      "version": 1,
+      "title": "GHSL GHS-BUILT-S R2023A total built-up SURFACE 2010 (100 m, Mollweide)",
+      "description": "Built-up SURFACE area in square metres per 100 m cell (0..10000). Not GHS-BUILT-V volume. All built-up surface.",
+      "kind": "raster",
+      "product_level": "source",
+      "year": 2010,
+      "units": "m2_per_cell",
+      "source": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+      "file": "rasters/india-ghsl-built-total-2010-hyderabad-region.tif",
+      "band": 1,
+      "checksum_sha256": "6f0440499d4292d23fd8b33902f5ffb4cf937bfe2739072db901a1f6a5577239",
+      "expect": {
+        "crs": "EPSG:4326",
+        "nodata": -99999.0,
+        "dtype": "float32",
+        "width": 1441,
+        "height": 1201
+      },
+      "provenance": {
+        "upstream_url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_54009_100/V1-0/GHS_BUILT_S_E2010_GLOBE_R2023A_54009_100_V1_0.zip",
+        "upstream_license": "CC BY 4.0 (European Union, JRC; attribution required)",
+        "upstream_edition": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+        "upstream_checksums": {},
+        "geographic_target": "sample:hyderabad-region",
+        "processing_steps": [
+          "extract GHSL tile zip (tile checksums in upstream_checksums)",
+          "windowed crop of native Mollweide ESRI:54009 100 m tile to bbox (77.9, 16.9, 79.1, 17.9)",
+          "m2/cell -> area fraction (/10000) -> area-weighted average warp (Resampling.average) onto the WorldPop EPSG:4326 3 arc-sec grid -> x geodesic cell area; NoData kept as NoData",
+          "area-conservation diagnostic: relative_diff=-0.00567"
+        ],
+        "access_state": "available",
+        "retrieved_utc": "2026-11-08T19:59:32Z",
+        "phase1_commit": "c4dac59433f7aed90b8223ef6ba00cf4fef6449b",
+        "model": "none (source preparation only)",
+        "level": "source"
+      }
+    },
+    {
+      "dataset_id": "india-ghsl-built-nres-2000-hyderabad-region",
+      "version": 1,
+      "title": "GHSL GHS-BUILT-S R2023A NRES built-up SURFACE 2000 (100 m, Mollweide)",
+      "description": "Built-up SURFACE area in square metres per 100 m cell (0..10000). Not GHS-BUILT-V volume. Non-residential share of that surface.",
+      "kind": "raster",
+      "product_level": "source",
+      "year": 2000,
+      "units": "m2_per_cell",
+      "source": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+      "file": "rasters/india-ghsl-built-nres-2000-hyderabad-region.tif",
+      "band": 1,
+      "checksum_sha256": "4ca369b206bceb397430ae3e48f4f9ada0024625902c311da9c177796af8d9be",
+      "expect": {
+        "crs": "EPSG:4326",
+        "nodata": -99999.0,
+        "dtype": "float32",
+        "width": 1441,
+        "height": 1201
+      },
+      "provenance": {
+        "upstream_url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_54009_100/V1-0/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_54009_100_V1_0.zip",
+        "upstream_license": "CC BY 4.0 (European Union, JRC; attribution required)",
+        "upstream_edition": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+        "upstream_checksums": {},
+        "geographic_target": "sample:hyderabad-region",
+        "processing_steps": [
+          "extract GHSL tile zip (tile checksums in upstream_checksums)",
+          "windowed crop of native Mollweide ESRI:54009 100 m tile to bbox (77.9, 16.9, 79.1, 17.9)",
+          "m2/cell -> area fraction (/10000) -> area-weighted average warp (Resampling.average) onto the WorldPop EPSG:4326 3 arc-sec grid -> x geodesic cell area; NoData kept as NoData",
+          "area-conservation diagnostic: relative_diff=-0.00593"
+        ],
+        "access_state": "available",
+        "retrieved_utc": "2026-11-08T19:59:36Z",
+        "phase1_commit": "c4dac59433f7aed90b8223ef6ba00cf4fef6449b",
+        "model": "none (source preparation only)",
+        "level": "source"
+      }
+    },
+    {
+      "dataset_id": "india-ghsl-built-nres-2005-hyderabad-region",
+      "version": 1,
+      "title": "GHSL GHS-BUILT-S R2023A NRES built-up SURFACE 2005 (100 m, Mollweide)",
+      "description": "Built-up SURFACE area in square metres per 100 m cell (0..10000). Not GHS-BUILT-V volume. Non-residential share of that surface.",
+      "kind": "raster",
+      "product_level": "source",
+      "year": 2005,
+      "units": "m2_per_cell",
+      "source": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+      "file": "rasters/india-ghsl-built-nres-2005-hyderabad-region.tif",
+      "band": 1,
+      "checksum_sha256": "c2d5c6bc78b5cf1872ffb73166ff336a2817f4a7b69ea736944d71d07062ba08",
+      "expect": {
+        "crs": "EPSG:4326",
+        "nodata": -99999.0,
+        "dtype": "float32",
+        "width": 1441,
+        "height": 1201
+      },
+      "provenance": {
+        "upstream_url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_54009_100/V1-0/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_54009_100_V1_0.zip",
+        "upstream_license": "CC BY 4.0 (European Union, JRC; attribution required)",
+        "upstream_edition": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+        "upstream_checksums": {},
+        "geographic_target": "sample:hyderabad-region",
+        "processing_steps": [
+          "extract GHSL tile zip (tile checksums in upstream_checksums)",
+          "windowed crop of native Mollweide ESRI:54009 100 m tile to bbox (77.9, 16.9, 79.1, 17.9)",
+          "m2/cell -> area fraction (/10000) -> area-weighted average warp (Resampling.average) onto the WorldPop EPSG:4326 3 arc-sec grid -> x geodesic cell area; NoData kept as NoData",
+          "area-conservation diagnostic: relative_diff=-0.005876"
+        ],
+        "access_state": "available",
+        "retrieved_utc": "2026-11-08T19:59:39Z",
+        "phase1_commit": "c4dac59433f7aed90b8223ef6ba00cf4fef6449b",
+        "model": "none (source preparation only)",
+        "level": "source"
+      }
+    },
+    {
+      "dataset_id": "india-ghsl-built-nres-2010-hyderabad-region",
+      "version": 1,
+      "title": "GHSL GHS-BUILT-S R2023A NRES built-up SURFACE 2010 (100 m, Mollweide)",
+      "description": "Built-up SURFACE area in square metres per 100 m cell (0..10000). Not GHS-BUILT-V volume. Non-residential share of that surface.",
+      "kind": "raster",
+      "product_level": "source",
+      "year": 2010,
+      "units": "m2_per_cell",
+      "source": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+      "file": "rasters/india-ghsl-built-nres-2010-hyderabad-region.tif",
+      "band": 1,
+      "checksum_sha256": "5223d5a3d32bc618b67af6fc11f0942a28c467d03a055c80fd7f27756e839218",
+      "expect": {
+        "crs": "EPSG:4326",
+        "nodata": -99999.0,
+        "dtype": "float32",
+        "width": 1441,
+        "height": 1201
+      },
+      "provenance": {
+        "upstream_url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_54009_100/V1-0/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_54009_100_V1_0.zip",
+        "upstream_license": "CC BY 4.0 (European Union, JRC; attribution required)",
+        "upstream_edition": "GHS-BUILT-S R2023A, V1.0 (Pesaresi & Politis 2023, doi:10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA)",
+        "upstream_checksums": {},
+        "geographic_target": "sample:hyderabad-region",
+        "processing_steps": [
+          "extract GHSL tile zip (tile checksums in upstream_checksums)",
+          "windowed crop of native Mollweide ESRI:54009 100 m tile to bbox (77.9, 16.9, 79.1, 17.9)",
+          "m2/cell -> area fraction (/10000) -> area-weighted average warp (Resampling.average) onto the WorldPop EPSG:4326 3 arc-sec grid -> x geodesic cell area; NoData kept as NoData",
+          "area-conservation diagnostic: relative_diff=-0.005896"
+        ],
+        "access_state": "available",
+        "retrieved_utc": "2026-11-08T19:59:43Z",
+        "phase1_commit": "c4dac59433f7aed90b8223ef6ba00cf4fef6449b",
+        "model": "none (source preparation only)",
+        "level": "source"
+      }
+    }
+  ]
+}

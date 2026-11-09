@@ -1,0 +1,2 @@
+2026-11-09 19:00:12,066 INFO ingestion.importer: india-geoboundaries-adm2-hyderabad-region@v1 imported -> vectors/india-geoboundaries-adm2-hyderabad-region/v1/india-geoboundaries-adm2-hyderabad-region_v1.geojson
+{"asset_path": "vectors/india-geoboundaries-adm2-hyderabad-region/v1/india-geoboundaries-adm2-hyderabad-region_v1.geojson", "checksum_sha256": "2a98699a72688428687fb0383c6cd8579a0de3e2f1d8d5ecf0c370f2c914116a", "dataset_id": "india-geoboundaries-adm2-hyderabad
