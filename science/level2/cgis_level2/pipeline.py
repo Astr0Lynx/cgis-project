@@ -116,7 +116,7 @@ def _manifest_entry(folder, output, report, checksums, cfg, provenance):
     }
 
 
-def run(config_path):
+def run(config_path, *, only=None):
     started = perf_counter()
     config_path = Path(config_path).resolve()
     root = config_path.parent
@@ -141,6 +141,9 @@ def run(config_path):
     selection, pca, boundaries, legend_source = (
         Source.read(root, source[key], synthetic) for key in ("selection", "pca", "boundaries", "legend"))
     towns = read_towns(selection, pca, boundaries, synthetic)
+    if only is not None and only not in {town.slug for town in towns}:
+        raise ValueError(f"unknown selected town slug: {only}")
+    targets = towns if only is None else [town for town in towns if town.slug == only]
     legend = read_legend(legend_source, method)
     l1 = read_level1(root, source["level1"], synthetic)
     if set(source["lulc"]) != {town.slug for town in towns}:
@@ -176,8 +179,10 @@ def run(config_path):
     town_root.mkdir(parents=True, exist_ok=True)
     entries, summary = [], []
     guard()
-    with rasterio.Env(GDAL_CACHEMAX=128 * 1024 ** 2), rasterio.open(l1.file) as src:
-        for town in towns:
+    # The input hashes cover self-contained TIFFs. Ignore undeclared sidecar masks and metadata.
+    with rasterio.Env(GDAL_CACHEMAX=128 * 1024 ** 2, GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
+                      GDAL_PAM_ENABLED="NO"), rasterio.open(l1.file) as src:
+        for town in targets:
             town_started = perf_counter()
             town_fingerprint = hashlib.sha256(_encode([fingerprint, land[town.slug].metadata, town.slug])
                                                .encode()).hexdigest()
@@ -216,10 +221,13 @@ def run(config_path):
                             "report": (folder / "report.json").relative_to(output).as_posix(),
                             "outputs_sha256": checksums,
                             "outputs_bytes": sum((folder / name).stat().st_size for name in ARTIFACTS)})
-    _write_json(output / "run.json", {"synthetic": synthetic, "model_commit": model_commit,
+    run_report = output / ("run.json" if only is None else f"pilot-{only}.json")
+    _write_json(run_report, {"synthetic": synthetic, "model_commit": model_commit,
                                      "config_sha256": config_sha, "towns": summary,
                                      "elapsed_seconds": perf_counter() - started, "peak_rss_bytes": _peak_rss(proc),
                                      "memory_limit_gib": limit, "host_ram_bytes": psutil.virtual_memory().total,
                                      "platform": platform.platform(), "gdal": rasterio.__gdal_version__})
+    if only is not None:
+        return run_report
     _write_json(output / "manifest.json", {"manifest_version": 1, "datasets": entries})
     return output / "manifest.json"

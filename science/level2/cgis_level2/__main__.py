@@ -18,12 +18,13 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     compute = commands.add_parser("run", help="produce and evaluate Level 2 town COGs")
     compute.add_argument("--config", type=Path, required=True)
+    compute.add_argument("--only", metavar="TOWN_SLUG", help="profile one town without publishing the set")
     fixture = commands.add_parser("make-synthetic", help="generate reproducible synthetic inputs")
     fixture.add_argument("--out", type=Path, required=True)
     fixture.add_argument("--level1-manifest", type=Path, help="use Agent 2's generated synthetic 2011 Level 1")
     args = parser.parse_args()
     try:
-        result = (run(args.config) if args.command == "run"
+        result = (run(args.config, only=args.only) if args.command == "run"
                   else make_fixture(args.out, args.level1_manifest))
     except (OSError, ValueError, TypeError, KeyError, MemoryError, IngestionError,
             rasterio.errors.RasterioError, fiona.errors.FionaError, ShapelyError, ProjError) as exc:

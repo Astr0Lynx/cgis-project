@@ -41,7 +41,8 @@ def make_fixture(path, level1_manifest=None):
     path.mkdir(parents=True, exist_ok=True)
     if any(path.iterdir()):
         raise ValueError("synthetic output directory must be empty")
-    east, north = Transformer.from_crs("EPSG:4326", CRS, always_xy=True).transform(77.06, 12.96)
+    # Exercise the partly masked geographic Level 1 fixture without placing either town over its lake.
+    east, north = Transformer.from_crs("EPSG:4326", CRS, always_xy=True).transform(77.06, 12.93)
     x, y = floor(east / PIXEL) * PIXEL, floor(north / PIXEL) * PIXEL
     # Two adjacent towns share a half-cell boundary. A hole and a seam at 256 cells exercise the masks.
     edge = x + 141.5 * PIXEL

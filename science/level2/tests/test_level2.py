@@ -199,8 +199,13 @@ def test_vector_land_cover_categorical(golden):
 
 
 def test_manifest_cog_retry_and_checkpoint_integrity(fixture_config, capsys):
-    path, raw = fixture_config
+    path, _ = fixture_config
+    pilot = run(path, only="fixture-alpha")
+    assert pilot.name == "pilot-fixture-alpha.json"
+    assert not (pilot.parent / "manifest.json").exists()
+    assert [item["slug"] for item in read_json(pilot)["towns"]] == ["fixture-alpha"]
     manifest = run(path)
+    assert [t["resumed"] for t in read_json(manifest.parent / "run.json")["towns"]] == [True, False]
     entries = read_json(manifest)["datasets"]
     assert len(entries) == 2
     assert ingest(["validate", "--manifest", str(manifest)]) == 0

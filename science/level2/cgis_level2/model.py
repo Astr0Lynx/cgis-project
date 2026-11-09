@@ -112,9 +112,11 @@ def build_town(stage, town, neighbors, src, band, land_source, legend, method, g
             raise ValueError("settlement has no owned or classified LULC support")
         lulc_coverage = min(1.0, classified_area / town.polygon.area)
         level1_coverage = min(1.0, coarse.town_valid_area / town.polygon.area)
-        if (lulc_coverage < method["minimum_lulc_coverage"]
-                or level1_coverage < method["minimum_level1_coverage"]):
-            raise ValueError("settlement does not meet the configured source-coverage requirements")
+        if (lulc_coverage + 1e-9 < method["minimum_lulc_coverage"]
+                or level1_coverage + 1e-9 < method["minimum_level1_coverage"]):
+            raise ValueError(f"source coverage below minimum: LULC {lulc_coverage:.2%} "
+                             f"(requires {method['minimum_lulc_coverage']:.2%}), "
+                             f"Level 1 {level1_coverage:.2%} (requires {method['minimum_level1_coverage']:.2%})")
         fallback = raw_sums[0] == 0
         denominators = np.where(fallback, raw_sums[1], raw_sums[0])
         possible = (denominators > 0) | (town.population == 0)
