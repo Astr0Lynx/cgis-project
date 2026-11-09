@@ -1,0 +1,5 @@
+# C1 delivery for Agent 3
+
+Use [the five district AOIs and official PCA candidate IDs](../../SELECTION.md) when preparing the Bhuvan request. Provide the final eligible settlement shortlist, the exact Census 2011 PCA rows and spatial supports, authorized Bhuvan 2011–12 1:50K analytical LULC, the delivered legend, dataset accuracy and access records.
+
+The local join uses the string composite `state-district-subdistrict-settlement` Census ID. Supply one unique row per settlement in the normalized PCA CSV (`census_id,name,population_2011`) and one corresponding WGS84 GeoJSON Polygon or MultiPolygon with `properties.census_id`. A municipal corporation and a municipal corporation plus outgrowths may share a code. Disambiguate and document the support before delivery. Supply each clipped LULC file as a local GeoPackage or GeoJSON retaining the source class field, or a single-band integer categorical raster with explicit NoData and its code mapping. Record the original delivery checksum, transformation steps, source scale, legend citation and allowed use in the local config. These are additive science inputs and require no platform schema change.
