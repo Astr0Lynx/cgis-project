@@ -5,7 +5,7 @@
 | Role | Complete the existing viewer (application layer, flowchart page 2) |
 | Branch | `completion/agent6-webapp` |
 | Frozen base | `c4dac59433f7aed90b8223ef6ba00cf4fef6449b` (verified equal to `origin/main` before branching) |
-| Implementation tip SHA | `__IMPL_SHA__` (this report is committed on top of it; see `git log`) |
+| Implementation tip SHA | `6726a904c66fdfd8bc86439d76251ec2144318c7` (this report is committed on top of it; see `git log`) |
 | Changed paths | `demo-client/**` only (ownership confirmed; no other agent's path touched) |
 | Completion status | **PARTIAL** — software complete and tested against mocks; real-data and integrated-stack evidence is `NOT_RUN` (no Docker on this machine; Agent 5 API not yet published) |
 
