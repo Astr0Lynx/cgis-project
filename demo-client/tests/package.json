@@ -1,0 +1,15 @@
+{
+  "name": "cgis-demo-client-tests",
+  "private": true,
+  "description": "Unit and browser tests for the CyberGIS viewer (demo-client). Not part of the served page.",
+  "type": "module",
+  "scripts": {
+    "mock": "node mock-gateway/server.mjs",
+    "test:unit": "node --test unit/*.test.js",
+    "test:e2e": "playwright test",
+    "test": "node --test unit/*.test.js && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1"
+  }
+}

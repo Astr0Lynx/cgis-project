@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CyberGIS diagnostic viewer</title>
+  <title>CyberGIS · India population viewer</title>
+  <meta name="description" content="Layer-wise viewer for CyberGIS Level 1 / Level 2 population rasters: OGC API Features and Tiles, comparisons, area analysis, exports and dataset administration.">
   <!-- MapLibre GL JS 4.7.1, pinned with Subresource Integrity. The viewer needs this CDN; the
        data itself comes only from this gateway. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css"
@@ -11,59 +12,245 @@
   <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"
           integrity="sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317202b'/%3E%3Cpath d='M7 22l6-7 5 4 7-9' stroke='%2335b779' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
-  <aside id="panel">
-    <header>
-      <h1>CyberGIS Phase 2 — diagnostic viewer</h1>
-      <p class="warn"><strong>SYNTHETIC test data.</strong> Values are deterministic fixtures, not population estimates.</p>
-    </header>
+  <!-- Icon sprite: referenced with <svg><use href="#i-…"></use></svg>. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM16 16l5 5"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-flask" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M9 3h6M10 3v6L4.5 19A1.5 1.5 0 0 0 5.8 21h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/></symbol>
+      <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3l9.5 17h-19z"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 10v4.5M12 17.5v.01"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 11v6M12 7.5v.01"/></symbol>
+      <symbol id="i-swap" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 5L3 12l5 7M16 5l5 7-5 7"/></symbol>
+      <symbol id="i-zoom" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 16V5M7 10l5-5 5 5M5 20h14"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.5v13l10.5-6.5z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+    </defs>
+  </svg>
 
-    <section>
-      <h2>Raster layer</h2>
-      <label for="raster">Dataset</label>
-      <select id="raster" data-testid="raster-select"></select>
-      <fieldset>
-        <legend>Tile source</legend>
-        <label><input type="radio" name="source" value="ogc" checked> OGC API – Tiles <code>/ogc/…/tiles</code></label>
-        <label><input type="radio" name="source" value="vendor"> TiTiler <code>/tiles/</code> <em>(vendor-specific, not OGC)</em></label>
-      </fieldset>
-      <label><input type="checkbox" id="raster-visible" checked> Show raster</label>
-      <label for="opacity">Opacity</label>
-      <input type="range" id="opacity" min="0" max="1" step="0.05" value="0.8">
-    </section>
+  <a class="skip-link" href="#panel">Skip to map controls</a>
 
-    <section>
-      <h2>Boundaries (OGC API – Features)</h2>
-      <div id="vectors" data-testid="vector-list"></div>
-    </section>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#26313d"/><path d="M7 22l6-7 5 4 7-9" stroke="#35b779" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="10" r="2.5" fill="#fde725"/></svg>
+      <div class="brand-text"><strong>CyberGIS</strong><span>India population viewer</span></div>
+    </div>
+    <nav class="views" aria-label="Views">
+      <a href="#/map" id="nav-map" aria-current="page">Map</a>
+      <a href="#/admin" id="nav-admin" hidden>Datasets admin</a>
+    </nav>
+    <div class="topbar-spacer"></div>
+    <span id="provenance-badge" data-testid="provenance-badge"></span>
+    <div class="account" id="account" data-testid="account"></div>
+  </header>
 
-    <section>
-      <h2>Area of interest</h2>
-      <p id="aoi-label">Click a boundary on the map, or use the current view.</p>
-      <button id="aoi-view" type="button">Use current map view as AOI</button>
-      <h2>Operations (custom API <code>/api/</code>)</h2>
-      <div class="buttons">
-        <button id="zonal" type="button" disabled>Zonal statistics</button>
-        <button id="clip" type="button" disabled>Clip → GeoTIFF</button>
+  <div class="banner" id="banner" role="status" hidden></div>
+
+  <div class="workspace" id="view-map">
+    <aside id="panel" aria-label="Map controls" tabindex="-1">
+      <div class="panel-head">
+        <p class="overline">Active layer <span class="badge badge-a" id="slot-a-tag" hidden>A</span></p>
+        <div class="field">
+          <label for="raster" class="sr-only">Active raster layer</label>
+          <select id="raster" class="input" data-testid="raster-select"></select>
+        </div>
+        <div class="active-layer-meta" id="active-meta" aria-live="polite"></div>
+        <fieldset class="segmented" id="source-switch">
+          <legend>Tile source</legend>
+          <label title="OGC API – Tiles: /ogc/collections/{id}/tiles"><input type="radio" name="source" value="ogc" checked><span>OGC API – Tiles</span></label>
+          <label title="TiTiler /tiles/ routes are vendor-specific, not an OGC standard"><input type="radio" name="source" value="vendor"><span>TiTiler (vendor)</span></label>
+        </fieldset>
       </div>
-      <p id="download"></p>
-    </section>
 
-    <section>
-      <h2>Output</h2>
-      <p id="pixel">Pixel value: click the map.</p>
-      <pre id="output" data-testid="output">Loading collections…</pre>
-    </section>
+      <div class="tabs" role="tablist" aria-label="Panels">
+        <button class="tab" role="tab" id="tab-btn-layers" aria-controls="tab-layers" aria-selected="true">Layers</button>
+        <button class="tab" role="tab" id="tab-btn-analysis" aria-controls="tab-analysis" aria-selected="false" tabindex="-1">Analysis</button>
+        <button class="tab" role="tab" id="tab-btn-download" aria-controls="tab-download" aria-selected="false" tabindex="-1">Download</button>
+      </div>
 
-    <footer>
-      <a href="../ogc/">OGC API landing</a> ·
-      <a href="../ogc/conformance">conformance</a> ·
-      <a href="../api/docs">processing API docs</a> ·
-      <a href="../tiles/datasets">TiTiler datasets</a>
-    </footer>
-  </aside>
-  <main id="map" aria-label="Map"></main>
-  <script src="app.js"></script>
+      <div class="panel-body">
+        <!-- LAYERS -->
+        <div role="tabpanel" id="tab-layers" aria-labelledby="tab-btn-layers">
+          <section class="section" aria-labelledby="h-compare">
+            <h2 class="section-title" id="h-compare">Compare <small id="compare-summary">Off</small></h2>
+            <fieldset class="segmented" id="mode-switch">
+              <legend>Comparison mode</legend>
+              <label><input type="radio" name="mode" value="single" checked><span>Single</span></label>
+              <label><input type="radio" name="mode" value="swipe"><span>Swipe</span></label>
+              <label><input type="radio" name="mode" value="side"><span>Side by side</span></label>
+            </fieldset>
+            <div class="field" id="layer-b-field" hidden style="margin-top:10px">
+              <label for="raster-b">Layer B <span class="badge badge-b">B</span></label>
+              <select id="raster-b" class="input" data-testid="raster-b-select"></select>
+            </div>
+            <div id="compare-notes"></div>
+          </section>
+
+          <section class="section" aria-labelledby="h-display">
+            <h2 class="section-title" id="h-display">Display</h2>
+            <div class="field">
+              <span class="field-label" id="scale-label">Colour scale</span>
+              <fieldset class="segmented" id="scale-switch" aria-labelledby="scale-label">
+                <legend>Colour scale</legend>
+                <label title="Use each tileset's own published style"><input type="radio" name="scale" value="layer" checked><span>As published</span></label>
+                <label title="One range for every compatible layer in view (TiTiler rescale)"><input type="radio" name="scale" value="shared"><span>Shared range</span></label>
+              </fieldset>
+            </div>
+            <div class="row" style="margin-bottom:4px">
+              <label class="check grow"><input type="checkbox" id="raster-visible" checked> Show raster</label>
+              <span class="hint num" id="opacity-value" style="margin:0">80%</span>
+            </div>
+            <label for="opacity" class="sr-only">Raster opacity</label>
+            <input type="range" id="opacity" min="0" max="1" step="0.05" value="0.8">
+          </section>
+
+          <section class="section" aria-labelledby="h-catalog">
+            <h2 class="section-title" id="h-catalog">Datasets <small id="catalog-count"></small></h2>
+            <div class="search">
+              <svg aria-hidden="true"><use href="#i-search"></use></svg>
+              <label for="catalog-filter" class="sr-only">Filter datasets</label>
+              <input id="catalog-filter" class="input" type="search" placeholder="Filter by title, id, year, source" autocomplete="off">
+            </div>
+            <div class="chips" id="catalog-facets" role="group" aria-label="Product level filter"></div>
+            <div id="catalog" data-testid="catalog" style="margin-top:12px" aria-live="polite"></div>
+          </section>
+
+          <section class="section" aria-labelledby="h-boundaries">
+            <h2 class="section-title" id="h-boundaries">Boundaries <small>OGC API – Features</small></h2>
+            <div id="vectors" data-testid="vector-list"></div>
+          </section>
+        </div>
+
+        <!-- ANALYSIS -->
+        <div role="tabpanel" id="tab-analysis" aria-labelledby="tab-btn-analysis" hidden>
+          <section class="section" aria-labelledby="h-aoi">
+            <h2 class="section-title" id="h-aoi">Area of interest</h2>
+            <div class="aoi-card" id="aoi-card">
+              <svg class="aoi-swatch" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 5.5 8 2l5.5 3.5-1.5 7.5h-8z"/></svg>
+              <div class="grow">
+                <p id="aoi-label">Click a boundary on the map, search for a place, or draw an area.</p>
+                <p class="aoi-sub" id="aoi-sub"></p>
+              </div>
+              <button class="icon-btn" id="aoi-clear" type="button" title="Clear area" aria-label="Clear area of interest" hidden><svg><use href="#i-x"></use></svg></button>
+            </div>
+            <div class="tool-row" role="group" aria-label="Choose an area">
+              <button class="btn btn-secondary" id="draw-rect" type="button" aria-pressed="false">Rectangle</button>
+              <button class="btn btn-secondary" id="draw-poly" type="button" aria-pressed="false">Polygon</button>
+              <button class="btn btn-secondary" id="aoi-view" type="button">Current view</button>
+            </div>
+            <p class="hint">Selections use the pixel-centre rule (<code>all_touched=false</code>); statistics are computed by the server on the native grid.</p>
+          </section>
+
+          <section class="section" aria-labelledby="h-ops">
+            <h2 class="section-title" id="h-ops">Operations <small>custom API <code>/api/</code></small></h2>
+            <div class="btn-group">
+              <button class="btn btn-primary" id="zonal" type="button" disabled>Zonal statistics</button>
+              <button class="btn btn-secondary" id="series" type="button" disabled hidden>Totals 2001–2011</button>
+            </div>
+            <div class="btn-group" style="margin-top:8px">
+              <button class="btn btn-secondary" id="clip" type="button" disabled>Clip → GeoTIFF</button>
+              <button class="btn btn-secondary" id="l1l2" type="button" disabled hidden>Level 1 vs Level 2</button>
+            </div>
+            <p id="download"></p>
+            <p class="hint" id="ops-hint"></p>
+          </section>
+
+          <section class="section" aria-labelledby="h-results" id="results-section">
+            <h2 class="section-title" id="h-results">Results</h2>
+            <div id="results" data-testid="results" aria-live="polite">
+              <div class="state-card"><h4>No results yet</h4><p>Choose an area, then run zonal statistics. Totals are computed by the processing service, never in the browser.</p></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- DOWNLOAD -->
+        <div role="tabpanel" id="tab-download" aria-labelledby="tab-btn-download" hidden>
+          <section class="section" aria-labelledby="h-export">
+            <h2 class="section-title" id="h-export">Export a dataset</h2>
+            <div id="export-panel" data-testid="export-panel"></div>
+          </section>
+        </div>
+      </div>
+
+      <details class="diagnostics">
+        <summary>API log (last request)</summary>
+        <pre id="output" data-testid="output">Loading collections…</pre>
+      </details>
+      <footer class="panel-foot">
+        <a href="../ogc/">OGC API landing</a>
+        <a href="../ogc/conformance">conformance</a>
+        <a href="../api/docs">processing API docs</a>
+        <a href="../tiles/datasets">TiTiler datasets</a>
+        <span>Layers marked SYNTHETIC are deterministic test fixtures, not population estimates.</span>
+      </footer>
+    </aside>
+
+    <main class="map-stage" id="map-stage">
+      <div class="map-pane" id="pane-a"><div id="map" role="region" aria-label="Map (layer A)"></div></div>
+      <div class="map-pane" id="pane-b" hidden><div id="map-b" role="region" aria-label="Map (layer B)"></div></div>
+      <div class="map-progress" id="map-progress" hidden><span></span></div>
+      <div class="swipe-handle" id="swipe-handle" hidden>
+        <button type="button" role="slider" aria-label="Swipe position between layer A and layer B" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><svg aria-hidden="true"><use href="#i-swap"></use></svg></button>
+      </div>
+      <span class="compare-tag a" id="tag-a" hidden></span>
+      <span class="compare-tag b" id="tag-b" hidden></span>
+
+      <div class="overlay map-search" id="map-search">
+        <div class="search">
+          <svg aria-hidden="true"><use href="#i-search"></use></svg>
+          <label for="place-search" class="sr-only">Search places (state, district, town)</label>
+          <input id="place-search" class="input" type="search" placeholder="Search state, district or town" autocomplete="off"
+                 role="combobox" aria-expanded="false" aria-controls="place-results" aria-autocomplete="list" data-testid="place-search">
+        </div>
+        <ul class="search-results" id="place-results" role="listbox" aria-label="Places" hidden></ul>
+        <div class="search-status" id="place-status" role="status" hidden></div>
+      </div>
+
+      <div class="overlay draw-hint" id="draw-hint" role="status" hidden></div>
+      <div class="overlay inspector" id="inspector" data-testid="inspector" hidden></div>
+      <div class="legend-stack" id="legend" data-testid="legend"></div>
+      <div class="legend-stack legend-stack-b" id="legend-b" data-testid="legend-b" hidden></div>
+      <div class="overlay timeline" id="timeline" data-testid="timeline" hidden></div>
+      <div class="map-empty" id="map-empty" hidden></div>
+    </main>
+  </div>
+
+  <div class="workspace admin" id="view-admin" hidden></div>
+
+  <dialog id="login-dialog" aria-labelledby="login-title">
+    <form method="dialog" id="login-form" novalidate>
+      <div class="dialog-head">
+        <h2 id="login-title">Sign in</h2>
+        <button class="icon-btn" type="button" id="login-cancel-x" aria-label="Close"><svg><use href="#i-x"></use></svg></button>
+      </div>
+      <div class="dialog-body">
+        <p id="login-reason">Administrators can upload and publish datasets. Users can view, analyse and export.</p>
+        <div class="field">
+          <label for="login-username">Username</label>
+          <input id="login-username" class="input" name="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input id="login-password" class="input" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <p class="field-error" id="login-error" role="alert" hidden></p>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-ghost" type="button" id="login-cancel">Cancel</button>
+        <button class="btn btn-primary" type="submit" id="login-submit">Sign in</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

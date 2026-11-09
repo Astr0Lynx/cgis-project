@@ -1,0 +1,6 @@
+# Only the static app is served by the viewer image (compose.yaml: COPY . /usr/share/nginx/html/).
+tests/
+docs/
+**/node_modules/
+*.md
+!README.md
