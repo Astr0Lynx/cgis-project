@@ -13,7 +13,9 @@ Freeze priority before computing any comparison metrics. Aim for two urban cores
 
 The Bhuvan portal accepts up to five districts. Select **Chandigarh (04/055), Varanasi (09/197), East Khasi Hills (17/298), Mysore/Mysuru (29/577), North Goa (30/585)** using their corresponding portal names. Codes here are Census 2011 codes and may differ from current portal identifiers. District selection is an access AOI. It does not define the settlement polygon used for allocation. If requesting smaller AOIs, derive them from the verified 2011 settlement geometries with a one-native-Level-1-cell margin. [Bhuvan 1:50K request portal](https://bhuvan-app1.nrsc.gov.in/thematic/thematic/index.php) · [NRSC request instructions](https://bhuvan.nrsc.gov.in/updates/bhuvan_apr2026.html)
 
-Purpose text for the authorized requester: Academic CyberGIS coursework. We request 2011–12 LULC 1:50K analytical polygons and the matching class legend for selected 2011 Census settlements in the five districts listed above. We will produce per-settlement population estimates on a 23.5 m target grid and compare with Census and Level 1 on matched spatial support. Please indicate permitted uses for the analytical source, derived rasters, evaluation plots and local teaching deployment.
+### Purpose text for the authorized requester
+
+Academic CyberGIS coursework. We request 2011–12 LULC 1:50K analytical polygons and the matching class legend for selected 2011 Census settlements in the five districts listed above. We will produce per-settlement population estimates on a 23.5 m target grid and compare with Census and Level 1 on matched spatial support. Please indicate permitted uses for the analytical source, derived rasters, evaluation plots and local teaching deployment.
 
 ## PCA audit
 
