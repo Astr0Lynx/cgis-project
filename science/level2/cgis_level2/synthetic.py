@@ -2,6 +2,7 @@
 
 import csv
 from math import floor
+import os
 from pathlib import Path
 
 from affine import Affine
@@ -87,6 +88,11 @@ def make_fixture(path, level1_manifest=None):
             "provenance": {"synthetic": True},
         }]})
     cfg = path / "config.json"
+    level1_manifest = Path(level1_manifest).resolve()
+    try:
+        level1_path = Path(os.path.relpath(level1_manifest, path)).as_posix()
+    except ValueError:  # Separate drives on Windows cannot share a relative path.
+        level1_path = level1_manifest.as_posix()
     lulc = _source(path / "lulc.tif", "synthetic-lulc", kind="raster")
     _write_json(cfg, {
         "mode": "synthetic", "version": 1, "output_dir": "outputs", "memory_limit_gib": 2,
@@ -103,8 +109,7 @@ def make_fixture(path, level1_manifest=None):
             "boundaries": _source(path / "study_areas.geojson", "synthetic-boundaries"),
             "legend": _source(path / "legend.json", "synthetic-legend"),
             "lulc": {row[1]: lulc for row in items},
-            "level1": {"manifest": (Path(level1_manifest).name if Path(level1_manifest).parent == path
-                                   else str(Path(level1_manifest).resolve())),
+            "level1": {"manifest": level1_path,
                        "dataset_id": "synthetic-india-l1-pop-2011", "version": 1},
         },
     })
