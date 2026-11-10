@@ -32,4 +32,9 @@ None made by Agent 1. D-L1-01 (2015 epoch) is Agent 2's, approved by the project
 ## Pending human actions
 Bhuvan request (B1; cannot be done by an agent), choice/supply of town/village Census-coded polygons (B3), flowchart questions (B5). Village/town PCA (B2) needs only Agent 3's district list.
 
-## Completion status: **PARTIAL (BLOCKED on D3)**
+## Operator decision (2026-11-10)
+The project owner chose **not** to submit the Bhuvan LULC request and asked for Agent 1's work to be pushed as delivered. Agent 1's deliverable is therefore
+final for everything obtainable without that approval. Level 2 is unaffected only if Agent 7/the owner approves a documented alternative (B1).
+
+## Completion status: **PARTIAL (BLOCKED on D3: no Bhuvan LULC, no village/town Census data or polygons)**
+Agent 1 has delivered everything in its task list that did not depend on those inputs. It does not claim D3 PASS.

@@ -2,7 +2,11 @@
 
 Status legend: every item is **BLOCKED** until a human completes the stated action. Unaffected work continues.
 
-## B1 — Bhuvan LULC 1:50,000, 2011–12 (blocks D3, S5)
+## B1 — Bhuvan LULC 1:50,000, 2011–12 (blocks D3, S5) — **NOT PURSUED: operator decision 2026-11-10**
+
+> The project owner decided not to submit this request now. Consequence: **no authorised LULC exists, so Level 2 (S4–S6) cannot be completed with the
+> flowchart's data.** Agent 3 must not substitute another land-cover product silently; any alternative needs an explicit written scientific approval
+> (see 'Safe alternatives' below). The request text remains valid if the decision is reversed.
 
 - **Required item:** NRSC/Bhuvan LULC 50K shapefiles, agricultural year **2011–12**, for the Level 2 towns' districts.
 - **Official source:** <https://bhuvan.nrsc.gov.in/updates/bhuvan_apr2026.html> (announcement dated 2026-04-16) →
