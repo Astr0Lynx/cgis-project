@@ -81,3 +81,19 @@ def test_fetch_source_records_state(http_server, tmp_path):
     rec = json.loads(st.read_text())["india-worldpop-unconstrained-2005"]
     assert rec["sha256"] == sha and rec["size_bytes"] == len(PAYLOAD)
     F.fetch_source(src, tmp_path, st)            # idempotent re-run verifies against recorded sha
+
+
+def test_head_content_length_lie_does_not_loop_forever(http_server, tmp_path, monkeypatch):
+    """Regression: raw.githubusercontent.com reported a HEAD length (139) smaller than the body (145)."""
+    served, base = http_server
+    sha = _put(served, "lie.bin", b"x" * 145)
+    monkeypatch.setattr(F, "head_size", lambda *a, **k: 139)
+    r = F.download_resumable(f"{base}/lie.bin", tmp_path / "o" / "lie.bin", expected_sha256=sha, max_retries=1)
+    assert r["size"] == 145 and (tmp_path / "o" / "lie.bin").read_bytes() == b"x" * 145
+
+
+def test_explicit_expected_size_is_still_enforced(http_server, tmp_path):
+    served, base = http_server
+    _put(served, "e.bin", b"y" * 100)
+    with pytest.raises(F.FetchError, match="expected 99"):
+        F.download_resumable(f"{base}/e.bin", tmp_path / "o" / "e.bin", expected_size=99, max_retries=1)

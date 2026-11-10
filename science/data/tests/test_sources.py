@@ -49,13 +49,15 @@ def test_geoboundaries_are_diagnostic_not_census():
 def test_gated_sources_are_never_marked_available():
     by = {s.source_id: s for s in S.all_sources()}
     assert by["india-bhuvan-lulc-50k-2011-12"].access == S.RESTRICTED
-    assert by["india-census-2011-pca"].access == S.MISSING
+    assert by["india-census-2011-pca"].access == S.MISSING          # village/town level not yet selected/fetched
+    assert by["india-census-2011-pca-state-district"].access == S.AVAILABLE
+    assert by["india-datameet-census2011-districts"].extra["authoritative"] is False
     assert by["india-admin-boundaries-2011"].access == S.MISSING
 
 
 def test_inventory_unique_ids_and_state_merge():
     inv = S.build_inventory({"india-worldpop-unconstrained-2005": {"size_bytes": 5, "sha256": "ab"}})
-    assert inv["count"] == len(inv["sources"]) == 11 + 4 + 4 + 4 + 2 + 3
+    assert inv["count"] == len(inv["sources"]) == 11 + 4 + 4 + 4 + 2 + 5
     row = next(r for r in inv["sources"] if r["source_id"] == "india-worldpop-unconstrained-2005")
     assert row["size_bytes"] == 5 and row["sha256"] == "ab"
     json.dumps(inv)

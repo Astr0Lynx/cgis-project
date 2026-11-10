@@ -27,32 +27,27 @@ Status legend: every item is **BLOCKED** until a human completes the stated acti
   (different class scheme and date; not the flowchart's product); (c) choose towns whose districts are obtainable.
   Each changes class legend, date and scientific validity; none is "the Bhuvan 2011–12 product".
 
-## B2 — Census of India 2011 Primary Census Abstract (blocks D3)
+## B2 — Census of India 2011 PCA (D3) — **PARTLY RESOLVED by Agent 1 on 2026-11-10; village/town level still open**
 
-- **Required item:** PCA 2011 town/village totals with state/district/sub-district/town-village codes (all India, or at
-  least the states of the selected towns).
-- **Official source:** <https://www.censusindia.gov.in/census.website/en/data/population-finder> and
-  <https://censusindia.gov.in/census.website/data/census-tables> (HTTP 200 verified; table downloads are portal driven).
-- **Operator action:** download the state-wise PCA (village directory and town) tables from the portal terms-compliantly into
-  `data/incoming/india-census-2011-pca/` and tell Agent 1. Check the portal terms for redistribution; Git receives only
-  checksums and acquisition steps.
-- **Impact:** blocks Level 2 census constraint and Level 1/2 census comparisons. Safe alternative: none equivalent.
+- **Finding (tested, not assumed):** the Census NADA catalog (`https://censusindia.gov.in/nada/`) is browsable and its table downloads are served
+  **without login** (HTTP 200 on `.../catalog/6191/download/9268/DDW_PCA0000_2011_Indiastatedist.xlsx`). Its login pop-ups concern staff systems.
+- **Done:** India/State/District PCA (640 districts, Σ TOT_P = 1,210,854,977 = official India total) downloaded, checksummed, registered as
+  `india-census-2011-pca-state-district`.
+- **Still needed:** **village/town-level PCA for the selected towns' districts.** These are per-district downloads in the NADA catalog
+  (District Census Handbook Part B / PCA workbooks). I did not fetch any because the districts depend on Agent 3's town list (B4).
+  Once the list exists this is a scripted, login-free fetch: no human step expected. (If a particular file turns out to require login, I stop and report.)
+- **Terms:** no licence text was found programmatically. Verify the portal's terms before redistributing; Git carries checksums only.
 
-## B3 — Boundaries aligned to Census 2011 codes (blocks D3 join test)
+## B3 — Boundaries aligned to Census 2011 codes (D3) — **PARTLY RESOLVED; town/village polygons still open**
 
-- **Required item:** national state/district/sub-district polygons plus town/village polygons for the selected towns, with
-  Census 2011 geocodes, valid geometry, known CRS and a licence that permits research use.
-- **Status update:** geoBoundaries ADM1 (36) / ADM2 (735) were downloaded and pass geometry/ID checks, but have **no
-  Census 2011 codes**: they are diagnostic zones only (Agent 2 uses them the same way). The real requirement remains open.
-- **Candidates (not yet verified as Census-coded; do not treat as chosen):**
-  - DataMeet community maps, CC BY 4.0 — <https://github.com/datameet/maps> (HTTP 200 verified). District/sub-district
-    layers exist; **town/village polygons and Census-code coverage must be verified**.
-  - geoBoundaries (CC BY 2.5 IN / ODbL) — fetched, diagnostic only; ADM boundaries are *not* Census codes.
-  - Survey of India / Bhuvan village boundaries — likely restricted; requires a human application.
-- **Operator action:** decide which boundary source is acceptable for the project (this is a scientific/licensing
-  decision), or supply the licensed files. Agent 1 will then run the 1:1 join/overlap/hole tests already implemented
-  (`cgis_data.validate.check_census_join`, `check_polygons`, `coverage_holes`).
-- **Impact:** without Census-code-aligned polygons no unambiguous town joins (D3) can be claimed.
+- **Done:** DataMeet `Districts/Census_2011` (CC BY 4.0, community-digitised, **not** an official SoI/Census product): 641 polygons carrying
+  `ST_CEN_CD`, `DT_CEN_CD` and `censuscode` (the national sequential district code = the PCA "District" column). Real join
+  (`python -m cgis_data census-join` -> `science/inputs/census_district_join.json`): **640/640 Census districts matched 1:1**, no state-code
+  mismatches, no duplicate codes; 1 extra polygon ("Data Not Available", code 0); **1 invalid geometry (Cuddalore: ring self-intersection)**
+  that the importer would reject, so it must be repaired (and documented) before ingest. District level only.
+- **Still needed:** **town and village polygons** with Census codes for the selected towns. DataMeet does not provide them. Candidates remain unverified;
+  Survey of India / Bhuvan village boundaries are likely restricted. **Decision for you:** which source is acceptable, or supply licensed files.
+- geoBoundaries ADM1/ADM2 stay diagnostic only (no Census codes).
 
 ## B4 — Candidate towns from Agent 3 (coordination, not a blocker on data fetching)
 

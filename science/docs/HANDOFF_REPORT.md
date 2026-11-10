@@ -6,15 +6,16 @@
 - Requirement IDs: **D1 PASS, D2 PASS, D4 PASS (data-preparation scope), D3 BLOCKED**. Overall: **PARTIAL (BLOCKED on D3)** — not complete.
 
 ## Inputs, licences, access state
-All 28 registry sources: `science/docs/source_inventory.json` / `SOURCE_INVENTORY.md`.
+All 30 registry sources: `science/docs/source_inventory.json` / `SOURCE_INVENTORY.md`.
 - available + downloaded + checksummed: WorldPop ×11; GHSL total/NRES/POP × 2000/05/10/15 (per-tile sha256 in the inventory); geoBoundaries ADM1/ADM2 (diagnostic only).
-- **missing:** Census 2011 PCA; Census-coded boundaries. **restricted:** Bhuvan LULC 1:50K 2011–12 (human request, `BLOCKER_REQUEST.md` B1).
+- available + downloaded + checksummed (added 2026-11-10): Census PCA India/State/District; DataMeet Census-2011 district polygons (joined 640/640).
+- **missing:** village/town-level Census PCA (open per-district; awaits Agent 3's districts); Census-coded town/village polygons. **restricted:** Bhuvan LULC 1:50K 2011–12 (human request, `BLOCKER_REQUEST.md` B1).
 
 ## Outputs
-Sample delivery (git-ignored, regenerable): `data/outputs/hyderabad-region/`. Committed examples: `science/inputs/examples/` (manifests, sample report, import logs, Agent 2 checksum cross-check). National integrity: `science/inputs/national_validation.json`.
+Sample delivery (git-ignored, regenerable): `data/outputs/hyderabad-region/`. Committed examples: `science/inputs/examples/` (manifests, sample report, import logs, Agent 2 checksum cross-check). National integrity: `science/inputs/national_validation.json`; real Census↔polygon join: `science/inputs/census_district_join.json`.
 
 ## Tests
-`cd science/data && PYTHONPATH=. python -m pytest -q` → **49 passed, 0 failed, 0 skipped** (synthetic fixtures). Real-input evidence: national integrity run; Hyderabad sample through the original `ingestion validate` and **`import` into a disposable PostGIS (7 rasters + 1 vector, idempotent re-run)**; byte-level cross-check with Agent 2 (11/11 WorldPop, 168/168 comparable GHSL tiles).
+`cd science/data && PYTHONPATH=. python -m pytest -q` → **54 passed, 0 failed, 0 skipped** (synthetic fixtures). Real-input evidence: national integrity run; Hyderabad sample through the original `ingestion validate` and **`import` into a disposable PostGIS (7 rasters + 1 vector, idempotent re-run)**; byte-level cross-check with Agent 2 (11/11 WorldPop, 168/168 comparable GHSL tiles).
 
 ## Resources
 Sample build 274 MB / ~8 s; import 167 MB / 12.5 s; national integrity 950 MB / 650 s; disk 24 GB incoming. Detail: `DATA_READINESS_REPORT.md`.
@@ -29,6 +30,6 @@ Sample build 274 MB / ~8 s; import 167 MB / 12.5 s; national integrity 950 MB / 
 None made by Agent 1. D-L1-01 (2015 epoch) is Agent 2's, approved by the project owner per their record.
 
 ## Pending human actions
-Bhuvan request (B1), Census PCA download (B2), Census-coded boundary choice (B3), flowchart questions (B5).
+Bhuvan request (B1; cannot be done by an agent), choice/supply of town/village Census-coded polygons (B3), flowchart questions (B5). Village/town PCA (B2) needs only Agent 3's district list.
 
 ## Completion status: **PARTIAL (BLOCKED on D3)**

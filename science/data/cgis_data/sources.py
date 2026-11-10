@@ -155,11 +155,41 @@ STATIC: tuple[Source, ...] = (
         semantics="Census COUNTS with state/district/sub-district/town-village codes. Not a raster.",
         resolution="village/town", access=MISSING,
         download_mechanism="Manual/portal download of state-wise PCA tables (human step; no scripted bypass).",
-        notes="Local copy not yet supplied; see BLOCKER_REQUEST.md item B2.",
+        notes="Village/town-level PCA is openly downloadable WITHOUT login per district via the Census NADA catalog "
+              "(District Census Handbook Part B / PCA workbooks, e.g. https://censusindia.gov.in/nada/index.php/catalog/<id>), "
+              "but no districts are selected yet (needs Agent 3's town list). State/district level is registered separately. See BLOCKER_REQUEST.md B2.",
+    ),
+    Source(
+        source_id="india-census-2011-pca-state-district", title="Census of India 2011 PCA, India/State/District totals (DDW_PCA0000_2011_Indiastatedist.xlsx)",
+        category="census", year=2011,
+        url="https://censusindia.gov.in/nada/index.php/catalog/6191/download/9268/DDW_PCA0000_2011_Indiastatedist.xlsx",
+        landing_page="https://censusindia.gov.in/nada/index.php/catalog/6191",
+        edition="Census 2011 PCA (state & district level), NADA catalog 6191",
+        license="Census of India / Government of India. No licence text was found programmatically; verify the portal terms before redistribution. "
+                "Local file git-ignored; commit checksum only.",
+        crs="n/a (tabular)", units="persons (census counts)",
+        semantics="Census COUNTS with State/District codes (district code is NATIONALLY sequential, e.g. 532). Level 'DISTRICT', TRU Total/Rural/Urban.",
+        resolution="district", access=AVAILABLE,
+        download_mechanism="Public HTTPS GET, no login (HTTP 200 verified 2026-11-10).",
+    ),
+    Source(
+        source_id="india-datameet-census2011-districts", title="DataMeet Census-2011 district polygons (641 features, Census codes)",
+        category="boundary", year=2011,
+        url="https://raw.githubusercontent.com/datameet/maps/master/Districts/Census_2011/2011_Dist.shp",
+        landing_page="https://github.com/datameet/maps/tree/master/Districts/Census_2011",
+        edition="DataMeet maps repository, Districts/Census_2011 (community-digitised; NOT an official Survey of India/Census product)",
+        license="CC BY 4.0 (DataMeet repository LICENSE; attribution required)",
+        crs="EPSG:4326", units="n/a (polygons)",
+        semantics="District polygons with Census 2011 codes: ST_CEN_CD (state), DT_CEN_CD (within-state), censuscode (NATIONAL sequential "
+                  "district code = Census PCA 'District' column). District level only: no towns or villages.",
+        resolution="vector (district)", access=AVAILABLE,
+        download_mechanism="Public HTTPS GET of .shp/.dbf/.shx/.prj",
+        extra={"companion_urls": [f"https://raw.githubusercontent.com/datameet/maps/master/Districts/Census_2011/2011_Dist.{e}"
+                                  for e in ("dbf", "shx", "prj")], "authoritative": False, "district_level_only": True},
     ),
     Source(
         source_id="india-admin-boundaries-2011", title="India 2011 administrative boundaries aligned to Census codes",
-        category="boundary", year=2011, url="(authoritative source to be confirmed by human; see BLOCKER_REQUEST.md B3)",
+        category="boundary", year=2011, url="(town/village polygons: authoritative source to be confirmed by human; see BLOCKER_REQUEST.md B3)",
         landing_page="https://bhuvan.nrsc.gov.in/ or https://onlinemaps.surveyofindia.gov.in/",
         edition="unconfirmed", license="UNCONFIRMED – Survey of India / Census restrictions apply; do not substitute silently",
         crs="EPSG:4326 expected", units="n/a (polygons)",

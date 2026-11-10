@@ -30,6 +30,7 @@ def main(argv=None) -> int:
     nat = sub.add_parser("national", help="national integrity report -> science/inputs/national_validation.json")
     nat.add_argument("--root", default=str(DEFAULT_ROOT))
     nat.add_argument("--step", type=int, default=16)
+    sub.add_parser("census-join", help="real Census PCA district totals <-> Census-coded polygons -> science/inputs/census_district_join.json")
     sub.add_parser("grids", help="lattice/shape report for the downloaded WorldPop years")
     ti = sub.add_parser("tiles", help="fetch only the GHSL tiles intersecting a bbox (or India)")
     ti.add_argument("source_ids", nargs="+")
@@ -83,6 +84,21 @@ def main(argv=None) -> int:
         rep["elapsed_s"], rep["peak_rss_mb"] = round(_t.time() - t0, 1), N.peak_rss_mb()
         (REPO / "science/inputs/national_validation.json").write_text(json.dumps(rep, indent=1, default=str) + "\n")
         print("wrote national_validation.json", rep["elapsed_s"], "s", rep["peak_rss_mb"], "MB")
+    elif a.cmd == "census-join":
+        import pyogrio
+        from shapely.validation import explain_validity
+        from . import census as Cn
+        st = _state()
+        pca = Cn.read_pca_districts(st["india-census-2011-pca-state-district"]["local_path"])
+        g = pyogrio.read_dataframe(st["india-datameet-census2011-districts"]["local_path"])
+        bad = [(str(g.DISTRICT[i]), explain_validity(geom)) for i, geom in enumerate(g.geometry) if not geom.is_valid]
+        rep = Cn.join_report(pca, list(g.censuscode), list(g.ST_CEN_CD), [b[0] for b in bad], official_total=1_210_854_977)
+        rep["invalid_geometry_reasons"] = bad
+        rep["inputs"] = {k: {"sha256": st[k]["sha256"]} for k in ("india-census-2011-pca-state-district",
+                                                                 "india-datameet-census2011-districts")}
+        rep["polygon_only_names"] = [str(g.DISTRICT[i]) for i, c in enumerate(g.censuscode) if str(int(c)) in rep["polygon_only"]]
+        (REPO / "science/inputs/census_district_join.json").write_text(json.dumps(rep, indent=1, default=str) + "\n")
+        print(json.dumps({k: rep[k] for k in ("census_districts", "polygons", "matched", "census_only", "polygon_only", "polygon_only_names", "state_code_mismatches", "sum_tot_p", "official_total_matches", "invalid_geometries")}, default=str))
     elif a.cmd == "grids":
         from .validate import worldpop_grid_report
         st = _state()

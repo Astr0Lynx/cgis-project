@@ -30,6 +30,8 @@ Regenerate: `cd science/data && PYTHONPATH=. python -m cgis_data inventory`. Siz
 | india-geoboundaries-adm1 | 2011 | **available** | n/a (polygons) | EPSG:4326 (CRS84) | 46170854 | 47aa0acb6f69 | CC BY 2.5 IN (DataMeet / Election Commission of  |
 | india-geoboundaries-adm2 | 2021 | **available** | n/a (polygons) | EPSG:4326 (CRS84) | 48317735 | 8bef6929fd65 | ODbL 1.0 (Pathways Data / LGD) |
 | india-census-2011-pca | 2011 | **missing** | persons (census counts) | n/a (tabular) |  |  | Government of India open data |
+| india-census-2011-pca-state-district | 2011 | **available** | persons (census counts) | n/a (tabular) | 1376414 | 7a8f70d46c43 | Census of India / Government of India. No licenc |
+| india-datameet-census2011-districts | 2011 | **available** | n/a (polygons) | EPSG:4326 | 10220732 | 3636e627a519 | CC BY 4.0 (DataMeet repository LICENSE |
 | india-admin-boundaries-2011 | 2011 | **missing** | n/a (polygons) | EPSG:4326 expected |  |  | UNCONFIRMED – Survey of India / Census restricti |
 | india-bhuvan-lulc-50k-2011-12 | 2011 | **restricted** | categorical LULC class codes | vector shapefile (CRS to be read from delivered .prj) |  |  | National Geospatial Policy-2022 access |
 
@@ -268,11 +270,29 @@ Regenerate: `cd science/data && PYTHONPATH=. python -m cgis_data inventory`. Siz
 - Licence: Government of India open data; terms on censusindia.gov.in (verify per table before redistribution). Commit acquisition steps + checksums only.
 - Semantics: Census COUNTS with state/district/sub-district/town-village codes. Not a raster.
 - Mechanism: Manual/portal download of state-wise PCA tables (human step; no scripted bypass).
-- Notes: Local copy not yet supplied; see BLOCKER_REQUEST.md item B2.
+- Notes: Village/town-level PCA is openly downloadable WITHOUT login per district via the Census NADA catalog (District Census Handbook Part B / PCA workbooks, e.g. https://censusindia.gov.in/nada/index.php/catalog/<id>), but no districts are selected yet (needs Agent 3's town list). State/district level is registered separately. See BLOCKER_REQUEST.md B2.
+
+### india-census-2011-pca-state-district
+- Title: Census of India 2011 PCA, India/State/District totals (DDW_PCA0000_2011_Indiastatedist.xlsx)
+- URL: https://censusindia.gov.in/nada/index.php/catalog/6191/download/9268/DDW_PCA0000_2011_Indiastatedist.xlsx
+- Landing page: https://censusindia.gov.in/nada/index.php/catalog/6191
+- Edition: Census 2011 PCA (state & district level), NADA catalog 6191
+- Licence: Census of India / Government of India. No licence text was found programmatically; verify the portal terms before redistribution. Local file git-ignored; commit checksum only.
+- Semantics: Census COUNTS with State/District codes (district code is NATIONALLY sequential, e.g. 532). Level 'DISTRICT', TRU Total/Rural/Urban.
+- Mechanism: Public HTTPS GET, no login (HTTP 200 verified 2026-11-10).
+
+### india-datameet-census2011-districts
+- Title: DataMeet Census-2011 district polygons (641 features, Census codes)
+- URL: https://raw.githubusercontent.com/datameet/maps/master/Districts/Census_2011/2011_Dist.shp
+- Landing page: https://github.com/datameet/maps/tree/master/Districts/Census_2011
+- Edition: DataMeet maps repository, Districts/Census_2011 (community-digitised; NOT an official Survey of India/Census product)
+- Licence: CC BY 4.0 (DataMeet repository LICENSE; attribution required)
+- Semantics: District polygons with Census 2011 codes: ST_CEN_CD (state), DT_CEN_CD (within-state), censuscode (NATIONAL sequential district code = Census PCA 'District' column). District level only: no towns or villages.
+- Mechanism: Public HTTPS GET of .shp/.dbf/.shx/.prj
 
 ### india-admin-boundaries-2011
 - Title: India 2011 administrative boundaries aligned to Census codes
-- URL: (authoritative source to be confirmed by human; see BLOCKER_REQUEST.md B3)
+- URL: (town/village polygons: authoritative source to be confirmed by human; see BLOCKER_REQUEST.md B3)
 - Landing page: https://bhuvan.nrsc.gov.in/ or https://onlinemaps.surveyofindia.gov.in/
 - Edition: unconfirmed
 - Licence: UNCONFIRMED – Survey of India / Census restrictions apply; do not substitute silently

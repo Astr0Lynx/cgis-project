@@ -108,7 +108,10 @@ def download_resumable(url: str, dest: str | Path, *, expected_sha256: str | Non
                 raise ChecksumMismatch(f"{dest}: sha256 {digest} != expected {expected_sha256}")
         dest.unlink()  # wrong size -> redownload
 
-    total = expected_size if expected_size is not None else head_size(url, sess, timeout)
+    explicit_size = expected_size is not None
+    # HEAD Content-Length is only a HINT (some hosts, e.g. raw.githubusercontent.com, report a different length than
+    # the body). A GET that completes without a transport error is authoritative; only an explicit expected_size is enforced.
+    total = expected_size if explicit_size else head_size(url, sess, timeout)
     resumed_from = part.stat().st_size if part.exists() else 0
     attempt = 0
     while True:
@@ -118,6 +121,8 @@ def download_resumable(url: str, dest: str | Path, *, expected_sha256: str | Non
         if total is not None and have > total:
             part.unlink()
             have = 0
+            if attempt >= 1 and not explicit_size:     # fresh body already larger than the HEAD hint: trust the body
+                total = None
         headers = {"User-Agent": UA}
         if have:
             headers["Range"] = f"bytes={have}-"
@@ -134,16 +139,15 @@ def download_resumable(url: str, dest: str | Path, *, expected_sha256: str | Non
                         f.write(chunk)
                         if progress:
                             progress(f.tell(), total)
-            if total is None:
-                break
+            break                                       # stream ended without a transport error -> transfer complete
         except (requests.RequestException, OSError) as exc:
             attempt += 1
             if attempt > max_retries:
                 raise FetchError(f"giving up on {url}: {exc}") from exc
             time.sleep(min(2 ** attempt, 60))
     size = part.stat().st_size
-    if total is not None and size != total:
-        raise FetchError(f"{url}: size {size} != expected {total}")
+    if explicit_size and size != expected_size:
+        raise FetchError(f"{url}: size {size} != expected {expected_size}")
     digest = sha256_file(part)
     if expected_sha256 is not None and digest != expected_sha256:
         part.unlink()
@@ -162,11 +166,16 @@ def fetch_source(src: Source, root: str | Path, state_path: str | Path, **kw) ->
     dest = Path(root) / "incoming" / src.source_id / fname
     res = download_resumable(src.url, dest, expected_sha256=prev.get("sha256"),
                              expected_size=prev.get("size_bytes"), **kw)
+    companions = {}
+    for cu in (src.extra or {}).get("companion_urls", []):            # e.g. shapefile .dbf/.shx/.prj next to the .shp
+        cr = download_resumable(cu, dest.parent / cu.rsplit("/", 1)[-1], **kw)
+        companions[cu.rsplit("/", 1)[-1]] = {"size_bytes": cr["size"], "sha256": cr["sha256"]}
     with _locked_state(state_path):
         state = read_state(state_path)   # re-read under the lock
         cur = state.get(src.source_id, {})
         state[src.source_id] = {**cur, **prev, "size_bytes": res["size"], "sha256": res["sha256"],
                                 "local_path": str(dest), "access": AVAILABLE,
+                                **({"companions": companions} if companions else {}),
                                 "retrieved_utc": prev.get("retrieved_utc") or cur.get("retrieved_utc")
                                 or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         write_state_atomic(state_path, state)

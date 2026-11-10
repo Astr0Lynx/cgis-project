@@ -1,6 +1,6 @@
 {
   "inventory_version": 1,
-  "count": 28,
+  "count": 30,
   "sources": [
     {
       "source_id": "india-worldpop-unconstrained-2001",
@@ -1635,7 +1635,7 @@
       "size_bytes": null,
       "access": "missing",
       "download_mechanism": "Manual/portal download of state-wise PCA tables (human step; no scripted bypass).",
-      "notes": "Local copy not yet supplied; see BLOCKER_REQUEST.md item B2.",
+      "notes": "Village/town-level PCA is openly downloadable WITHOUT login per district via the Census NADA catalog (District Census Handbook Part B / PCA workbooks, e.g. https://censusindia.gov.in/nada/index.php/catalog/<id>), but no districts are selected yet (needs Agent 3's town list). State/district level is registered separately. See BLOCKER_REQUEST.md B2.",
       "tiles": null,
       "extra": {},
       "sha256": null,
@@ -1643,11 +1643,65 @@
       "local_path": null
     },
     {
+      "source_id": "india-census-2011-pca-state-district",
+      "title": "Census of India 2011 PCA, India/State/District totals (DDW_PCA0000_2011_Indiastatedist.xlsx)",
+      "category": "census",
+      "year": 2011,
+      "url": "https://censusindia.gov.in/nada/index.php/catalog/6191/download/9268/DDW_PCA0000_2011_Indiastatedist.xlsx",
+      "landing_page": "https://censusindia.gov.in/nada/index.php/catalog/6191",
+      "edition": "Census 2011 PCA (state & district level), NADA catalog 6191",
+      "license": "Census of India / Government of India. No licence text was found programmatically; verify the portal terms before redistribution. Local file git-ignored; commit checksum only.",
+      "crs": "n/a (tabular)",
+      "units": "persons (census counts)",
+      "semantics": "Census COUNTS with State/District codes (district code is NATIONALLY sequential, e.g. 532). Level 'DISTRICT', TRU Total/Rural/Urban.",
+      "resolution": "district",
+      "size_bytes": 1376414,
+      "access": "available",
+      "download_mechanism": "Public HTTPS GET, no login (HTTP 200 verified 2026-11-10).",
+      "notes": "",
+      "tiles": null,
+      "extra": {},
+      "sha256": "7a8f70d46c43b5dd30eefe920f251752f69f6af8589594c21ac06499074646f5",
+      "retrieved_utc": "2026-11-10T06:05:46Z",
+      "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-census-2011-pca-state-district/DDW_PCA0000_2011_Indiastatedist.xlsx"
+    },
+    {
+      "source_id": "india-datameet-census2011-districts",
+      "title": "DataMeet Census-2011 district polygons (641 features, Census codes)",
+      "category": "boundary",
+      "year": 2011,
+      "url": "https://raw.githubusercontent.com/datameet/maps/master/Districts/Census_2011/2011_Dist.shp",
+      "landing_page": "https://github.com/datameet/maps/tree/master/Districts/Census_2011",
+      "edition": "DataMeet maps repository, Districts/Census_2011 (community-digitised; NOT an official Survey of India/Census product)",
+      "license": "CC BY 4.0 (DataMeet repository LICENSE; attribution required)",
+      "crs": "EPSG:4326",
+      "units": "n/a (polygons)",
+      "semantics": "District polygons with Census 2011 codes: ST_CEN_CD (state), DT_CEN_CD (within-state), censuscode (NATIONAL sequential district code = Census PCA 'District' column). District level only: no towns or villages.",
+      "resolution": "vector (district)",
+      "size_bytes": 10220732,
+      "access": "available",
+      "download_mechanism": "Public HTTPS GET of .shp/.dbf/.shx/.prj",
+      "notes": "",
+      "tiles": null,
+      "extra": {
+        "companion_urls": [
+          "https://raw.githubusercontent.com/datameet/maps/master/Districts/Census_2011/2011_Dist.dbf",
+          "https://raw.githubusercontent.com/datameet/maps/master/Districts/Census_2011/2011_Dist.shx",
+          "https://raw.githubusercontent.com/datameet/maps/master/Districts/Census_2011/2011_Dist.prj"
+        ],
+        "authoritative": false,
+        "district_level_only": true
+      },
+      "sha256": "3636e627a519f67b4615b6a97df48c2b279e8c7b2566d3bfbc3eda1d06e33206",
+      "retrieved_utc": "2026-11-10T06:14:01Z",
+      "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-datameet-census2011-districts/2011_Dist.shp"
+    },
+    {
       "source_id": "india-admin-boundaries-2011",
       "title": "India 2011 administrative boundaries aligned to Census codes",
       "category": "boundary",
       "year": 2011,
-      "url": "(authoritative source to be confirmed by human; see BLOCKER_REQUEST.md B3)",
+      "url": "(town/village polygons: authoritative source to be confirmed by human; see BLOCKER_REQUEST.md B3)",
       "landing_page": "https://bhuvan.nrsc.gov.in/ or https://onlinemaps.surveyofindia.gov.in/",
       "edition": "unconfirmed",
       "license": "UNCONFIRMED \u2013 Survey of India / Census restrictions apply; do not substitute silently",
