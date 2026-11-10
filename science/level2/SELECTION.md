@@ -28,3 +28,7 @@ Counts were checked directly in the ORGI workbooks, sheet `Data` or the first da
 | [East Khasi Hills PCA TV, 6489](https://censusindia.gov.in/nada/index.php/catalog/6489) | `fcbdbaea1ffcacb973f3ca9802bda3ce7521b2e7dfe810ba4abb6168458dc73b` |
 | [Mysore PCA TV, 6768](https://censusindia.gov.in/nada/index.php/catalog/6768) | `922cb937a5292e5d627b3ac8b8b18501cc93eee957515ce904cf04a73b8bbaea` |
 | [North Goa PCA TV, 6776](https://censusindia.gov.in/nada/index.php/catalog/6776) | `2983122e73fca540e9c65057a9f7fbc9fdaa8848761315818a37f5f0fea45763` |
+
+## Public settlement-boundary lead
+
+The SHRUG 2.2 PC11 village/town shapefile attribute table has one exact composite Census-code match for each of the six primary candidates and four reserves in [selection.csv](selection.csv). Chandigarh and Panaji both have `mdds_og=1` in that table. Check actual municipal-only extent against the selected PCA records and verify the geometry and source limitations for each site before adopting the polygons. The publisher lists the dataset under CC BY-NC-SA 4.0. [SHRUG downloads and terms](https://www.devdatalab.org/shrug_download/) · [Boundary source and limitations](https://docs.devdatalab.org/SHRUG-Construction-Details/shrug-open-source-polygons/)

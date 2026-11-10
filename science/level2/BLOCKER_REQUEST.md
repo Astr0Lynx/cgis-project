@@ -2,13 +2,15 @@
 
 ## Bhuvan analytical data and permissions
 
+Agent 1's 10 November 2026 handoff records the operator's decision to defer the Bhuvan request. The real run remains pending. The request details below are retained for a later operator. A different analytical product requires explicit scientific approval and a traceability update. [Agent 1 handoff](https://github.com/Astr0Lynx/cgis-project/blob/8684aab9372bdf778744f4118e94f799257efa76/science/docs/HANDOFF_REPORT.md)
+
 The official announcement confirms that the **2011–12 1:50K shapefiles** are provided after the AOI request is approved. The download link goes to the requester’s registered address. Agent 3 verified the public instructions and prepared the candidate IDs, five request AOIs and purpose text. An authorized operator can submit that request and place the approved files in local ignored storage for Agent 1 to prepare. Include the delivered legend, mapping scale and documented positional/thematic accuracy if available, approved use, and permission for derived product distribution. Ask NRSC to confirm that the proposed 23.5 m modeled grid and settlement-scale visualizations fall within the authorized use. The published web-product technical report specifies a scale-of-use restriction. [NRSC technical report](https://bhuvan-app1.nrsc.gov.in/2dresources/thematic/2LULC/lulc1112.pdf) Keep credentials and download links private. [Candidate AOIs and purpose](SELECTION.md) · [Bhuvan request instructions](https://bhuvan.nrsc.gov.in/updates/bhuvan_apr2026.html) · [Request portal](https://bhuvan-app1.nrsc.gov.in/thematic/thematic/index.php)
 
 If approval is denied for a candidate, use the same predeclared ranking and request an eligible alternate AOI. A different analytical LULC product would require an explicit scientific decision and traceability update.
 
 ## Census polygons and Level 1
 
-- **Agent 1:** provide legally usable 2011 settlement polygons keyed to the exact PCA units in the selection, with evidence of matching vintage and municipal or village extent. Official tabular counts are already available for the candidate list. See the [Census Population Finder](https://censusindia.gov.in/census.website/en/data/population-finder).
+- **Later operator:** supply legally usable 2011 settlement polygons keyed to the exact PCA units. Agent 1's published Census join is at district level. Agent 3 verified settlement-level PCA counts and found one exact code match for each candidate in the SHRUG village/town boundary attributes. Verify actual geometry and municipal or village extent before using those boundaries. [Candidate and boundary audit](SELECTION.md)
 - **Agent 2:** provide a local copy of `india-l1-pop-2011` and the matching v1 manifest, with the manifest-relative `cog/` path intact. Agent 2's handoff at `996d71a1cfe6bb4f3cca4129f88042e4494ccd8d` reports a national SHA-256 of `8284c2877c49d7329ea6b6775448a265c2403722f24466bb1ae218bdd34d3488`. Git carries metadata and evidence. The raster is stored separately. The national run verifies the raster bytes against the accepted manifest.
 
 ## Scientific decisions

@@ -20,6 +20,8 @@
 
 The official population totals are evidence for candidate identification. The real run needs the actual matched geometries and the authorized analytical legend. The published Level 1 branch contains metadata and evidence for the accepted national product. The national 2011 TIFF has SHA-256 `8284c2877c49d7329ea6b6775448a265c2403722f24466bb1ae218bdd34d3488` per Agent 2's handoff and needs to be made available locally. Keep the source data and restricted derivatives in ignored local storage.
 
+On 10 November 2026, Agent 1 published its district-level Census join and recorded the operator's decision to defer the Bhuvan request. For the later Level 2 run, use this branch's settlement-level PCA audit and verify the public SHRUG candidate geometries against that audit. The real-data acceptance gates above remain open. [Agent 1 handoff](https://github.com/Astr0Lynx/cgis-project/blob/8684aab9372bdf778744f4118e94f799257efa76/science/docs/HANDOFF_REPORT.md) · [Candidate boundary audit](SELECTION.md)
+
 ## Synthetic results
 
 Agent 2’s synthetic 2011 Level 1 COG was rebuilt at its published SHA using Python 3.12 and the pinned rasterio/GDAL environment. The regenerated synthetic raster had SHA-256 `2fb46c70beb96121ea39f59826a5c88ab2959ab662e8541f9f9e99d8974c9185`. The Level 2 package uses that geographic prior and synthetic Census and LULC. The separate automated known-value tests use small explicitly controlled counts and polygons.
