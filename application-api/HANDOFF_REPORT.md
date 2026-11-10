@@ -5,7 +5,7 @@
 | Role | auth, administration, exports |
 | Branch | `completion/agent5-application-api` |
 | Frozen base | `c4dac59433f7aed90b8223ef6ba00cf4fef6449b` (verified equal to `origin/main` before branching) |
-| Implementation SHA | `PENDING` (recorded in the follow-up commit that adds this SHA) |
+| Implementation SHA | `575af655b92198399d33b223e84fd1ddeb67f12e` |
 | Completion status | **PASS for B1, B2, B3** with evidence: local suite (real PostGIS, real nginx, real inputs) **and** the full Docker Compose stack with the overlay (images built, all services healthy, 22-step live check incl. OGC discovery, existing Phase 2 e2e suite 92 passed / 0 failed). Open: Agent 4 merge of R1–R3/R6, decision D-A5-1; CITE/QGIS/browser runs belong to Agents 4/6/7 |
 
 ## 1. Changed paths (ownership)
