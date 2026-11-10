@@ -1,0 +1,239 @@
+{
+  "name": "admin_dataset_detail",
+  "request": {
+    "method": "GET",
+    "path": "/admin/datasets/example-pop-2011",
+    "body": null
+  },
+  "note": null,
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "dataset_id": "example-pop-2011",
+      "title": "SYNTHETIC example-pop-2011",
+      "kind": "raster",
+      "product_level": "other",
+      "year": 2011,
+      "units": "people_per_cell",
+      "current_version": 1,
+      "latest_version": 1,
+      "latest_status": "ready",
+      "versions_count": 1,
+      "updated_at": "<timestamp>",
+      "access": "users",
+      "versions": [
+        {
+          "version": 1,
+          "status": "ready",
+          "catalog_status": "ready",
+          "upload_status": "published",
+          "upload_id": "<uuid>",
+          "title": "SYNTHETIC example-pop-2011",
+          "kind": "raster",
+          "checksum_sha256": "<sha256>",
+          "size_bytes": 1043,
+          "crs": "EPSG:4326",
+          "units": "people_per_cell",
+          "year": 2011,
+          "source": "synthetic test fixture (application-api tests)",
+          "original_filename": "synthetic_pop_4326.tif",
+          "created_by": "alice-admin",
+          "created_at": "<timestamp>",
+          "updated_at": "<timestamp>",
+          "published_at": "<timestamp>",
+          "provenance": {
+            "raster": {
+              "crs": "EPSG:4326",
+              "band": 1,
+              "mask": "nodata",
+              "dtype": "float32",
+              "stats": {
+                "max": 7.0,
+                "min": 1.0,
+                "sum": 31899.0,
+                "valid_count": 7975,
+                "nodata_count": 25
+              },
+              "width": 100,
+              "height": 80,
+              "nodata": -9999.0,
+              "transform": [
+                0.0005,
+                0.0,
+                78.0,
+                0.0,
+                -0.0005,
+                18.0
+              ],
+              "band_count": 1,
+              "bbox_wgs84": [
+                78.0,
+                17.96,
+                78.05,
+                18.0
+              ],
+              "resolution_x": 0.0005,
+              "resolution_y": 0.0005,
+              "source_units": null,
+              "native_bounds": [
+                78.0,
+                17.96,
+                78.05,
+                18.0
+              ],
+              "source_driver": "GTiff",
+              "source_is_cog": true
+            },
+            "upload": {
+              "via": "cgis-application-api",
+              "sha256": "<sha256>",
+              "upload_id": "<uuid>",
+              "size_bytes": 1043,
+              "uploaded_at": "<timestamp>",
+              "uploaded_by": "alice-admin",
+              "original_filename": "synthetic_pop_4326.tif"
+            },
+            "license": "CC0-1.0 (test data)",
+            "group_id": "test-group",
+            "ingestion": {
+              "asset": {
+                "format": "COG",
+                "blocksize": [
+                  512,
+                  512
+                ],
+                "predictor": "YES",
+                "compression": "DEFLATE",
+                "cog_warnings": [],
+                "overview_factors": [],
+                "overview_resampling": "nearest"
+              },
+              "importer": "cgis-ingestion",
+              "asset_path": "rasters/example-pop-2011/v1/example-pop-2011_v1.tif",
+              "started_at": "<timestamp>",
+              "source_file": "<job-hex>.tif",
+              "asset_sha256": "<sha256>",
+              "completed_at": "<timestamp>",
+              "gdal_version": "3.9.3",
+              "source_sha256": "<sha256>",
+              "importer_version": "1.0.0"
+            },
+            "synthetic": true
+          },
+          "validation": null,
+          "error": null,
+          "actions": []
+        }
+      ],
+      "recent_jobs": [
+        {
+          "job_id": "<uuid>",
+          "kind": "publish",
+          "status": "completed",
+          "progress": 1.0,
+          "progress_message": "completed",
+          "dataset_id": "example-pop-2011",
+          "version": 1,
+          "upload_id": "<uuid>",
+          "attempts": 1,
+          "result": {
+            "kind": "raster",
+            "note": "OGC API collections refresh from the catalog every OGC_REFRESH_INTERVAL seconds.",
+            "links": {
+              "admin": "/admin/datasets/example-pop-2011",
+              "catalog": "/api/catalog/datasets/example-pop-2011/versions/1",
+              "ogc_collection": "/ogc/collections/example-pop-2011"
+            },
+            "outcome": "imported",
+            "summary": {
+              "crs": "EPSG:4326",
+              "sum": 31899.0,
+              "dtype": "float32",
+              "width": 100,
+              "height": 80,
+              "nodata": -9999.0,
+              "bbox_wgs84": [
+                78.0,
+                17.96,
+                78.05,
+                18.0
+              ],
+              "valid_count": 7975
+            },
+            "version": 1,
+            "warnings": [
+              "geographic CRS (degrees): pixel area varies with latitude; units must be per cell, not per area, to be summed",
+              "marked SYNTHETIC: this is test data, not a real population estimate",
+              "geographic CRS (degrees): pixel area varies with latitude; units must be per cell, not per area, to be summed"
+            ],
+            "dataset_id": "example-pop-2011",
+            "checksum_sha256": "<sha256>"
+          },
+          "error": null,
+          "created_at": "<timestamp>",
+          "updated_at": "<timestamp>",
+          "started_at": "<timestamp>",
+          "finished_at": "<timestamp>",
+          "links": {
+            "self": "/admin/jobs/<uuid>"
+          }
+        },
+        {
+          "job_id": "<uuid>",
+          "kind": "upload",
+          "status": "completed",
+          "progress": 1.0,
+          "progress_message": "completed",
+          "dataset_id": "example-pop-2011",
+          "version": 1,
+          "upload_id": "<uuid>",
+          "attempts": 1,
+          "result": {
+            "next": "/admin/datasets/example-pop-2011/versions/1/publish",
+            "outcome": "validated",
+            "upload_id": "<uuid>",
+            "validation": {
+              "ok": true,
+              "errors": [],
+              "summary": {
+                "crs": "EPSG:4326",
+                "sum": 31899.0,
+                "dtype": "float32",
+                "width": 100,
+                "height": 80,
+                "nodata": -9999.0,
+                "bbox_wgs84": [
+                  78.0,
+                  17.96,
+                  78.05,
+                  18.0
+                ],
+                "valid_count": 7975
+              },
+              "importer": {
+                "name": "cgis-ingestion",
+                "version": "1.0.0"
+              },
+              "warnings": [
+                "geographic CRS (degrees): pixel area varies with latitude; units must be per cell, not per area, to be summed",
+                "marked SYNTHETIC: this is test data, not a real population estimate"
+              ],
+              "checksum_sha256": "<sha256>"
+            }
+          },
+          "error": null,
+          "created_at": "<timestamp>",
+          "updated_at": "<timestamp>",
+          "started_at": "<timestamp>",
+          "finished_at": "<timestamp>",
+          "links": {
+            "self": "/admin/jobs/<uuid>"
+          }
+        }
+      ]
+    }
+  }
+}

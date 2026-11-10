@@ -1,0 +1,63 @@
+# Docker stack evidence (2026-11-10T08:02:16Z); Docker 29.9.0, Docker Compose version v5.6.0
+# build: docker compose -f compose.yaml -f infra/compose.db-port.yaml -f application-api/deploy/compose.app-api.yaml --profile tools build -> exit 0
+# docker build -f application-api/Dockerfile --target test . -> exit 0 (unit tests inside the image)
+
+## images
+cgis-e2e:local	419MB
+cgis-app-api-test:local	414MB
+cgis-app-api:local	399MB
+cgis-app-ingest-worker:local	327MB
+cgis-tiles:local	433MB
+cgis-processing:local	396MB
+cgis-ingestion:local	345MB
+cgis-migrate:local	142MB
+cgis-ogc:local	977MB
+cgis-viewer:local	48.3MB
+cgis-gateway:local	48.2MB
+
+## services
+SERVICE             STATUS
+app-api             Up 33 seconds (healthy)
+app-export-worker   Up 6 minutes (healthy)
+app-ingest-worker   Up 6 minutes (healthy)
+app-migrate         Exited (0) 59 seconds ago
+app-volume-init     Exited (0) About a minute ago
+db                  Up 8 minutes (healthy)
+gateway             Up 27 seconds (healthy)
+migrate             Exited (0) About a minute ago
+ogc                 Up 8 minutes (healthy)
+processing          Up 8 minutes (healthy)
+tiles               Up 8 minutes (healthy)
+viewer              Up 8 minutes (healthy)
+volume-init         Exited (0) About a minute ago
+
+## memory (idle, after the live check)
+cgis-app-api-1	146.2MiB / 768MiB
+cgis-app-export-worker-1	90.8MiB / 1.5GiB
+cgis-app-ingest-worker-1	166MiB / 2GiB
+cgis-gateway-1	12.75MiB / 15.31GiB
+cgis-ogc-1	175MiB / 15.31GiB
+cgis-tiles-1	225.1MiB / 15.31GiB
+cgis-processing-1	146.8MiB / 15.31GiB
+cgis-db-1	56.6MiB / 15.31GiB
+cgis-viewer-1	17.05MiB / 15.31GiB
+
+## database roles
+                                  List of roles
+      Role name      |                         Attributes                         
+---------------------+------------------------------------------------------------
+ cgis_admin          | Superuser, Create role, Create DB, Replication, Bypass RLS
+ cgis_app_api        | Cannot login
+ cgis_app_svc        | 
+ cgis_app_worker     | Cannot login
+ cgis_app_worker_svc | 
+ cgis_ingest         | Cannot login
+ cgis_ingestion_svc  | 
+ cgis_ogc_svc        | 
+ cgis_processing     | Cannot login
+ cgis_processing_svc | 
+ cgis_reader         | Cannot login
+
+## cgis_app schema
+1|application_schema
+2|access_roles

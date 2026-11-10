@@ -1,0 +1,25 @@
+{
+  "name": "auth_me_anonymous",
+  "request": {
+    "method": "GET",
+    "path": "/auth/me",
+    "body": null
+  },
+  "note": null,
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "authenticated": false,
+      "user": null,
+      "expires_at": null,
+      "idle_timeout_seconds": null,
+      "auth_method": null,
+      "csrf_token": null,
+      "access_token": null,
+      "token_type": null
+    }
+  }
+}

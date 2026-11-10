@@ -1,0 +1,101 @@
+{
+  "name": "export_full_native_201",
+  "request": {
+    "method": "POST",
+    "path": "/api/exports",
+    "body": {
+      "dataset_id": "example-pop-2011",
+      "kind": "full",
+      "format": "COG"
+    }
+  },
+  "note": null,
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "job_id": "<uuid>",
+      "kind": "export",
+      "status": "completed",
+      "progress": 1.0,
+      "progress_message": "completed",
+      "input": {
+        "kind": "full",
+        "format": "COG",
+        "version": 1,
+        "dataset_id": "example-pop-2011",
+        "native_crs": "EPSG:4326",
+        "output_crs": null,
+        "dataset_kind": "raster"
+      },
+      "result": {
+        "format": "COG",
+        "output": {
+          "crs": "EPSG:4326",
+          "dtype": "float32",
+          "units": "people_per_cell",
+          "width": 100,
+          "height": 80,
+          "nodata": -9999.0,
+          "resampled": false,
+          "resampling": "none",
+          "resolution": [
+            0.0005,
+            0.0005
+          ],
+          "bounds_wgs84": [
+            78.0,
+            17.96,
+            78.05,
+            18.0
+          ],
+          "bounds_native": [
+            78.0,
+            17.96,
+            78.05,
+            18.0
+          ]
+        },
+        "sha256": "<sha256>",
+        "source": "native_asset",
+        "filename": "example-pop-2011_v1.tif",
+        "warnings": [],
+        "media_type": "image/tiff; application=geotiff; profile=cloud-optimized",
+        "provenance": {
+          "year": 2011,
+          "title": "SYNTHETIC example-pop-2011",
+          "units": "people_per_cell",
+          "source": "synthetic test fixture (application-api tests)",
+          "license": "CC0-1.0 (test data)",
+          "version": 1,
+          "citation": null,
+          "synthetic": true,
+          "dataset_id": "example-pop-2011",
+          "asset_sha256": "<sha256>",
+          "product_level": "other",
+          "checksum_sha256": "<sha256>"
+        },
+        "size_bytes": 2650,
+        "requested_format": "COG",
+        "download_url": "/api/exports/<uuid>/download",
+        "metadata_url": "/api/exports/<uuid>/metadata",
+        "expires_at": "<timestamp>"
+      },
+      "error": null,
+      "attempts": 0,
+      "owner": "<uuid>",
+      "created_at": "<timestamp>",
+      "updated_at": "<timestamp>",
+      "started_at": "<timestamp>",
+      "finished_at": "<timestamp>",
+      "expires_at": "<timestamp>",
+      "links": {
+        "self": "/api/exports/<uuid>",
+        "download": "/api/exports/<uuid>/download",
+        "metadata": "/api/exports/<uuid>/metadata"
+      }
+    }
+  }
+}

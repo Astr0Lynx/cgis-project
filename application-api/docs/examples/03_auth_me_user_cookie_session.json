@@ -1,0 +1,29 @@
+{
+  "name": "auth_me_user_cookie_session",
+  "request": {
+    "method": "GET",
+    "path": "/auth/me",
+    "body": null
+  },
+  "note": null,
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "authenticated": true,
+      "user": {
+        "user_id": "<uuid>",
+        "username": "bob-user",
+        "role": "user"
+      },
+      "expires_at": "<timestamp>",
+      "idle_timeout_seconds": 900,
+      "auth_method": "cookie",
+      "csrf_token": "<csrf-token>",
+      "access_token": null,
+      "token_type": null
+    }
+  }
+}
