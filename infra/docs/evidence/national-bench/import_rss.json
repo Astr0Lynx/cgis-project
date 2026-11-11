@@ -1,0 +1,39 @@
+{
+  "file": "geoBoundaries-IND-ADM2.geojson",
+  "size_bytes": 48317735,
+  "vector_parse_normalize": {
+    "seconds": 7.7,
+    "features": 735,
+    "normalized_bytes": 40348714,
+    "peak_rss_mib, cgroup_peak_mib": [
+      491.0,
+      454.9
+    ]
+  }
+}
+{
+  "file": "ind_ppp_2011.tif",
+  "size_bytes": 1849514894,
+  "validate": {
+    "seconds": 56.7,
+    "peak_rss_mib, cgroup_peak_mib": [
+      607.1,
+      556.8
+    ]
+  },
+  "write_cog": {
+    "seconds": 338.2,
+    "cog_bytes": 1625202696,
+    "peak_rss_mib, cgroup_peak_mib": [
+      675.2,
+      635.8
+    ]
+  },
+  "verify_cog": {
+    "seconds": 107.8,
+    "peak_rss_mib, cgroup_peak_mib": [
+      730.7,
+      699.0
+    ]
+  }
+}

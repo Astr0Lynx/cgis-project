@@ -22,7 +22,7 @@ OpenAPI paths. Completion P3 adds one route: `POST /operations/{job_id}/cancel` 
 
 The rest of that test (no DELETE/PUT, no `/datasets`, no `/import`) stays valid and passes. Behaviour of
 the existing routes is unchanged: `mode` defaults to `sync`, so every Phase 2 request and response is the
-same. Tests of the new behaviour: `spatial-processing/tests/test_async_blockwise.py` (25),
+same. Tests of the new behaviour: `spatial-processing/tests/test_async_blockwise.py` (21 tests, 38 cases),
 `spatial-processing/tests/test_postgis.py` (2 new, PostGIS).
 
 ## CR-A4-7.2 — record the `geo.admin_units` identity change (contract decision)

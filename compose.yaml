@@ -16,7 +16,7 @@
 # mounts the Docker socket, and no service accepts client file paths.
 #
 # Memory: every long-running service has a mem_limit (overridable in .env). Default platform total
-# ~6.8 GiB of limits (typical use far lower); +4.3 GiB with the "app" profile; the science profile's
+# ~6.7 GiB of limits (typical use far lower); +4.3 GiB with the "app" profile; the science profile's
 # 14 GiB limit assumes the other services are stopped. Budget table: infra/COMPLETION_HANDOFF_REPORT.md.
 
 name: ${COMPOSE_PROJECT_NAME:-cgis}
@@ -157,7 +157,7 @@ services:
         condition: service_completed_successfully
       migrate:
         condition: service_completed_successfully
-    mem_limit: ${INGESTION_MEM_LIMIT:-3g}
+    mem_limit: ${INGESTION_MEM_LIMIT:-4g}
     logging: *logging
 
   tiles:

@@ -68,9 +68,9 @@ reservations; measured peaks are in `COMPLETION_HANDOFF_REPORT.md`.
 | ogc | 1 GiB | 2 gunicorn workers |
 | processing | 2 GiB | 4 sync slots x <= 25 M-pixel window + 1 blockwise worker (16 MB blocks) + GDAL cache 256 MB |
 | viewer / gateway | 64 MiB / 128 MiB | static files / nginx |
-| ingestion (tool) | 3 GiB | block-wise validation and COG build, GDAL cache 512 MB |
+| ingestion (tool) | 4 GiB | block-wise validation and COG build, GDAL cache 512 MB; measured peak 2.51 GiB (docker stats, incl. active page cache) importing India WorldPop + ADM2 |
 | app-api / ingest worker / export worker | 768 MiB / 2 GiB / 1.5 GiB | Agent 5's measurements |
-| **platform total** | **~6.7 GiB** | + 3 GiB while an import runs; + 4.3 GiB with `app` |
+| **platform total** | **~6.7 GiB** | + 4 GiB while an import runs; + 4.3 GiB with `app` |
 | level1 (science) | 14 GiB | runs alone: `docker compose stop` first |
 
 Health checks test readiness, not just that a process is running:

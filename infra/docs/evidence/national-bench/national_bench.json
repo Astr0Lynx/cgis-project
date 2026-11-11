@@ -1,0 +1,512 @@
+{
+  "run_id": "8bb297d8",
+  "gateway": "http://gateway:8080",
+  "started": "2026-11-11T07:15:07Z",
+  "vector_grid": {
+    "dataset_id": "bench-india-grid-12100",
+    "units": 12100,
+    "explain": {
+      "collection page, deep offset (dataset+version scope, ORDER BY unit_id)": {
+        "execution_ms": 5.716,
+        "uses_index": false,
+        "plan": "Limit  (cost=1451.07..1451.32 rows=100 width=10) (actual rows=100 loops=1)\n  Buffers: shared hit=408\n  ->  Sort  (cost=1421.07..1451.32 rows=12100 width=10) (actual rows=12100 loops=1)\n        Sort Key: unit_id\n        Sort Method: quicksort  Memory: 385kB\n        Buffers: shared hit=408\n        ->  Seq Scan on admin_units  (cost=0.00..600.52 rows=12100 width=10) (actual rows=12100 loops=1)\n              Filter: ((dataset_id = 'bench-india-grid-12100'::text) AND (dataset_version = 1))\n              Rows Removed by Filter: 735\n              Buffers: shared hit=408\nPlanning:\n  Buffers: shared hit=53\nPlanning Time: 0.186 ms\nExecution Time: 5.716 ms"
+      },
+      "collection count (numberMatched)": {
+        "execution_ms": 1.855,
+        "uses_index": false,
+        "plan": "Aggregate  (cost=630.77..630.78 rows=1 width=8) (actual rows=1 loops=1)\n  Buffers: shared hit=408\n  ->  Seq Scan on admin_units  (cost=0.00..600.52 rows=12100 width=0) (actual rows=12100 loops=1)\n        Filter: ((dataset_id = 'bench-india-grid-12100'::text) AND (dataset_version = 1))\n        Rows Removed by Filter: 735\n        Buffers: shared hit=408\nPlanning:\n  Buffers: shared hit=6\nPlanning Time: 0.074 ms\nExecution Time: 1.855 ms"
+      },
+      "bbox on current units (GiST)": {
+        "execution_ms": 1.907,
+        "uses_index": true,
+        "plan": "Index Scan using admin_units_geom_gist on admin_units u  (cost=0.15..37.01 rows=1 width=10) (actual rows=18 loops=1)\n  Index Cond: ((geom && '0103000020E6100000010000000500000000000000004053400000000000003C4000000000004053400000000000803C4000000000006053400000000000803C4000000000006053400000000000003C4000000000004053400000000000003C40'::geometry) AND (geom && '0103000020E6100000010000000500000000000000004053400000000000003C4000000000004053400000000000803C4000000000006053400000000000803C4000000000006053400000000000003C4000000000004053400000000000003C40'::geometry))\n  Filter: (st_intersects(geom, '0103000020E6100000010000000500000000000000004053400000000000003C4000000000004053400000000000803C4000000000006053400000000000803C4000000000006053400000000000003C4000000000004053400000000000003C40'::geometry) AND ((dataset_id IS NULL) OR (ANY ((dataset_id = (hashed SubPlan 2).col1) AND (dataset_version = (hashed SubPlan 2).col2)))))\n  Rows Removed by Filter: 1\n  Buffers: shared hit=151\n  SubPlan 2\n    ->  Nested Loop Anti Join  (cost=0.29..16.33 rows=1 width=36) (actual rows=4 loops=1)\n          Join Filter: ((n.version > d.version) AND (n.dataset_id = d.dataset_id))\n          Rows Removed by Join Filter: 16\n          Buffers: shared hit=10\n          ->  Index Only Scan using datasets_ready_latest_idx on datasets d  (cost=0.14..8.16 rows=1 width=36) (actual rows=4 loops=1)\n                Heap Fetches: 4\n                Buffers: shared hit=2\n          ->  Index Only Scan using datasets_ready_latest_idx on datasets n  (cost=0.14..8.16 rows=1 width=36) (actual rows=4 loops=4)\n                Heap Fetches: 16\n                Buffers: shared hit=8\nPlanning:\n  Buffers: shared hit=139 read=6 dirtied=2\nPlanning Time: 2.264 ms\nExecution Time: 1.907 ms"
+      },
+      "geo.units_in_bbox primitive (EPSG:3857 input)": {
+        "execution_ms": 3.531,
+        "uses_index": true,
+        "plan": "Subquery Scan on units_in_bbox  (cost=37.77..37.78 rows=1 width=10) (actual rows=19 loops=1)\n  Buffers: shared hit=482\n  ->  Sort  (cost=37.77..37.77 rows=1 width=252) (actual rows=19 loops=1)\n        Sort Key: u.unit_id, u.dataset_id\n        Sort Method: quicksort  Memory: 26kB\n        Buffers: shared hit=482\n        ->  Index Scan using admin_units_geom_gist on admin_units u  (cost=0.65..37.76 rows=1 width=252) (actual rows=19 loops=1)\n              Index Cond: ((geom && cgis.envelope_4326('8571000'::double precision, '3250000'::double precision, '8627000'::double precision, '3315000'::double precision, 3857)) AND (geom && cgis.envelope_4326('8571000'::double precision, '3250000'::double precision, '8627000'::double precision, '3315000'::double precision, 3857)))\n              Filter: (st_intersects(geom, cgis.envelope_4326('8571000'::double precision, '3250000'::double precision, '8627000'::double precision, '3315000'::double precision, 3857)) AND ((dataset_id IS NULL) OR (ANY ((dataset_id = (hashed SubPlan 2).col1) AND (dataset_version = (hashed SubPlan 2).col2)))))\n              Rows Removed by Filter: 1\n              Buffers: shared hit=230\n              SubPlan 2\n                ->  Nested Loop Anti Join  (cost=0.29..16.33 rows=1 width=36) (actual rows=4 loops=1)\n                      Join Filter: ((n.version > d.version) AND (n.dataset_id = d.dataset_id))\n                      Rows Removed by Join Filter: 16\n                      Buffers: shared hit=10\n                      ->  Index Only Scan using datasets_ready_latest_idx on datasets d  (cost=0.14..8.16 rows=1 width=36) (actual rows=4 loops=1)\n                            Heap Fetches: 4\n                            Buffers: shared hit=2\n                      ->  Index Only Scan using datasets_ready_latest_idx on datasets n  (cost=0.14..8.16 rows=1 width=36) (actual rows=4 loops=4)\n                            Heap Fetches: 16\n                            Buffers: shared hit=8\nPlanning:\n  Buffers: shared hit=148 read=3 dirtied=1\nPlanning Time: 42.894 ms\nExecution Time: 3.531 ms"
+      }
+    },
+    "paging": {
+      "numberMatched": 12100,
+      "features_paged": 12100,
+      "unique": 12100,
+      "complete": true,
+      "pages": 13,
+      "page_median_ms": 25.0,
+      "page_max_ms": 440.5
+    },
+    "bbox_query": {
+      "runs": 5,
+      "median_ms": 26.8,
+      "max_ms": 58.8,
+      "numberMatched": 9
+    },
+    "item_lookup": {
+      "runs": 5,
+      "median_ms": 7.7,
+      "max_ms": 9.7,
+      "status": 200
+    }
+  },
+  "vector_real": {
+    "india-geoboundaries-adm2": {
+      "paging": {
+        "numberMatched": 735,
+        "features_paged": 735,
+        "unique": 735,
+        "complete": true,
+        "pages": 8,
+        "page_median_ms": 39.2,
+        "page_max_ms": 463.4
+      },
+      "item_lookup": {
+        "runs": 5,
+        "median_ms": 10.0,
+        "max_ms": 10.0,
+        "status": 200
+      }
+    }
+  },
+  "rasters": {
+    "synthetic-national-grid-2011": {
+      "tiles": {
+        "ogc_style_title": "viridis linear 0..50",
+        "ogc_style_shared": true,
+        "ogc_png_z3": {
+          "runs": 3,
+          "median_ms": 28.9,
+          "max_ms": 150.7,
+          "status": 200,
+          "bytes": 4975
+        },
+        "ogc_png_z5": {
+          "runs": 3,
+          "median_ms": 25.6,
+          "max_ms": 25.9,
+          "status": 200,
+          "bytes": 6829
+        },
+        "ogc_png_z7": {
+          "runs": 3,
+          "median_ms": 30.4,
+          "max_ms": 105.7,
+          "status": 200,
+          "bytes": 8427
+        },
+        "ogc_png_z9": {
+          "runs": 3,
+          "median_ms": 39.1,
+          "max_ms": 43.0,
+          "status": 200,
+          "bytes": 24424
+        },
+        "ogc_png_z11": {
+          "runs": 3,
+          "median_ms": 31.0,
+          "max_ms": 32.0,
+          "status": 200,
+          "bytes": 16565
+        },
+        "vendor_png_z9": {
+          "runs": 3,
+          "median_ms": 27.5,
+          "max_ms": 28.6,
+          "status": 200
+        }
+      },
+      "metadata": {
+        "dataset_id": "synthetic-national-grid-2011",
+        "version": 1,
+        "title": "SYNTHETIC national-grid benchmark raster (Level 1 grid; not population data)",
+        "year": 2011,
+        "crs": "EPSG:4326",
+        "units": "people_per_cell",
+        "nodata": -99999.0,
+        "bbox": [
+          68.185416408,
+          6.753750174,
+          97.414582958,
+          35.501250059
+        ],
+        "product_level": "level1",
+        "resolution": [
+          0.0008333333300071276,
+          0.0008333333299997101
+        ],
+        "group_id": null,
+        "synthetic": true,
+        "license": null,
+        "citation": null,
+        "render": {
+          "mode": "shared",
+          "profile_id": "level1-people-per-cell",
+          "title": "Population per ~100 m cell (shared Level 1 scale)",
+          "description": "Shared fixed scale for all Level 1 years: 0..50 people per ~100 m cell (~0..5 000 people/km2); values above 50 are drawn with the top colour.",
+          "units": "people_per_cell",
+          "colormap": "viridis",
+          "rescale": [
+            0.0,
+            50.0
+          ],
+          "clamped": true,
+          "nodata": "transparent",
+          "titiler_params": {
+            "rescale": "0,50",
+            "colormap_name": "viridis"
+          }
+        },
+        "links": [
+          {
+            "rel": "tilejson",
+            "type": "application/json",
+            "href": "http://gateway:8080/tiles/datasets/synthetic-national-grid-2011/WebMercatorQuad/tilejson.json"
+          },
+          {
+            "rel": "tiles",
+            "type": "image/png",
+            "templated": true,
+            "href": "http://gateway:8080/tiles/datasets/synthetic-national-grid-2011/tiles/WebMercatorQuad/{z}/{x}/{y}.png"
+          },
+          {
+            "rel": "info",
+            "type": "application/json",
+            "href": "http://gateway:8080/tiles/datasets/synthetic-national-grid-2011/info"
+          },
+          {
+            "rel": "statistics",
+            "type": "application/json",
+            "href": "http://gateway:8080/tiles/datasets/synthetic-national-grid-2011/statistics",
+            "title": "Per-layer statistics (diagnostic autoscale)"
+          }
+        ]
+      },
+      "processing": {
+        "zonal_district_sync": {
+          "ms": 207.7,
+          "status": 200,
+          "sum": 5888779.2408185005,
+          "count_valid": 226800
+        },
+        "zonal_district_async": {
+          "status": "completed",
+          "seconds": 1.0,
+          "sum": 5888779.2408185005,
+          "count_valid": 226800,
+          "matches_sync": true
+        },
+        "zonal_state_sync": {
+          "status": 413,
+          "code": "AOI_TOO_LARGE",
+          "pixels": 72281529,
+          "hint": "resubmit with \"mode\": \"async\" (or \"auto\") to run it as a background job"
+        },
+        "zonal_state_async": {
+          "http_status": 202,
+          "status": "completed",
+          "seconds": 3.1,
+          "count_valid": 66272177,
+          "pixels_in_aoi": 72230400,
+          "sum": 105536437.10123348,
+          "processing": {
+            "block_size": 2048,
+            "blocks_read": 20,
+            "candidate_window_pixels": 72281529,
+            "path": "blockwise"
+          },
+          "error": null,
+          "last_progress": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "zonal_india_async": {
+          "http_status": 202,
+          "status": "completed",
+          "seconds": 22.4,
+          "count_valid": 452195940,
+          "pixels_in_aoi": 1206777600,
+          "sum": 708439998.0254318,
+          "processing": {
+            "block_size": 2048,
+            "blocks_read": 306,
+            "candidate_window_pixels": 1206986049,
+            "path": "blockwise"
+          },
+          "error": null,
+          "last_progress": [
+            0.6633986928104575,
+            0.6633986928104575,
+            0.9084967320261438,
+            0.9084967320261438,
+            1.0
+          ]
+        },
+        "clip_async_cog": {
+          "status": "completed",
+          "seconds": 1.0,
+          "output": {
+            "bounds": [
+              76.80041637361369,
+              28.19958342154254,
+              77.80041636962224,
+              28.99958341834226
+            ],
+            "count_valid": 1152000,
+            "crs": "EPSG:4326",
+            "driver_layout": "COG",
+            "dtype": "float32",
+            "format": "COG",
+            "height": 960,
+            "mask": "nodata_value",
+            "nodata": -99999.0,
+            "resampled": false,
+            "resampling": "none",
+            "size_bytes": 502450,
+            "sum_valid": 8003523.940719962,
+            "transform_gdal": [
+              76.80041637361369,
+              0.0008333333300071276,
+              0.0,
+              28.99958341834226,
+              0.0,
+              -0.0008333333299997101
+            ],
+            "width": 1200
+          },
+          "download_status": 200,
+          "download_bytes": 502450,
+          "error": null
+        },
+        "cancel_india_job": {
+          "cancel_http": 200,
+          "final_status": "failed",
+          "error_code": "CANCELLED",
+          "seconds_to_stop": 2.0
+        }
+      }
+    },
+    "india-worldpop-unconstrained-2011": {
+      "tiles": {
+        "ogc_style_title": "viridis linear 0..50",
+        "ogc_style_shared": true,
+        "ogc_png_z3": {
+          "runs": 3,
+          "median_ms": 49.1,
+          "max_ms": 49.7,
+          "status": 200,
+          "bytes": 20161
+        },
+        "ogc_png_z5": {
+          "runs": 3,
+          "median_ms": 41.4,
+          "max_ms": 45.0,
+          "status": 200,
+          "bytes": 66375
+        },
+        "ogc_png_z7": {
+          "runs": 3,
+          "median_ms": 55.9,
+          "max_ms": 60.0,
+          "status": 200,
+          "bytes": 116178
+        },
+        "ogc_png_z9": {
+          "runs": 3,
+          "median_ms": 57.4,
+          "max_ms": 58.1,
+          "status": 200,
+          "bytes": 103895
+        },
+        "ogc_png_z11": {
+          "runs": 3,
+          "median_ms": 28.5,
+          "max_ms": 32.8,
+          "status": 200,
+          "bytes": 36994
+        },
+        "vendor_png_z9": {
+          "runs": 3,
+          "median_ms": 47.8,
+          "max_ms": 50.0,
+          "status": 200
+        }
+      },
+      "metadata": {
+        "dataset_id": "india-worldpop-unconstrained-2011",
+        "version": 1,
+        "title": "WorldPop unconstrained population count, India 2011 (100 m)",
+        "year": 2011,
+        "crs": "EPSG:4326",
+        "units": "people_per_cell",
+        "nodata": -99999.0,
+        "bbox": [
+          68.185416408,
+          6.753750174,
+          97.414582958,
+          35.501250059
+        ],
+        "product_level": "source",
+        "resolution": [
+          0.0008333333300071276,
+          0.0008333333299997101
+        ],
+        "group_id": null,
+        "synthetic": false,
+        "license": "CC BY 4.0",
+        "citation": "WorldPop (2018). Global 1km/100m Population, doi:10.5258/SOTON/WP00645",
+        "render": {
+          "mode": "shared",
+          "profile_id": "worldpop-people-per-cell",
+          "title": "Population per ~100 m cell (WorldPop input, Level 1 scale)",
+          "description": "Same fixed scale as Level 1 so the WorldPop input and the redistributed Level 1 output compare directly.",
+          "units": "people_per_cell",
+          "colormap": "viridis",
+          "rescale": [
+            0.0,
+            50.0
+          ],
+          "clamped": true,
+          "nodata": "transparent",
+          "titiler_params": {
+            "rescale": "0,50",
+            "colormap_name": "viridis"
+          }
+        },
+        "links": [
+          {
+            "rel": "tilejson",
+            "type": "application/json",
+            "href": "http://gateway:8080/tiles/datasets/india-worldpop-unconstrained-2011/WebMercatorQuad/tilejson.json"
+          },
+          {
+            "rel": "tiles",
+            "type": "image/png",
+            "templated": true,
+            "href": "http://gateway:8080/tiles/datasets/india-worldpop-unconstrained-2011/tiles/WebMercatorQuad/{z}/{x}/{y}.png"
+          },
+          {
+            "rel": "info",
+            "type": "application/json",
+            "href": "http://gateway:8080/tiles/datasets/india-worldpop-unconstrained-2011/info"
+          },
+          {
+            "rel": "statistics",
+            "type": "application/json",
+            "href": "http://gateway:8080/tiles/datasets/india-worldpop-unconstrained-2011/statistics",
+            "title": "Per-layer statistics (diagnostic autoscale)"
+          }
+        ]
+      },
+      "processing": {
+        "zonal_district_sync": {
+          "ms": 95.5,
+          "status": 200,
+          "sum": 18608869.368065834,
+          "count_valid": 224126
+        },
+        "zonal_district_async": {
+          "status": "completed",
+          "seconds": 1.0,
+          "sum": 18608869.368065834,
+          "count_valid": 224126,
+          "matches_sync": true
+        },
+        "zonal_state_sync": {
+          "status": 413,
+          "code": "AOI_TOO_LARGE",
+          "pixels": 72281529,
+          "hint": "resubmit with \"mode\": \"async\" (or \"auto\") to run it as a background job"
+        },
+        "zonal_state_async": {
+          "http_status": 202,
+          "status": "completed",
+          "seconds": 4.1,
+          "count_valid": 55762534,
+          "pixels_in_aoi": 72230400,
+          "sum": 285280690.288998,
+          "processing": {
+            "block_size": 2048,
+            "blocks_read": 20,
+            "candidate_window_pixels": 72281529,
+            "path": "blockwise"
+          },
+          "error": null,
+          "last_progress": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "zonal_india_async": {
+          "http_status": 202,
+          "status": "completed",
+          "seconds": 27.5,
+          "count_valid": 393918707,
+          "pixels_in_aoi": 1206777600,
+          "sum": 1210854633.3507447,
+          "processing": {
+            "block_size": 2048,
+            "blocks_read": 306,
+            "candidate_window_pixels": 1206986049,
+            "path": "blockwise"
+          },
+          "error": null,
+          "last_progress": [
+            0.6633986928104575,
+            0.6633986928104575,
+            0.8823529411764706,
+            0.8823529411764706,
+            1.0
+          ]
+        },
+        "clip_async_cog": {
+          "status": "completed",
+          "seconds": 1.0,
+          "output": {
+            "bounds": [
+              76.80041637361369,
+              28.19958342154254,
+              77.80041636962224,
+              28.99958341834226
+            ],
+            "count_valid": 1144082,
+            "crs": "EPSG:4326",
+            "driver_layout": "COG",
+            "dtype": "float32",
+            "format": "COG",
+            "height": 960,
+            "mask": "nodata_value",
+            "nodata": -99999.0,
+            "resampled": false,
+            "resampling": "none",
+            "size_bytes": 3555550,
+            "sum_valid": 29393694.114869237,
+            "transform_gdal": [
+              76.80041637361369,
+              0.0008333333300071276,
+              0.0,
+              28.99958341834226,
+              0.0,
+              -0.0008333333299997101
+            ],
+            "width": 1200
+          },
+          "download_status": 200,
+          "download_bytes": 3555550,
+          "error": null
+        },
+        "cancel_india_job": {
+          "cancel_http": 200,
+          "final_status": "failed",
+          "error_code": "CANCELLED",
+          "seconds_to_stop": 2.1
+        }
+      }
+    }
+  },
+  "finished": "2026-11-11T07:16:34Z"
+}
