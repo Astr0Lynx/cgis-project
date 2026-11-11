@@ -1,11 +1,6 @@
-"""Bounded-memory harmonisation helpers. Every function works in windows; no function reads a full raster.
-
-Resampling policy (documented in science/docs/HARMONIZATION.md):
-  * counts (people_per_cell)  -> never averaged; only summed (`block_sum`) or left on the native grid.
-  * areas  (m2_per_cell)      -> converted to area FRACTION, averaged, converted back with the target cell area
-                                 (`warp_area_quantity`). Mass is conserved up to edge/rounding effects, reported.
-  * categorical (class codes) -> nearest neighbour only (`warp_categorical`).
-"""
+# Bounded-memory harmonisation helpers; every function works in windows, none reads a full raster.
+# Policy: counts are only summed or left native; m2_per_cell areas are warped as area fractions;
+# categorical classes use nearest neighbour only.
 from __future__ import annotations
 
 import math
@@ -23,14 +18,15 @@ GTIFF_OPTS = dict(driver="GTiff", tiled=True, blockxsize=512, blockysize=512, co
 _GEOD = Geod(ellps="WGS84")
 
 
+# Yields block windows covering a width x height raster; used by every windowed reader here and in validate.py.
 def iter_windows(width: int, height: int, size: int = 1024) -> Iterator[Window]:
     for r in range(0, height, size):
         for c in range(0, width, size):
             yield Window(c, r, min(size, width - c), min(size, height - r))
 
 
+# True where a cell is finite and not the declared NoData (NaN NoData handled); used across the package.
 def valid_mask(arr: np.ndarray, nodata) -> np.ndarray:
-    """True where a cell holds data: finite and not equal to the declared NoData (NaN NoData handled)."""
     m = np.ones(arr.shape, bool)
     if arr.dtype.kind == "f":
         m &= np.isfinite(arr)
@@ -39,19 +35,16 @@ def valid_mask(arr: np.ndarray, nodata) -> np.ndarray:
     return m
 
 
+# Expands a fractional window to whole pixels; used by crop_to_bbox and warp_area_quantity.
 def snap_window_outward(win: Window) -> Window:
-    """Expand a fractional window to whole pixels (floor offsets, ceil far edges)."""
     c0, r0 = math.floor(win.col_off + 1e-9), math.floor(win.row_off + 1e-9)
     c1, r1 = math.ceil(win.col_off + win.width - 1e-9), math.ceil(win.row_off + win.height - 1e-9)
     return Window(c0, r0, c1 - c0, r1 - r0)
 
 
+# Whole-pixel (col, row) offset of `other`'s origin from `ref`'s; raises if not on one lattice.
+# Used to register WorldPop years and GHSL tiles without resampling (sample, national, validate).
 def lattice_offset(ref: Affine, other: Affine, tol: float = 1e-3) -> tuple[int, int]:
-    """Whole-pixel (col, row) offset of `other`'s origin from `ref`'s; raises if not on the same lattice.
-
-    This is how e.g. WorldPop-IND 2010 (one extra west column) or the GHSL 4326_3ss tiles are registered onto the
-    reference grid without any resampling. Pixel sizes must match to ~1e-9 deg.
-    """
     if abs(ref.a - other.a) > 1e-9 or abs(ref.e - other.e) > 1e-9:
         raise ValueError(f"pixel size differs: {ref.a},{ref.e} vs {other.a},{other.e}")
     dc, dr = (other.c - ref.c) / ref.a, (other.f - ref.f) / ref.e
@@ -60,12 +53,10 @@ def lattice_offset(ref: Affine, other: Affine, tol: float = 1e-3) -> tuple[int, 
     return int(round(dc)), int(round(dr))
 
 
+# Copies the part of a same-lattice source covering a reference window with NO resampling;
+# uncovered cells become NoData. Used by sample.build_sample for GHSL tiles.
 def extract_aligned_window(src_path: str, dst_path: str, ref: Affine, width: int, height: int,
                            block: int = 1024) -> dict:
-    """Copy the part of `src` covering the reference window [ref, width x height] with NO resampling.
-
-    Cells of the window not covered by `src` become NoData. dtype/NoData of the source are kept.
-    """
     with rasterio.open(src_path) as src:
         dc, dr = lattice_offset(ref, src.transform)            # src origin relative to ref origin
         # A source with NO declared NoData (GHSL 4326_3ss) must not default to 0: zero means 'no built-up area'.
@@ -92,8 +83,8 @@ def extract_aligned_window(src_path: str, dst_path: str, ref: Affine, width: int
     return {"offset_cols": dc, "offset_rows": dr, "covered_cells": covered, "window_cells": width * height}
 
 
+# Geodesic area (m2) of each pixel row of a north-up EPSG:4326 grid; used by sample.py and warp_area_quantity callers.
 def cell_area_m2_rows(transform: Affine, height: int, row0: int = 0, width: int = 1) -> np.ndarray:
-    """Geodesic area (m2) of each pixel row for a north-up EPSG:4326 grid (one value per row)."""
     dx, dy = transform.a, -transform.e
     out = np.empty(height)
     for i in range(height):
@@ -105,8 +96,8 @@ def cell_area_m2_rows(transform: Affine, height: int, row0: int = 0, width: int 
     return out
 
 
+# Windowed float64 sum over valid cells -> (sum, valid, nodata); used by sample.build_sample.
 def raster_sum(path: str, band: int = 1, block: int = 1024) -> tuple[float, int, int]:
-    """Windowed (float64) sum over valid cells -> (sum, valid_count, nodata_count)."""
     total, n_valid, n_nd = 0.0, 0, 0
     with rasterio.open(path) as ds:
         nd = ds.nodata
@@ -119,9 +110,9 @@ def raster_sum(path: str, band: int = 1, block: int = 1024) -> tuple[float, int,
     return total, n_valid, n_nd
 
 
+# Windowed crop to a lon/lat bbox snapped outward to source pixels, values untouched; used by sample.build_sample.
 def crop_to_bbox(src_path: str, dst_path: str, bbox_wgs84: tuple[float, float, float, float],
                  band: int = 1, block: int = 1024) -> dict:
-    """Windowed crop to a lon/lat bbox (snapped outward to the source pixel grid); values/NoData untouched."""
     with rasterio.open(src_path) as src:
         l, b, r, t = transform_bounds("EPSG:4326", src.crs, *bbox_wgs84, densify_pts=21)
         win = snap_window_outward(from_bounds(l, b, r, t, src.transform))
@@ -139,9 +130,9 @@ def crop_to_bbox(src_path: str, dst_path: str, bbox_wgs84: tuple[float, float, f
         return {"width": int(win.width), "height": int(win.height), "transform": tuple(tr)[:6], "crs": str(src.crs)}
 
 
+# Sum of valid source cells whose centre falls inside a target grid; used by warp_area_quantity.
 def source_sum_within_grid(src_path: str, dst_crs, dst_transform: Affine, dst_width: int, dst_height: int,
                            block: int = 1024) -> float:
-    """Sum of valid source cells whose CENTRE falls inside the target grid extent (each source cell counted once)."""
     from pyproj import Transformer
     dst_crs = rasterio.crs.CRS.from_user_input(dst_crs)
     x0, y0 = dst_transform.c, dst_transform.f
@@ -162,15 +153,11 @@ def source_sum_within_grid(src_path: str, dst_crs, dst_transform: Affine, dst_wi
     return total
 
 
+# Area-conserving warp of an m2_per_cell raster to another grid (fraction -> average -> x target cell area).
+# Mollweide fallback path; reports input/output sums. Used only when 4326_3ss is unavailable (tested).
 def warp_area_quantity(src_path: str, dst_path: str, dst_crs, dst_transform: Affine, dst_width: int, dst_height: int,
                        src_cell_area_m2: float, dst_cell_area_fn=None, *, block: int = 512,
                        dst_nodata: float = -1.0) -> dict:
-    """Area-conserving warp of an `m2_per_cell` raster (e.g. GHSL Mollweide) to another grid.
-
-    value -> fraction of source cell area -> area-weighted average (Resampling.average) -> * dst cell area.
-    `dst_cell_area_fn(transform, h, row0)` returns per-row cell areas for geographic targets; projected
-    targets with constant pixel area may omit it. Source/target NoData stay NoData (never become zero).
-    """
     dst_crs = rasterio.crs.CRS.from_user_input(dst_crs)
     in_sum = out_sum = 0.0
     with rasterio.open(src_path) as src:
@@ -214,9 +201,9 @@ def warp_area_quantity(src_path: str, dst_path: str, dst_crs, dst_transform: Aff
     return {"input_sum_m2": in_sum, "output_sum_m2": out_sum, "relative_diff": rel}
 
 
+# Nearest-neighbour warp of a categorical raster (class codes never interpolated); LULC fallback path (tested).
 def warp_categorical(src_path: str, dst_path: str, dst_crs, dst_transform: Affine, dst_width: int, dst_height: int,
                      *, block: int = 512, dst_nodata: int = 0) -> None:
-    """Nearest-neighbour warp of a categorical raster. Class codes are never interpolated."""
     dst_crs = rasterio.crs.CRS.from_user_input(dst_crs)
     with rasterio.open(src_path) as src:
         prof = dict(driver="GTiff", tiled=True, blockxsize=block, blockysize=block, compress="deflate",
@@ -231,8 +218,8 @@ def warp_categorical(src_path: str, dst_path: str, dst_crs, dst_transform: Affin
                 dst.write(out, 1, window=w)
 
 
+# Count-preserving aggregation by an integer factor (sum, never mean); helper for count rasters (tested).
 def block_sum(src_path: str, dst_path: str, factor: int) -> dict:
-    """Count-preserving aggregation by an integer factor (sum, never mean). NoData block = all-NoData."""
     with rasterio.open(src_path) as src:
         nd = src.nodata
         h, w = src.height // factor * factor, src.width // factor * factor

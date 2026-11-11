@@ -1,4 +1,4 @@
-"""Compact population, native residual and class sensitivity panels."""
+# Per-town evaluation figure: Level 2 population, Level 2 minus Level 1 residual and class sensitivity bars.
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
@@ -6,21 +6,25 @@ import numpy as np
 import rasterio
 
 
+# Reads `band` downsampled to at most 768 px on the long side (masked); used by plot_town for both panels.
+def _preview(src, band):
+    scale = min(1, 768 / max(src.width, src.height))
+    return src.read(band, masked=True, out_shape=(max(1, round(src.height * scale)),
+                                                   max(1, round(src.width * scale))))
+
+
+# Writes <stage>/evaluation.png from population.tif, comparison.tif and the town report; used by pipeline.run.
 def plot_town(stage, report, synthetic):
     fig = Figure(figsize=(12, 4.4), layout="constrained")
     FigureCanvasAgg(fig)
     fine, residual, classes = fig.subplots(1, 3, gridspec_kw={"width_ratios": [1, 1, 1.45]})
     with rasterio.open(stage / "population.tif") as src:
-        scale = min(1, 768 / max(src.width, src.height))
-        values = src.read(1, masked=True, out_shape=(max(1, round(src.height * scale)),
-                                                      max(1, round(src.width * scale))))
+        values = _preview(src, 1)
     pop = fine.imshow(values, cmap="viridis", interpolation="nearest")
     fig.colorbar(pop, ax=fine, shrink=.7, label="people / 23.5 m cell")
     fine.set_title("Level 2 population")
     with rasterio.open(stage / "comparison.tif") as src:
-        scale = min(1, 768 / max(src.width, src.height))
-        values = src.read(3, masked=True, out_shape=(max(1, round(src.height * scale)),
-                                                      max(1, round(src.width * scale))))
+        values = _preview(src, 3)
         bounds = src.bounds
         coords = (bounds.left, bounds.right, bounds.bottom, bounds.top)
     observed = values.compressed()

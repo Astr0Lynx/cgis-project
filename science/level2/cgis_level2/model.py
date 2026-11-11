@@ -1,4 +1,5 @@
-"""Blockwise weighting, Census normalization and matched-support diagnostics."""
+# Per-town model: blockwise weights, Census normalisation, population COG, matched-support comparison with
+# Level 1 and soft/hard class sensitivity.
 
 from contextlib import ExitStack
 from time import perf_counter
@@ -18,6 +19,7 @@ MASS_ABS_TOL = 1e-3
 MASS_REL_TOL = 1e-6
 
 
+# Owned cells, class codes, Level 1 prior and soft/hard weights for one window; used twice per window by build_town.
 def block_inputs(grid, window, town, neighbors, land, legend, coarse):
     cells = owned_cells(grid, window, town.census_id, town.polygon, neighbors)
     codes = land.read(window)[cells.rows, cells.cols]
@@ -35,6 +37,8 @@ def block_inputs(grid, window, town, neighbors, land, legend, coarse):
     return cells, codes, prior, weights, (fi, ci, areas)
 
 
+# Writes the 3-band native-grid comparison GeoTIFF (Level 1, Level 2, difference) and returns the common values;
+# used by build_town.
 def _write_comparison(path, coarse, src, common_area, level2):
     common = common_area > 0
     level1 = common_area * coarse.density.ravel()
@@ -53,6 +57,7 @@ def _write_comparison(path, coarse, src, common_area, level2):
     return level1[common], level2[common], delta[common]
 
 
+# Bias, MAE, RMSE and total differences on matched native support; used by build_town.
 def _comparison_metrics(level1, level2, delta):
     if not len(delta):
         raise ValueError("no common Level 1 and classified Level 2 support")
@@ -70,6 +75,7 @@ def _comparison_metrics(level1, level2, delta):
     }
 
 
+# Checks COG layout and stored values, returning (valid cells, total people); used by build_town.
 def _cog_stats(path):
     valid_cells, total = 0, 0.0
     with rasterio.open(path) as src:
@@ -84,6 +90,7 @@ def _cog_stats(path):
     return valid_cells, total
 
 
+# Builds population.tif and comparison.tif for one town in `stage` and returns its report; used by pipeline.run.
 def build_town(stage, town, neighbors, src, band, land_source, legend, method, guard):
     started = perf_counter()
     grid = FineGrid.for_polygon(town.polygon)

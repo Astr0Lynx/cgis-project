@@ -1,9 +1,5 @@
-"""Single source of truth for every required external input.
-
-Nothing here downloads data. `build_inventory()` renders the registry to the machine-readable
-`source_inventory.json`; access status and checksums are filled from `science/inputs/source_state.json`
-(written by the fetch tooling) so the registry itself stays declarative and deterministic.
-"""
+# Declarative registry of every external input (URLs, editions, licences, units, access state).
+# Nothing here downloads. build_inventory() merges the registry with the fetch state into source_inventory.json.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
@@ -11,7 +7,7 @@ from typing import Any
 
 WORLDPOP_YEARS = tuple(range(2001, 2012))   # exactly 11 annual rasters
 GHSL_EPOCHS = (2000, 2005, 2010)          # required by the original flowchart
-GHSL_EXTRA_EPOCHS = (2015,)               # added for 2011 only: D-L1-01 option C, approved 2026-11-07 (see Agent 2 METHODOLOGY_DECISION.md)
+GHSL_EXTRA_EPOCHS = (2015,)               # used for the 2011 Level 1 weights only (decision D-L1-01 option C, approved 2026-11-07)
 
 WORLDPOP_BASE = "https://data.worldpop.org/GIS/Population/Global_2000_2020"
 GHSL_BASE = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL"
@@ -21,9 +17,10 @@ AVAILABLE, REQUESTED, RESTRICTED, MISSING = "available", "requested", "restricte
 ACCESS_STATES = (AVAILABLE, REQUESTED, RESTRICTED, MISSING)
 
 
+# One registry entry; consumed by fetch, manifest, sample and the inventory.
 @dataclass(frozen=True)
 class Source:
-    source_id: str            # also the stable dataset-id family (see SHARED_CONTRACTS section 1)
+    source_id: str            # also the stable dataset-id family
     title: str
     category: str             # worldpop | ghsl_built_total | ghsl_built_nres | ghsl_pop | census | boundary | lulc
     year: int | None
@@ -43,6 +40,7 @@ class Source:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
+# Registry entry for WorldPop unconstrained India counts of one year; used by all_sources.
 def _worldpop(year: int) -> Source:
     return Source(
         source_id=f"india-worldpop-unconstrained-{year}",
@@ -62,12 +60,14 @@ def _worldpop(year: int) -> Source:
     )
 
 
+# Global zip URL of a GHSL product/epoch/grid; used by the GHSL entry builders.
 def _ghsl_url(product: str, epoch: int, grid: str) -> str:
     fam = "GHS_BUILT_S_GLOBE_R2023A" if product.startswith("GHS_BUILT_S") else "GHS_POP_GLOBE_R2023A"
     pid = f"{product}_E{epoch}_GLOBE_R2023A_{grid}"
     return f"{GHSL_BASE}/{fam}/{pid}/V1-0/{pid}_V1_0.zip"
 
 
+# Per-tile URL pattern and tiling scheme of a GHSL product; used by the GHSL entry builders.
 def _ghsl_tiles(product: str, epoch: int, grid: str) -> dict[str, Any]:
     fam = "GHS_BUILT_S_GLOBE_R2023A" if product.startswith("GHS_BUILT_S") else "GHS_POP_GLOBE_R2023A"
     pid = f"{product}_E{epoch}_GLOBE_R2023A_{grid}"
@@ -80,6 +80,7 @@ def _ghsl_tiles(product: str, epoch: int, grid: str) -> dict[str, Any]:
 _EXTRA_NOTE = "Additional epoch authorised only for the 2011 Level 1 weights (D-L1-01 option C)."
 
 
+# Registry entry for GHS-BUILT-S total or NRES surface of one epoch; used by all_sources.
 def _ghsl_built(epoch: int, nres: bool) -> Source:
     product = "GHS_BUILT_S_NRES" if nres else "GHS_BUILT_S"
     kind = "NRES" if nres else "total"
@@ -101,12 +102,13 @@ def _ghsl_built(epoch: int, nres: bool) -> Source:
         access=AVAILABLE,
         download_mechanism="HTTPS GET public JRC open-data FTP (global zip or per-tile zips)",
         tiles=_ghsl_tiles(product, epoch, "4326_3ss"),
-        extra={"primary_grid": "4326_3ss (requested by Agent 2: docs/change-requests/agent2-to-agent1-inputs.md)",
+        extra={"primary_grid": "4326_3ss (on the WorldPop lattice, as required by the Level 1 model)",
                "alt_grid_mollweide_100m_url": _ghsl_url(product, epoch, "54009_100"),
                "required_by_flowchart": epoch in GHSL_EPOCHS},
     )
 
 
+# Registry entry for GHS-POP of one epoch (evaluation reference); used by all_sources.
 def _ghsl_pop(epoch: int) -> Source:
     return Source(
         source_id=f"india-ghsl-pop-{epoch}",
@@ -125,6 +127,7 @@ def _ghsl_pop(epoch: int) -> Source:
     )
 
 
+# Registry entry for a geoBoundaries ADM layer (diagnostic zones only); used by all_sources.
 def _geoboundaries(level: str, n_expected: int, lic: str, year: int) -> Source:
     return Source(
         source_id=f"india-geoboundaries-{level.lower()}",
@@ -132,7 +135,7 @@ def _geoboundaries(level: str, n_expected: int, lic: str, year: int) -> Source:
         category="boundary_diagnostic", year=year,
         url=f"https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/IND/{level}/geoBoundaries-IND-{level}.geojson",
         landing_page="https://www.geoboundaries.org/",
-        edition=f"geoBoundaries gbOpen, commit 9469f09 (same pin as Agent 2); {n_expected} units expected",
+        edition=f"geoBoundaries gbOpen, commit 9469f09 (same pin as Level 1); {n_expected} units expected",
         license=lic, crs="EPSG:4326 (CRS84)", units="n/a (polygons)",
         semantics="Generic ADM boundaries, claimed-extent India; carries NO Census 2011 geocodes, so it cannot satisfy the "
                   "Census join (D3). Usable only as evaluation zones.",
@@ -157,7 +160,7 @@ STATIC: tuple[Source, ...] = (
         download_mechanism="Manual/portal download of state-wise PCA tables (human step; no scripted bypass).",
         notes="Village/town-level PCA is openly downloadable WITHOUT login per district via the Census NADA catalog "
               "(District Census Handbook Part B / PCA workbooks, e.g. https://censusindia.gov.in/nada/index.php/catalog/<id>), "
-              "but no districts are selected yet (needs Agent 3's town list). State/district level is registered separately. See BLOCKER_REQUEST.md B2.",
+              "but no districts are selected yet (needs the Level 2 town list). State/district level is registered separately.",
     ),
     Source(
         source_id="india-census-2011-pca-state-district", title="Census of India 2011 PCA, India/State/District totals (DDW_PCA0000_2011_Indiastatedist.xlsx)",
@@ -189,13 +192,13 @@ STATIC: tuple[Source, ...] = (
     ),
     Source(
         source_id="india-admin-boundaries-2011", title="India 2011 administrative boundaries aligned to Census codes",
-        category="boundary", year=2011, url="(town/village polygons: authoritative source to be confirmed by human; see BLOCKER_REQUEST.md B3)",
+        category="boundary", year=2011, url="(town/village polygons: authoritative source to be confirmed by a human)",
         landing_page="https://bhuvan.nrsc.gov.in/ or https://onlinemaps.surveyofindia.gov.in/",
         edition="unconfirmed", license="UNCONFIRMED – Survey of India / Census restrictions apply; do not substitute silently",
         crs="EPSG:4326 expected", units="n/a (polygons)",
         semantics="Polygons carrying 2011 Census state/district/town/village geocodes; join integrity must be tested.",
         resolution="vector", access=MISSING,
-        download_mechanism="Not yet determined. Candidate open sources listed in BLOCKER_REQUEST.md.",
+        download_mechanism="Not yet determined. Candidate open lead: SHRUG 2.2 PC11 village/town polygons (CC BY-NC-SA 4.0), unverified.",
     ),
     Source(
         source_id="india-bhuvan-lulc-50k-2011-12", title="Bhuvan LULC 1:50,000, 2011-12 (shapefile, by AOI/district)",
@@ -208,11 +211,12 @@ STATIC: tuple[Source, ...] = (
                   "Use nearest-neighbour/rasterise-by-class, never averaging.",
         resolution="1:50,000 vector", access=RESTRICTED,
         download_mechanism="Portal request (<=5 districts or AOI, purpose statement); link emailed after approval.",
-        notes="Human action required – see BLOCKER_REQUEST.md B1. 2011-12 is a different period from Census 2011; document.",
+        notes="Human action required: an authorised operator must request it on the Bhuvan portal. 2011-12 is a different period from Census 2011; document.",
     ),
 )
 
 
+# All registry entries with unique ids; used by the CLI, fetch tests, sample builder and inventory.
 def all_sources() -> list[Source]:
     out = [_worldpop(y) for y in WORLDPOP_YEARS]
     eps = GHSL_EPOCHS + GHSL_EXTRA_EPOCHS
@@ -227,8 +231,8 @@ def all_sources() -> list[Source]:
     return out
 
 
+# Registry merged with fetch state (size, sha256, tiles, access) for the `inventory` CLI.
 def build_inventory(state: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Render the registry; `state` maps source_id -> {size_bytes, sha256, access, local_path, retrieved}."""
     state = state or {}
     items = []
     for s in all_sources():
@@ -246,10 +250,11 @@ def build_inventory(state: dict[str, Any] | None = None) -> dict[str, Any]:
     return {"inventory_version": 1, "count": len(items), "sources": items}
 
 
+# Human-readable table of the inventory, written next to the JSON by the `inventory` CLI.
 def render_markdown(inv: dict) -> str:
     rows = ["# Source inventory (generated – do not edit by hand)", "",
             "Regenerate: `cd science/data && PYTHONPATH=. python -m cgis_data inventory`. Sizes for GHSL rows are the "
-            "GLOBAL zip; India needs only the tiles listed in `tiles` (see HARMONIZATION.md). `sha256` is blank until fetched.", "",
+            "GLOBAL zip; India needs only the tiles listed in `tiles`. `sha256` is blank until fetched.", "",
             "| source_id | year | access | units | CRS | size (bytes) | sha256 | license |", "|---|---|---|---|---|---|---|---|"]
     for r in inv["sources"]:
         sha = (r.get("sha256") or "")[:12]

@@ -1,18 +1,16 @@
-"""Level 1 vs GHS-POP evaluation on common spatial support and unit (people per cell / per zone).
-
-Reference: GHS-POP R2023A (3 arc-second, counts). It is itself a *model* (GHSL disaggregation of census
-data with built-up surface) — it is a reference, not ground truth. For years between GHS-POP epochs the
-reference is a linear interpolation of the bracketing epochs (flagged ``reference_temporal=interpolated``).
-
-Supports (all count-preserving aggregations on the WorldPop grid):
-  * s=1   (~100 m native cells): streaming moments + a deterministic systematic sample for Spearman;
-  * s=k   blocks (e.g. 10 = ~1 km, 100 = ~10 km): full in-memory aggregates, exact Spearman;
-  * zones (optional rasterized admin polygons): per-zone totals (state/district conservation + metrics).
-The same metrics are computed for the unmodified WorldPop input as a baseline, so the effect of the
-redistribution itself is visible. NOTE: at supports that are unions of whole parents (s multiple of the
-parent block) Level 1 equals WorldPop by construction (mass conservation), so differences vs the baseline
-can only appear at sub-parent supports (s=1) and across zone boundaries.
-"""
+# Level 1 vs GHS-POP evaluation on common spatial support and unit (people per cell / per zone).
+# Reference: GHS-POP R2023A (3 arc-second, counts). It is itself a *model* (GHSL disaggregation of census
+# data with built-up surface) — it is a reference, not ground truth. For years between GHS-POP epochs the
+# reference is a linear interpolation of the bracketing epochs (flagged ``reference_temporal=interpolated``).
+#
+# Supports (all count-preserving aggregations on the WorldPop grid):
+#   * s=1   (~100 m native cells): streaming moments + a deterministic systematic sample for Spearman;
+#   * s=k   blocks (e.g. 10 = ~1 km, 100 = ~10 km): full in-memory aggregates, exact Spearman;
+#   * zones (optional rasterized admin polygons): per-zone totals (state/district conservation + metrics).
+# The same metrics are computed for the unmodified WorldPop input as a baseline, so the effect of the
+# redistribution itself is visible. NOTE: at supports that are unions of whole parents (s multiple of the
+# parent block) Level 1 equals WorldPop by construction (mass conservation), so differences vs the baseline
+# can only appear at sub-parent supports (s=1) and across zone boundaries.
 
 from __future__ import annotations
 
@@ -27,16 +25,19 @@ import numpy as np
 import rasterio
 from rasterio.windows import Window
 
-from .config import Config, load_config
+from .config import Config
 from .grid import ensure_proj_data, grid_from_raster
 from .monitor import ResourceMonitor
+from . import core
 from . import pipeline as P
 
 log = logging.getLogger("cgis_level1.eval")
 
 
+# Model ``x`` vs reference ``y`` (1-D float64, same support).
+# Full metric set (Pearson, log Pearson, Spearman, MAE, RMSE, bias, R2, residual percentiles) for
+# in-memory supports and the systematic sample; used by evaluate_year.
 def metrics(x: np.ndarray, y: np.ndarray, *, spearman: bool = True) -> dict:
-    """Model ``x`` vs reference ``y`` (1-D float64, same support)."""
     n = int(x.size)
     if n == 0:
         return {"n": 0}
@@ -64,6 +65,7 @@ def metrics(x: np.ndarray, y: np.ndarray, *, spearman: bool = True) -> dict:
     return out
 
 
+# Metrics from summed moments for the streamed 100 m support (evaluate_year).
 def moments_metrics(m: dict) -> dict:
     n = m["n"]
     if not n:
@@ -79,25 +81,17 @@ def moments_metrics(m: dict) -> dict:
             "r2_vs_reference": 1 - mse / vy if vy > 0 else None}
 
 
-def _moments(x: np.ndarray, y: np.ndarray) -> dict:
-    return {"n": int(x.size), "sx": float(x.sum()), "sy": float(y.sum()), "sxx": float((x * x).sum()),
-            "syy": float((y * y).sum()), "sxy": float((x * y).sum()), "sad": float(np.abs(x - y).sum())}
-
-
+# Adds two moment dicts (evaluate_year.consume).
 def _addm(a: dict, b: dict) -> dict:
     return {k: a.get(k, 0) + v for k, v in b.items()}
-
-
-def _blocksum(a: np.ndarray, s: int) -> np.ndarray:
-    h, w = a.shape
-    return a.reshape(h // s, s, w // s, s).sum(axis=(1, 3))
 
 
 _ZONES: dict = {}
 
 
+# Rasterize zone polygons (cell-centre rule => each cell in exactly one zone) for one window.
+# Cached per worker in _ZONES; used by eval_tile.
 def _zone_raster(cfg: Config, layer: dict, r: int, c: int, h: int, w: int) -> np.ndarray:
-    """Rasterize zone polygons (cell-centre rule => each cell in exactly one zone) for one window."""
     from rasterio.features import rasterize
     key = layer["name"]
     if key not in _ZONES:
@@ -120,11 +114,12 @@ def _zone_raster(cfg: Config, layer: dict, r: int, c: int, h: int, w: int) -> np
     return rasterize(shapes, out_shape=(h, w), transform=t, fill=0, dtype="int32", all_touched=False)
 
 
+# Per-tile evaluation in a worker: moments at 100 m, systematic sample, block aggregates and zone
+# totals for Level 1, WorldPop baseline and GHS-POP. Submitted by evaluate_year.
 def eval_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
     cfg: Config = P._W["cfg"]
     target = P._target(cfg)
     l1 = P._src(("l1", year), lambda: rasterio.open(cfg.out_dir / "cog" / f"{cfg.dataset_id(year)}.tif"))
-    wp = P._src(("wp", year), lambda: rasterio.open(cfg.worldpop_path(year)))
     a = l1.read(1, window=Window(c, r, w, h)).astype(np.float64)
     valid = np.isfinite(a) & (a != l1.nodata)
     out: dict = {"r": r, "c": c, "h": h, "w": w}
@@ -142,9 +137,9 @@ def eval_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
     x = np.where(valid, a, 0.0)
     xb = np.where(valid, b, 0.0)
     y = np.where(valid, ref, 0.0)
-    out["m1"] = _moments(x[valid], y[valid])
-    out["m1_baseline"] = _moments(xb[valid], y[valid])
-    out["m1_l1_vs_wp"] = _moments(x[valid], xb[valid])
+    out["m1"] = core.moments(x[valid], y[valid])
+    out["m1_baseline"] = core.moments(xb[valid], y[valid])
+    out["m1_l1_vs_wp"] = core.moments(x[valid], xb[valid])
     # deterministic systematic sample (global cell indices) for s=1 Spearman
     st = cfg.eval_sample_step
     rows = np.arange(r, r + h) + target.row0
@@ -163,8 +158,8 @@ def eval_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
             o = np.zeros((H, W))
             o[:h, :w] = z
             return o
-        out[f"s{s}"] = {"l1": _blocksum(pad(x), s), "wp": _blocksum(pad(xb), s),
-                        "ref": _blocksum(pad(y), s), "n": _blocksum(pad(valid.astype(float)), s)}
+        out[f"s{s}"] = {"l1": core.blocksum(pad(x), s), "wp": core.blocksum(pad(xb), s),
+                        "ref": core.blocksum(pad(y), s), "n": core.blocksum(pad(valid.astype(float)), s)}
     for layer in P._W.get("zones", []):
         z = _zone_raster(cfg, layer, r, c, h, w)
         zz = np.where(valid, z, 0).ravel()
@@ -177,6 +172,7 @@ def eval_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
     return out
 
 
+# Loads the configured zone layers' ids/names (evaluate_year); missing layers are skipped.
 def _zone_layers(cfg: Config) -> list[dict]:
     layers = []
     for name, spec in cfg.eval_zones.items():
@@ -191,6 +187,7 @@ def _zone_layers(cfg: Config) -> list[dict]:
     return layers
 
 
+# Builds the year's evaluation bundle out_dir/eval/<id>.eval.json (+ figures). Used by cli `evaluate` and tests.
 def evaluate_year(cfg: Config, year: int, figures_dir: Path | None = None) -> dict:
     ensure_proj_data()
     cog = cfg.out_dir / "cog" / f"{cfg.dataset_id(year)}.tif"
@@ -216,6 +213,7 @@ def evaluate_year(cfg: Config, year: int, figures_dir: Path | None = None) -> di
     ref_total = ref_out = 0.0
     ref_out_cells = 0
 
+    # Merges one tile result into the national accumulators.
     def consume(d: dict) -> None:
         nonlocal ref_total, ref_out, ref_out_cells
         ref_total += d["ref_total_all_cells"]
@@ -330,6 +328,7 @@ def evaluate_year(cfg: Config, year: int, figures_dir: Path | None = None) -> di
     return bundle
 
 
+# Worker initialiser for the evaluation pool (config + zone layers).
 def _eval_init(cfg_path: str, layers: list[dict]) -> None:
     P._worker_init(cfg_path)
     P._W["zones"] = layers

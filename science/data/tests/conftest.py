@@ -1,4 +1,4 @@
-"""Fixtures here are SYNTHETIC and exist only to test code paths (never presented as real science)."""
+# Shared SYNTHETIC fixtures for the cgis_data tests (never presented as real science).
 import http.server
 import socketserver
 import threading
@@ -11,8 +11,10 @@ import rasterio
 from rasterio.transform import from_origin
 
 
+# Factory writing a small single-band GeoTIFF into tmp_path; used by most raster tests.
 @pytest.fixture
 def make_raster(tmp_path):
+    # Writes one raster with the given data/CRS/transform/NoData and returns its path.
     def _make(name="r.tif", data=None, crs="EPSG:4326", transform=None, nodata=-99999.0, dtype="float32"):
         data = np.arange(64, dtype=dtype).reshape(8, 8) if data is None else data
         transform = transform or from_origin(77.0, 18.0, 0.01, 0.01)
@@ -24,10 +26,11 @@ def make_raster(tmp_path):
     return _make
 
 
+# Static HTTP handler that honours a single 'Range: bytes=N-' header (toggle with honour_range).
 class RangeHandler(http.server.SimpleHTTPRequestHandler):
-    """Static handler that honours a single 'Range: bytes=N-' header (SimpleHTTPRequestHandler does not)."""
     honour_range = True
 
+    # Serves a 206 partial body for Range requests, else the normal file.
     def do_GET(self):
         rng = self.headers.get("Range")
         path = Path(self.translate_path(self.path))
@@ -41,10 +44,12 @@ class RangeHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data[start:])
 
+    # Silences request logging.
     def log_message(self, *a):
         pass
 
 
+# Local HTTP server over tmp_path/srv; yields (served_dir, base_url) for fetch tests.
 @pytest.fixture
 def http_server(tmp_path):
     served = tmp_path / "srv"

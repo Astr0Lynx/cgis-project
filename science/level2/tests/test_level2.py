@@ -1,3 +1,5 @@
+# Level 2 tests on small synthetic inputs: golden weighting, masks, ownership, input validation, checkpoints,
+# v1 manifest/COG validity and tiling independence. Run from the repository root.
 from dataclasses import replace
 import json
 
@@ -10,7 +12,7 @@ from rio_cogeo.cogeo import cog_validate
 from shapely.geometry import Polygon, box
 
 from ingestion.cli import main as ingest
-from ingestion.paths import sha256_file
+from ingestion.importer import sha256_file
 from science.level2.cgis_level2 import grid
 from science.level2.cgis_level2.inputs import LandClass, Source, Town, read_json, read_legend, read_towns
 from science.level2.cgis_level2.model import build_town
@@ -18,12 +20,14 @@ from science.level2.cgis_level2.pipeline import _method, _write_json, run
 from science.level2.cgis_level2.synthetic import _write_raster, make_fixture
 
 
+# Synthetic fixture directory and its parsed config.
 @pytest.fixture
 def fixture_config(tmp_path):
     path = make_fixture(tmp_path / "inputs")
     return path, read_json(path)
 
 
+# Two-cell golden case (one fine cell straddles two coarse columns) and a compute() helper around build_town.
 @pytest.fixture
 def golden(tmp_path):
     pixel = grid.PIXEL
@@ -36,6 +40,7 @@ def golden(tmp_path):
     town = Town("A", "town-a", "A", "west", "urban", 100, box(0, 0, 2 * pixel, pixel))
     source = Source(tmp_path / "classes.tif", {"kind": "raster"})
 
+    # Runs build_town into a fresh stage and returns (report, population band, comparison bands).
     def compute(primary="hard", settlement=town, lulc=source, mapping=legend, stage="result"):
         target = tmp_path / stage
         target.mkdir()
@@ -53,6 +58,7 @@ def golden(tmp_path):
 
 
 @pytest.mark.parametrize("model,expected", [("hard", [100, 0]), ("soft", [400 / 7, 300 / 7])])
+# Hard and soft allocations, Level 1 support total and comparison bands match hand-computed values.
 def test_golden_weighting_and_common_support(golden, model, expected):
     _, _, compute, _, _ = golden
     report, values, comparison = compute(model)
@@ -65,6 +71,7 @@ def test_golden_weighting_and_common_support(golden, model, expected):
     assert report["sensitivity"]["people_shifted_between_soft_and_hard"] == pytest.approx(300 / 7)
 
 
+# A zero Level 1 prior falls back to eligible area only.
 def test_zero_prior_falls_back_only_on_eligible_area(golden):
     folder, affine, compute, _, _ = golden
     _write_raster(folder / "prior.tif", np.array([[0, 0]], dtype="float32"), affine, -99999)
@@ -74,6 +81,7 @@ def test_zero_prior_falls_back_only_on_eligible_area(golden):
     assert report["matched_level1_comparison"]["relative_total_delta"] is None
 
 
+# No hard-eligible class, missing LULC and unknown codes all fail.
 @pytest.mark.parametrize("code,message", [(2, "no admissible"), (-9999, "no owned or classified"), (7, "unknown LULC")])
 def test_no_hard_eligible_or_missing_land_cover(golden, code, message):
     folder, _, compute, _, _ = golden
@@ -83,6 +91,7 @@ def test_no_hard_eligible_or_missing_land_cover(golden, code, message):
         compute()
 
 
+# A zero-population town yields valid zeros, NoData where unclassified, and correct coverage fractions.
 def test_valid_zero_population_and_nodata(golden):
     folder, affine, compute, town, _ = golden
     _write_raster(folder / "prior.tif", np.array([[-99999, 12]], dtype="float32"), affine, -99999)
@@ -97,6 +106,7 @@ def test_valid_zero_population_and_nodata(golden):
     assert report["common_coverage_of_census_polygon"] == pytest.approx(.25)
 
 
+# An all-NoData prior cannot produce a comparison.
 def test_all_prior_nodata_cannot_produce_a_comparison(golden):
     folder, affine, compute, _, _ = golden
     _write_raster(folder / "prior.tif", np.array([[-99999, -99999]], dtype="float32"), affine, -99999)
@@ -104,6 +114,7 @@ def test_all_prior_nodata_cannot_produce_a_comparison(golden):
         compute()
 
 
+# Negative Level 1 counts are rejected.
 def test_negative_prior_is_rejected(golden):
     folder, affine, compute, _, _ = golden
     _write_raster(folder / "prior.tif", np.array([[-2, 0]], dtype="float32"), affine, -99999)
@@ -111,6 +122,7 @@ def test_negative_prior_is_rejected(golden):
         compute()
 
 
+# Fractional edges and holes give exact areas and neighbouring towns never share a cell.
 def test_fractional_edges_holes_and_deterministic_ownership():
     p = grid.PIXEL
     area = grid.CELL_AREA
@@ -127,6 +139,7 @@ def test_fractional_edges_holes_and_deterministic_ownership():
     assert len(no_cell.area) == 0
 
 
+# Self-intersecting polygons and unsupported Level 1 CRSs are rejected.
 def test_invalid_polygon_and_crs(golden):
     folder, _, compute, _, _ = golden
     with pytest.raises(ValueError, match="invalid"):
@@ -137,6 +150,7 @@ def test_invalid_polygon_and_crs(golden):
         compute()
 
 
+# Duplicate, missing, renamed, overlapping or polygon-less Census rows fail the join.
 @pytest.mark.parametrize("defect,match", [
     ("duplicate", "duplicate census_id"),
     ("missing", "missing PCA total"),
@@ -169,6 +183,7 @@ def test_census_join_failures(fixture_config, defect, match):
         read_towns(Source(selection, {}), Source(pca, {}), Source(boundaries, {}), True)
 
 
+# Legend labels must match class weights and real mode needs the approved hard method.
 def test_legend_codes_and_approved_mode(fixture_config):
     path, raw = fixture_config
     legend = Source(path.parent / "legend.json", {})
@@ -183,6 +198,7 @@ def test_legend_codes_and_approved_mode(fixture_config):
         _method(raw, False)
 
 
+# Vector LULC is rasterised categorically and allocates like the raster case.
 def test_vector_land_cover_categorical(golden):
     import fiona
 
@@ -198,6 +214,7 @@ def test_vector_land_cover_categorical(golden):
     assert result["lulc_coverage_of_census_polygon"] == 1
 
 
+# Pilot, full run, checkpoint reuse, byte-stable manifest, ingestion validation, COG validity and corruption detection.
 def test_manifest_cog_retry_and_checkpoint_integrity(fixture_config, capsys):
     path, _ = fixture_config
     pilot = run(path, only="fixture-alpha")
@@ -228,6 +245,7 @@ def test_manifest_cog_retry_and_checkpoint_integrity(fixture_config, capsys):
     assert manifest.read_bytes() == old
 
 
+# A changed source file fails its checksum before anything is published.
 def test_checksummed_source_changes_fail_before_publication(fixture_config):
     path, _ = fixture_config
     with (path.parent / "lulc.tif").open("ab") as stream:
@@ -237,6 +255,7 @@ def test_checksummed_source_changes_fail_before_publication(fixture_config):
     assert not (path.parent / "outputs/manifest.json").exists()
 
 
+# Results do not depend on the processing block size.
 def test_tiling_independence(fixture_config, monkeypatch):
     path, raw = fixture_config
     first = run(path)

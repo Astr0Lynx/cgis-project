@@ -1,8 +1,6 @@
-"""Idempotent, resumable, checksum-verified downloads for UNRESTRICTED public sources only.
-
-Policy: this module never logs in, never follows portal forms and refuses any source whose registry
-access state is not `available`. State (size, sha256) is recorded in a JSON sidecar, not in code.
-"""
+# Idempotent, resumable, checksum-verified downloads of UNRESTRICTED public sources only.
+# Never logs in or follows portal forms; refuses any source whose registry access state is not `available`.
+# Per-file size/sha256 is recorded in the JSON state file (science/results/data/source_state.json).
 from __future__ import annotations
 
 import contextlib
@@ -22,18 +20,22 @@ CHUNK = 1024 * 1024
 UA = "cgis-agent01-fetch/0.1 (academic research; contact via repo owner)"
 
 
+# Base error for download failures; raised by download_resumable / fetch_tiles.
 class FetchError(RuntimeError):
     pass
 
 
+# Raised by assert_fetchable for gated (requested/restricted/missing) sources.
 class RestrictedSourceError(FetchError):
     pass
 
 
+# Raised when a downloaded or existing file does not match the recorded sha256.
 class ChecksumMismatch(FetchError):
     pass
 
 
+# Streams a file through SHA-256; used here, in manifest.py, sample.py and vector_sample.py.
 def sha256_file(path: str | Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -42,9 +44,9 @@ def sha256_file(path: str | Path) -> str:
     return h.hexdigest()
 
 
+# Exclusive flock around read-modify-write of the shared state file; used by fetch_source, _merge_tiles and the `probe` CLI.
 @contextlib.contextmanager
 def _locked_state(state_path: Path):
-    """Exclusive lock around read-modify-write of the shared JSON state (several fetches may run at once)."""
     state_path.parent.mkdir(parents=True, exist_ok=True)
     with open(state_path.with_name(state_path.name + ".lock"), "w") as lk:
         fcntl.flock(lk, fcntl.LOCK_EX)
@@ -54,12 +56,14 @@ def _locked_state(state_path: Path):
             fcntl.flock(lk, fcntl.LOCK_UN)
 
 
+# Writes the state JSON via a temp file + rename; used under _locked_state.
 def write_state_atomic(state_path: Path, state: dict) -> None:
     tmp = state_path.with_name(state_path.name + f".tmp{os.getpid()}")
     tmp.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
     os.replace(tmp, state_path)
 
 
+# Reads the state JSON, retrying briefly if a writer is mid-write; used by fetch_* and __main__._state.
 def read_state(state_path: Path, retries: int = 5) -> dict:
     for i in range(retries):
         try:
@@ -69,12 +73,14 @@ def read_state(state_path: Path, retries: int = 5) -> dict:
     raise FetchError(f"{state_path} unreadable after {retries} tries")
 
 
+# Refuses scripted download of any non-`available` source; used by fetch_source and fetch_tiles.
 def assert_fetchable(src: Source) -> None:
     if src.access != AVAILABLE:
         raise RestrictedSourceError(
-            f"{src.source_id} has access state {src.access!r}; scripted download refused (see BLOCKER_REQUEST.md)")
+            f"{src.source_id} has access state {src.access!r}; scripted download refused (gated source: needs a human access request)")
 
 
+# HEAD request returning Content-Length (a hint only); used by download_resumable and the `probe` CLI.
 def head_size(url: str, session: requests.Session | None = None, timeout: int = 30) -> int | None:
     s = session or requests
     r = s.head(url, allow_redirects=True, timeout=timeout, headers={"User-Agent": UA})
@@ -83,15 +89,12 @@ def head_size(url: str, session: requests.Session | None = None, timeout: int = 
     return int(n) if n is not None else None
 
 
+# Downloads url -> dest via dest.part, resuming with HTTP Range when honoured; skips a dest that
+# already verifies. Returns {path,size,sha256,resumed_from,skipped}. Used by fetch_source and fetch_tiles.
 def download_resumable(url: str, dest: str | Path, *, expected_sha256: str | None = None,
                        expected_size: int | None = None, session: requests.Session | None = None,
                        max_retries: int = 8, timeout: int = 60,
                        progress: Callable[[int, int | None], None] | None = None) -> dict:
-    """Download `url` to `dest` via `dest.part`, resuming with HTTP Range when the server honours it.
-
-    Idempotent: if `dest` exists and verifies (size, then sha256 when given) nothing is transferred.
-    Returns {"path","size","sha256","resumed_from","skipped"}.
-    """
     dest = Path(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     part = dest.with_name(dest.name + ".part")
@@ -156,8 +159,8 @@ def download_resumable(url: str, dest: str | Path, *, expected_sha256: str | Non
     return {"path": str(dest), "size": size, "sha256": digest, "resumed_from": resumed_from, "skipped": False}
 
 
+# Fetches one registry source (+ companion files) into <root>/incoming/<source_id>/ and records state; used by the `fetch` CLI.
 def fetch_source(src: Source, root: str | Path, state_path: str | Path, **kw) -> dict:
-    """Fetch one registry source into `<root>/incoming/<source_id>/` and record state. Refuses gated sources."""
     assert_fetchable(src)
     state_path = Path(state_path)
     state = read_state(state_path)
@@ -182,6 +185,7 @@ def fetch_source(src: Source, root: str | Path, state_path: str | Path, **kw) ->
     return res
 
 
+# Merges per-tile records into the state file under the lock; used by fetch_tiles.
 def _merge_tiles(state_path: Path, source_id: str, tdone: dict) -> None:
     with _locked_state(state_path):
         cur = read_state(state_path)
@@ -189,8 +193,8 @@ def _merge_tiles(state_path: Path, source_id: str, tdone: dict) -> None:
         write_state_atomic(state_path, cur)
 
 
+# Fetches the listed GHSL tiles (404 = open-sea tile, recorded absent); used by the `tiles` CLI.
 def fetch_tiles(src: Source, tiles: list[tuple[int, int]], root: str | Path, state_path: str | Path, **kw) -> list[dict]:
-    """Fetch only the listed GHSL tiles (unrestricted JRC open data). Per-tile sha256 kept in the state sidecar."""
     assert_fetchable(src)
     if not src.tiles:
         raise FetchError(f"{src.source_id} has no tile scheme")

@@ -1,10 +1,9 @@
-"""National-scale integrity checks using DECIMATED reads (bounded memory). Footprint = geoBoundaries ADM1 (diagnostic)."""
+# National-scale integrity checks using DECIMATED reads (bounded memory); used by the `national` CLI.
+# Footprint = geoBoundaries ADM1 union (diagnostic, claimed extent).
 from __future__ import annotations
 
-import hashlib
 import json
 import resource
-import time
 
 import numpy as np
 import rasterio
@@ -20,13 +19,14 @@ from .harmonize import valid_mask
 ISLANDS = {"andaman_nicobar": (92.0, 6.5, 94.5, 14.0), "lakshadweep": (71.5, 8.0, 74.0, 12.6)}
 
 
+# Simplified union of ADM1 polygons used as the national footprint by the `national` CLI.
 def load_footprint(adm1_geojson: str, simplify_deg: float = 0.005):
     fc = json.load(open(adm1_geojson))
     return unary_union([shape(f["geometry"]) for f in fc["features"]]).simplify(simplify_deg)
 
 
+# Reads every step-th cell -> (valid mask, values, transform); used by coverage_vs_footprint.
 def decimated_presence(path: str, step: int = 16):
-    """Read every `step`-th cell (nearest) -> (valid mask, transform) for the whole raster at bounded memory."""
     with rasterio.open(path) as ds:
         h, w = ds.height // step, ds.width // step
         a = ds.read(1, out_shape=(h, w), resampling=Resampling.nearest)
@@ -34,6 +34,7 @@ def decimated_presence(path: str, step: int = 16):
         return valid_mask(a, ds.nodata), a, tr
 
 
+# NoData inside / data outside the footprint plus island checks for one WorldPop year; used by the `national` CLI.
 def coverage_vs_footprint(path: str, footprint, step: int = 16) -> dict:
     m, a, tr = decimated_presence(path, step)
     inside = ~geometry_mask([footprint], out_shape=m.shape, transform=tr, all_touched=False)
@@ -53,6 +54,7 @@ def coverage_vs_footprint(path: str, footprint, step: int = 16) -> dict:
     return rep
 
 
+# Detects WorldPop years with identical checksums; used by the `national` CLI.
 def duplicate_year_check(state: dict, years) -> dict:
     shas = {y: state[f"india-worldpop-unconstrained-{y}"].get("sha256") for y in years}
     seen, dup = {}, []
@@ -66,12 +68,13 @@ def duplicate_year_check(state: dict, years) -> dict:
             "missing_checksum_years": [y for y, s in shas.items() if s is None]}
 
 
+# Peak RSS of this process in MB; used by the `national` CLI and sample.build_sample.
 def peak_rss_mb() -> float:
     return round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)
 
 
+# Opens every downloaded GHSL tile zip and checks CRS, lattice offset and value range; used by the `national` CLI.
 def check_ghsl_tiles(state: dict, root, ref_transform, source_ids, step: int = 32) -> dict:
-    """Open every downloaded GHSL tile zip in place (/vsizip), verify CRS, pixel size, lattice offset and units (decimated)."""
     import zipfile
     from pathlib import Path
     from .harmonize import lattice_offset

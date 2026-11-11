@@ -1,4 +1,4 @@
-"""Golden tiny-raster tests for the scientific core (subtraction, interpolation, alignment, redistribution)."""
+# Golden tiny-raster tests for the scientific core (subtraction, interpolation, alignment, redistribution).
 
 import math
 
@@ -22,6 +22,7 @@ def test_residential_golden_values():
     assert st.nres_gt_total == 1 and st.nres_gt_total_m2 == 10 and st.missing == 1 and st.cells == 4
 
 
+# Checks: residential uint16 inputs no wraparound.
 def test_residential_uint16_inputs_no_wraparound():
     # uint16 subtraction would wrap to 65526; the core must work in float
     total = np.array([[5]], dtype=np.uint16)
@@ -30,6 +31,7 @@ def test_residential_uint16_inputs_no_wraparound():
     assert r[0, 0] == 0
 
 
+# Checks: residential rejects negative and mismatch.
 def test_residential_rejects_negative_and_mismatch():
     with pytest.raises(ValueError):
         core.residential(np.array([[-1.0]]), np.array([[0.0]]))
@@ -41,6 +43,7 @@ def test_residential_rejects_negative_and_mismatch():
 EP = (2000, 2005, 2010)
 
 
+# Checks: interpolation weights.
 def test_interpolation_weights():
     r = core.temporal_rule(2003, EP)
     assert r.kind == "interpolate"
@@ -50,11 +53,13 @@ def test_interpolation_weights():
     assert dict(r.terms) == pytest.approx({2005: 0.2, 2010: 0.8})
 
 
+# Checks: exact epochs.
 def test_exact_epochs():
     for e in EP:
         assert core.temporal_rule(e, EP).terms == ((e, 1.0),)
 
 
+# Checks: every target year has rule weights summing to one.
 def test_every_target_year_has_rule_weights_summing_to_one():
     for y in range(2001, 2011):
         r = core.temporal_rule(y, EP)
@@ -62,11 +67,13 @@ def test_every_target_year_has_rule_weights_summing_to_one():
         assert all(c >= 0 for _, c in r.terms)
 
 
+# Checks: 2011 requires explicit policy.
 def test_2011_requires_explicit_policy():
     with pytest.raises(ValueError, match="approved policy"):
         core.temporal_rule(2011, EP)
 
 
+# Checks: 2011 policies.
 def test_2011_policies():
     assert core.temporal_rule(2011, EP, "hold_2010").terms == ((2010, 1.0),)
     ex = core.temporal_rule(2011, EP, "extrapolate_linear")
@@ -77,11 +84,13 @@ def test_2011_policies():
         core.temporal_rule(2011, EP, "interpolate_2015")   # no extra epoch supplied
 
 
+# Checks: year before first epoch refused.
 def test_year_before_first_epoch_refused():
     with pytest.raises(ValueError):
         core.temporal_rule(1999, EP)
 
 
+# Checks: apply rule interpolation and extrapolation clip.
 def test_apply_rule_interpolation_and_extrapolation_clip():
     r = {2005: np.array([[10.0, 0.0, nan]]), 2010: np.array([[20.0, 0.0, 5.0]])}
     out = core.apply_rule(core.temporal_rule(2008, EP), r)
@@ -98,6 +107,7 @@ def test_shift_identity():
     assert np.array_equal(core.shift_weights(s, 0, 0), s[:2, :3])
 
 
+# Checks: shift half pixel golden.
 def test_shift_half_pixel_golden():
     s = np.array([[0, 4, 8], [4, 8, 0]], dtype=float)
     out = core.shift_weights(s, 0.5, 0.5)     # each target = mean of 2x2 (equal quarter overlaps)
@@ -106,6 +116,7 @@ def test_shift_half_pixel_golden():
     assert out.tolist() == [[2.0, 6.0]]
 
 
+# Checks: shift conserves interior mass.
 def test_shift_conserves_interior_mass():
     rng = np.random.default_rng(1)
     s = np.zeros((52, 52))
@@ -114,6 +125,7 @@ def test_shift_conserves_interior_mass():
     assert out.sum() == pytest.approx(s.sum(), rel=1e-12)
 
 
+# Checks: shift nan propagates.
 def test_shift_nan_propagates():
     s = np.array([[1, nan], [1, 1]], dtype=float)
     assert math.isnan(core.shift_weights(s, 0.5, 0.0)[0, 0])
@@ -126,6 +138,7 @@ def _ok(shape):
     return np.ones(shape, dtype=bool)
 
 
+# Checks: uniform weights spread evenly.
 def test_uniform_weights_spread_evenly():
     pop = np.array([[1, 2], [3, 4]], dtype=float)
     out, st = core.redistribute_blocks(pop, _ok(pop.shape), np.ones((2, 2)), 2)
@@ -133,6 +146,7 @@ def test_uniform_weights_spread_evenly():
     assert st.parents == 1 and st.parents_zero_weight == 0
 
 
+# Checks: uneven weights golden.
 def test_uneven_weights_golden():
     pop = np.array([[1, 2], [3, 4]], dtype=float)
     w = np.array([[1, 3], [0, 0]], dtype=float)
@@ -141,6 +155,7 @@ def test_uneven_weights_golden():
     assert st.sum_out == pytest.approx(10.0)
 
 
+# Checks: all zero weights fallbacks.
 def test_all_zero_weights_fallbacks():
     pop = np.array([[1, 2], [3, 4]], dtype=float)
     out, st = core.redistribute_blocks(pop, _ok(pop.shape), np.zeros((2, 2)), 2, "worldpop")
@@ -150,6 +165,7 @@ def test_all_zero_weights_fallbacks():
     assert np.allclose(out, 2.5)
 
 
+# Checks: nodata cells excluded and stay nodata.
 def test_nodata_cells_excluded_and_stay_nodata():
     pop = np.array([[1, 2], [3, -99999]], dtype=float)
     valid = pop != -99999
@@ -160,6 +176,7 @@ def test_nodata_cells_excluded_and_stay_nodata():
     assert st.valid_cells == 3 and st.sum_in == 6
 
 
+# Checks: missing weight is zero and counted.
 def test_missing_weight_is_zero_and_counted():
     pop = np.array([[4, 0], [0, 0]], dtype=float)
     w = np.array([[nan, 1], [1, 2]])
@@ -168,6 +185,7 @@ def test_missing_weight_is_zero_and_counted():
     assert st.weight_missing_cells == 1
 
 
+# Checks: parent boundaries no leakage.
 def test_parent_boundaries_no_leakage():
     pop = np.zeros((2, 4))
     pop[:, :2] = 1.0          # parent A: 4 people; parent B: 0 people
@@ -179,6 +197,7 @@ def test_parent_boundaries_no_leakage():
     assert st.parents_zero_weight == 1
 
 
+# Checks: partial parent all invalid block.
 def test_partial_parent_all_invalid_block():
     pop = np.full((2, 4), -1.0)
     valid = np.zeros((2, 4), dtype=bool)
@@ -188,6 +207,7 @@ def test_partial_parent_all_invalid_block():
     assert st.parents == 1 and np.isnan(out[:, 2:]).all()
 
 
+# Checks: conservation random property.
 def test_conservation_random_property():
     rng = np.random.default_rng(42)
     for k in (2, 5, 10):
@@ -202,6 +222,7 @@ def test_conservation_random_property():
         assert (out[valid] >= 0).all() and st.negative_out == 0
 
 
+# Checks: shape and sign validation.
 def test_shape_and_sign_validation():
     with pytest.raises(ValueError):
         core.redistribute_blocks(np.ones((3, 4)), _ok((3, 4)), np.ones((3, 4)), 2)
@@ -211,6 +232,7 @@ def test_shape_and_sign_validation():
         core.redistribute_blocks(np.ones((2, 2)), _ok((2, 2)), -np.ones((2, 2)), 2)
 
 
+# Checks: deterministic rerun.
 def test_deterministic_rerun():
     rng = np.random.default_rng(7)
     pop, w = rng.random((20, 20)), rng.random((20, 20))
@@ -219,6 +241,7 @@ def test_deterministic_rerun():
     assert a.tobytes() == b.tobytes()
 
 
+# Checks: zone mode matches block mode.
 def test_zone_mode_matches_block_mode():
     rng = np.random.default_rng(3)
     pop = rng.gamma(1, 3, (20, 30))

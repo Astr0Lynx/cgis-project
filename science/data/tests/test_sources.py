@@ -1,3 +1,4 @@
+# Tests for the source registry and inventory in sources.py.
 import json
 import dataclasses
 
@@ -6,6 +7,7 @@ import pytest
 from cgis_data import sources as S
 
 
+# Exactly 11 WorldPop years with count units and EPSG:4326.
 def test_exactly_eleven_worldpop_years():
     wp = [s for s in S.all_sources() if s.category == "worldpop"]
     assert sorted(s.year for s in wp) == list(range(2001, 2012)) and len(wp) == 11
@@ -13,6 +15,7 @@ def test_exactly_eleven_worldpop_years():
     assert all(s.url.endswith(f"ind_ppp_{s.year}.tif") for s in wp)
 
 
+# GHSL total/NRES cover 2000-2015 as m2_per_cell 4326_3ss surfaces.
 def test_ghsl_total_and_nres_epochs_and_units():
     tot = [s for s in S.all_sources() if s.category == "ghsl_built_total"]
     nres = [s for s in S.all_sources() if s.category == "ghsl_built_nres"]
@@ -25,11 +28,13 @@ def test_ghsl_total_and_nres_epochs_and_units():
     assert all(s.tiles and "{row}" in s.tiles["pattern"] for s in tot + nres)
 
 
+# GHS-POP epochs are people_per_cell.
 def test_ghsl_pop_is_reference_count():
     pop = [s for s in S.all_sources() if s.category == "ghsl_pop"]
     assert [s.year for s in pop] == [2000, 2005, 2010, 2015] and all(s.units == "people_per_cell" for s in pop)
 
 
+# The 2015 epoch is flagged as additional; 2010 as required.
 def test_additional_epoch_is_flagged_and_required_ones_are_not():
     by = {s.source_id: s for s in S.all_sources()}
     assert by["india-ghsl-built-total-2015"].extra["required_by_flowchart"] is False
@@ -38,6 +43,7 @@ def test_additional_epoch_is_flagged_and_required_ones_are_not():
     assert "54009_100" in by["india-ghsl-built-total-2010"].extra["alt_grid_mollweide_100m_url"]
 
 
+# geoBoundaries are diagnostic; Census-coded boundaries stay missing.
 def test_geoboundaries_are_diagnostic_not_census():
     by = {s.source_id: s for s in S.all_sources()}
     for k in ("india-geoboundaries-adm1", "india-geoboundaries-adm2"):
@@ -46,6 +52,7 @@ def test_geoboundaries_are_diagnostic_not_census():
     assert by["india-admin-boundaries-2011"].access == S.MISSING        # real requirement still open
 
 
+# Gated sources keep their restricted/missing access state.
 def test_gated_sources_are_never_marked_available():
     by = {s.source_id: s for s in S.all_sources()}
     assert by["india-bhuvan-lulc-50k-2011-12"].access == S.RESTRICTED
@@ -55,6 +62,7 @@ def test_gated_sources_are_never_marked_available():
     assert by["india-admin-boundaries-2011"].access == S.MISSING
 
 
+# Inventory has unique ids and merges fetch state.
 def test_inventory_unique_ids_and_state_merge():
     inv = S.build_inventory({"india-worldpop-unconstrained-2005": {"size_bytes": 5, "sha256": "ab"}})
     assert inv["count"] == len(inv["sources"]) == 11 + 4 + 4 + 4 + 2 + 5
@@ -63,6 +71,7 @@ def test_inventory_unique_ids_and_state_merge():
     json.dumps(inv)
 
 
+# An unknown access state is rejected.
 def test_inventory_rejects_bad_access_state():
     with pytest.raises(ValueError):
         S.build_inventory({"india-census-2011-pca": {"access": "wide-open"}})

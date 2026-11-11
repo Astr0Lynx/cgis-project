@@ -1,19 +1,18 @@
-"""Tiled, checkpointed, restartable India-wide Level 1 production.
-
-Per year:
-  1. Plan deterministic tiles (multiples of the parent block, anchored at the WorldPop raster origin).
-  2. Each tile (in a bounded worker pool): read WorldPop window, GHSL total/NRES epochs, compute R_e, apply
-     the temporal rule, redistribute within parents, write a compressed chunk GeoTIFF + JSON checkpoint.
-     Existing, checksum-verified checkpoints are skipped on restart.
-  3. Assemble chunks (VRT) into one lossless COG, re-read it to verify mass balance/NoData/stats, write
-     the run report and the v1 ingestion manifest entry.
-Never holds more than ``workers`` tiles in memory; never holds two years at once.
-"""
+# Tiled, checkpointed, restartable India-wide Level 1 production.
+# Per year:
+#   1. Plan deterministic tiles (multiples of the parent block, anchored at the WorldPop raster origin).
+#   2. Each tile (in a bounded worker pool): read WorldPop window, GHSL total/NRES epochs, compute R_e, apply
+#      the temporal rule, redistribute within parents, write a compressed chunk GeoTIFF + JSON checkpoint.
+#      Existing, checksum-verified checkpoints are skipped on restart.
+#   3. Assemble chunks (VRT) into one lossless COG, re-read it to verify mass balance/NoData/stats, write
+#      the run report and the v1 ingestion manifest entry.
+# Never holds more than ``workers`` tiles in memory; never holds two years at once.
 
 from __future__ import annotations
 
 import concurrent.futures as cf
 import datetime as dt
+import glob
 import hashlib
 import json
 import logging
@@ -29,7 +28,6 @@ import numpy as np
 import rasterio
 import rasterio.shutil
 from affine import Affine
-from rasterio.windows import Window
 
 from . import __version__, core
 from .config import POLICIES_2011, Config, load_config
@@ -43,6 +41,7 @@ COG_OPTIONS = {"COMPRESS": "DEFLATE", "PREDICTOR": "YES", "BLOCKSIZE": "512", "O
                "RESAMPLING": "NEAREST", "BIGTIFF": "IF_SAFER", "NUM_THREADS": "ALL_CPUS"}
 
 
+# Raised when a year cannot be produced or fails QA; caught by cli `run`.
 class RunError(RuntimeError):
     pass
 
@@ -50,6 +49,7 @@ class RunError(RuntimeError):
 # --------------------------------------------------------------------------------------------------
 # helpers
 # --------------------------------------------------------------------------------------------------
+# SHA-256 of a file; used for chunk checkpoints and the final COG (process_tile, checkpoint_ok, run_year).
 def sha256_file(p: Path, bufsize: int = 8 * 1024 * 1024) -> str:
     h = hashlib.sha256()
     with open(p, "rb") as f:
@@ -58,8 +58,9 @@ def sha256_file(p: Path, bufsize: int = 8 * 1024 * 1024) -> str:
     return h.hexdigest()
 
 
+# SHA-256 with a (path, size, mtime) cache so large inputs are hashed once.
+# Used by run_year, upstream_provenance, inventory.build_inventory and evaluate.evaluate_year.
 def cached_sha256(p: Path, cache_file: Path) -> str:
-    """SHA-256 with a (path, size, mtime) cache so large inputs are hashed once."""
     st = p.stat()
     key = f"{p.resolve()}|{st.st_size}|{int(st.st_mtime)}"
     cache = {}
@@ -77,7 +78,9 @@ def cached_sha256(p: Path, cache_file: Path) -> str:
     return cache[key]
 
 
+# Commit and dirty flag of the code that runs, recorded in each run report (run_year).
 def git_commit(path: Path) -> dict:
+    # Runs one git command, returning '' on failure.
     def run(*args: str) -> str:
         try:
             return subprocess.run(["git", *args], cwd=path, capture_output=True, text=True, timeout=30
@@ -89,6 +92,7 @@ def git_commit(path: Path) -> dict:
     return {"commit": sha or None, "dirty_worktree": dirty}
 
 
+# Writes JSON via temp file + rename; used for checkpoints, reports, manifests, eval bundles, evidence.
 def atomic_json(p: Path, obj: dict) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     tmp = p.with_name(p.name + ".tmp")
@@ -96,6 +100,7 @@ def atomic_json(p: Path, obj: dict) -> None:
     replace_retry(tmp, p)
 
 
+# json.dumps fallback for NumPy scalars (atomic_json, RunLog).
 def _json_default(o):
     if isinstance(o, (np.integer,)):
         return int(o)
@@ -104,13 +109,15 @@ def _json_default(o):
     raise TypeError(type(o))
 
 
+# Append-only JSONL restart log.
+# Used by run_year (work_dir/runlog.jsonl).
 class RunLog:
-    """Append-only JSONL restart log."""
-
+    # Creates the log directory.
     def __init__(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
 
+    # Appends one timestamped event.
     def event(self, **kw) -> None:
         kw["ts"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
         with open(self.path, "a", encoding="utf-8") as f:
@@ -120,8 +127,9 @@ class RunLog:
 # --------------------------------------------------------------------------------------------------
 # context shared by main process and workers
 # --------------------------------------------------------------------------------------------------
+# Main policy and comparison policies for a year (only years after the last epoch have any).
+# Used by rules_for_year; refuses years after the last epoch without a configured policy.
 def policies_for_year(cfg: Config, year: int) -> tuple[str | None, list[str]]:
-    """Main policy and comparison policies for a year (only years after the last epoch have any)."""
     if year <= cfg.epochs[-1]:
         return None, []
     if cfg.policy_2011 is None:
@@ -131,10 +139,13 @@ def policies_for_year(cfg: Config, year: int) -> tuple[str | None, list[str]]:
     return cfg.policy_2011, alts
 
 
+# Additional epochs (2015) usable only by the interpolate_2015 policy; used by rules_for_year.
 def extra_epochs(cfg: Config) -> tuple[int, ...]:
     return tuple(e for e in (2015,) if e > cfg.epochs[-1])
 
 
+# Temporal rule of the main policy plus comparison policies, main first.
+# Used by process_tile and run_year.
 def rules_for_year(cfg: Config, year: int) -> dict[str | None, core.TemporalRule]:
     main, alts = policies_for_year(cfg, year)
     rules = {main: core.temporal_rule(year, cfg.epochs, main, extra_epochs(cfg))}
@@ -146,10 +157,12 @@ def rules_for_year(cfg: Config, year: int) -> dict[str | None, core.TemporalRule
     return rules
 
 
+# Location of the GHSL mosaic VRT for one product and epoch (prepare_vrts, _weights).
 def vrt_path(cfg: Config, kind: str, epoch: int) -> Path:
     return cfg.work_dir / "vrt" / f"ghsl_{kind}_{epoch}.vrt"
 
 
+# Builds the GHSL mosaic VRTs needed by a run or evaluation (run_year, evaluate.evaluate_year).
 def prepare_vrts(cfg: Config, kinds_epochs: list[tuple[str, int]]) -> dict[tuple[str, int], Path]:
     out = {}
     for kind, e in kinds_epochs:
@@ -160,6 +173,7 @@ def prepare_vrts(cfg: Config, kinds_epochs: list[tuple[str, int]]) -> dict[tuple
 _W: dict = {}
 
 
+# Per-process initialiser for the tile pools of run_year and evaluate (loads the config into _W).
 def _worker_init(cfg_path: str) -> None:
     ensure_proj_data()
     os.environ.setdefault("GDAL_CACHEMAX", "256")
@@ -169,8 +183,9 @@ def _worker_init(cfg_path: str) -> None:
     atexit.register(_close_all)
 
 
+# Close GDAL handles before interpreter teardown (avoids noisy dealloc errors in workers).
+# Registered with atexit by _worker_init.
 def _close_all() -> None:
-    """Close GDAL handles before interpreter teardown (avoids noisy dealloc errors in workers)."""
     for v in list(_W.values()):
         close = getattr(v, "close", None)
         if callable(close):
@@ -181,30 +196,35 @@ def _close_all() -> None:
     _W.clear()
 
 
+# Per-process cache of open datasets and grids in _W; used by the readers below and evaluate.eval_tile.
 def _src(key: tuple, opener):
     if key not in _W:
         _W[key] = opener()
     return _W[key]
 
 
+# Cached processing-extent grid; used by process_tile, read_worldpop, evaluate and figures.
 def _target(cfg: Config) -> TargetGrid:
     return _src(("target",), lambda: grid_from_raster(cfg.worldpop_path(cfg.years[0]) if
                                                       cfg.worldpop_path(cfg.years[0]).exists() else
                                                       _first_existing_wp(cfg), cfg.block, cfg.bbox))
 
 
+# Cached whole-pixel registration of one year's WorldPop file (read_worldpop).
 def _registration(cfg: Config, year: int) -> Registration:
     return _src(("reg", year), lambda: register_to(
         grid_from_raster(_first_existing_wp(cfg), cfg.block, None), cfg.worldpop_path(year)))
 
 
+# WorldPop counts of ``year`` on extent-window (r, c, h, w) of the REFERENCE grid (NoData where outside).
+# Used by process_tile, evaluate.eval_tile and figures.zoom_figure.
 def read_worldpop(cfg: Config, year: int, r: int, c: int, h: int, w: int) -> np.ndarray:
-    """WorldPop counts of ``year`` on extent-window (r, c, h, w) of the REFERENCE grid (NoData where outside)."""
     wp = _src(("wp", year), lambda: rasterio.open(cfg.worldpop_path(year)))
     nod = wp.nodata if wp.nodata is not None else -99999.0
     return read_registered(wp, _registration(cfg, year), _target(cfg), r, c, h, w, nod)
 
 
+# First configured WorldPop file that exists; it defines the reference grid (run_year, evaluate).
 def _first_existing_wp(cfg: Config) -> Path:
     for y in cfg.years:
         if cfg.worldpop_path(y).exists():
@@ -212,23 +232,16 @@ def _first_existing_wp(cfg: Config) -> Path:
     raise RunError("no WorldPop input found for any configured year")
 
 
+# Cached GHSL mosaic reader for one product and epoch (process_tile, read_reference).
 def _weights(cfg: Config, kind: str, epoch: int) -> WeightSource:
     return _src(("w", kind, epoch), lambda: WeightSource(vrt_path(cfg, kind, epoch), _target(cfg), cfg.ghsl_nodata))
 
 
+# GHS-POP reference counts on the target window: exact epoch, or linear interpolation of epochs.
+# Used by process_tile (2011 policy comparison), evaluate.eval_tile and figures.zoom_figure.
 def read_reference(cfg: Config, year: int, r: int, c: int, h: int, w: int) -> np.ndarray | None:
-    """GHS-POP reference counts on the target window: exact epoch, or linear interpolation of epochs."""
-    eps = cfg.ghs_pop_epochs
-    if not eps or cfg.ghs_pop_glob is None:
-        return None
-    if year in eps:
-        terms = [(year, 1.0)]
-    elif eps[0] < year < eps[-1]:
-        e0 = max(e for e in eps if e < year)
-        e1 = min(e for e in eps if e > year)
-        wgt = (year - e0) / (e1 - e0)
-        terms = [(e0, 1 - wgt), (e1, wgt)]
-    else:
+    terms = reference_terms(cfg, year) if cfg.ghs_pop_glob is not None else None
+    if not terms:
         return None
     out = None
     for e, coef in terms:
@@ -237,6 +250,8 @@ def read_reference(cfg: Config, year: int, r: int, c: int, h: int, w: int) -> np
     return out
 
 
+# GHS-POP epochs and weights for a year (exact or bracketing interpolation), None if not covered.
+# Used by read_reference, run_year and evaluate.evaluate_year.
 def reference_terms(cfg: Config, year: int) -> list[tuple[int, float]] | None:
     eps = cfg.ghs_pop_epochs
     if year in eps:
@@ -252,6 +267,7 @@ def reference_terms(cfg: Config, year: int) -> list[tuple[int, float]] | None:
 # --------------------------------------------------------------------------------------------------
 # tile worker
 # --------------------------------------------------------------------------------------------------
+# Pads a tile to a multiple of the parent block (process_tile).
 def _pad(a: np.ndarray, k: int, fill) -> np.ndarray:
     h, w = a.shape
     H, W = math.ceil(h / k) * k, math.ceil(w / k) * k
@@ -262,12 +278,15 @@ def _pad(a: np.ndarray, k: int, fill) -> np.ndarray:
     return out
 
 
+# Checkpoint chunk GeoTIFF and JSON sidecar paths of a tile (process_tile, checkpoint_ok, run_year).
 def chunk_paths(cfg: Config, year: int, r: int, c: int) -> tuple[Path, Path]:
     d = cfg.work_dir / "chunks" / str(year)
     stem = f"r{r:06d}_c{c:06d}"
     return d / f"{stem}.tif", d / f"{stem}.json"
 
 
+# Computes one tile in a worker: WorldPop window, residential weights per epoch, temporal rule,
+# redistribution (plus 2011 comparison policies), writes chunk + checkpoint JSON. Submitted by run_year.
 def process_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
     cfg: Config = _W["cfg"]
     t0 = time.perf_counter()
@@ -331,12 +350,8 @@ def process_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
                           "max_abs_diff_vs_main": float(np.abs(diff).max(initial=0)),
                           "cells_diff_gt_0p5": int((np.abs(diff) > 0.5).sum())})
             if ref is not None:
-                m = valid
-                x, y = ov[m], ref[m]
-                y = np.where(np.isnan(y), 0.0, y)
-                d["vs_ref"] = {"n": int(m.sum()), "sx": float(x.sum()), "sy": float(y.sum()),
-                               "sxx": float((x * x).sum()), "syy": float((y * y).sum()),
-                               "sxy": float((x * y).sum()), "sad": float(np.abs(x - y).sum())}
+                y = ref[valid]
+                d["vs_ref"] = core.moments(ov[valid], np.where(np.isnan(y), 0.0, y))
             cmp[str(pol)] = d
         res["policy_comparison"] = cmp
 
@@ -357,6 +372,7 @@ def process_tile(year: int, r: int, c: int, h: int, w: int) -> dict:
     return res
 
 
+# Returns a tile's checkpoint record if its chunk checksum still matches, else None (run_year).
 def checkpoint_ok(cfg: Config, year: int, r: int, c: int) -> dict | None:
     tif, js = chunk_paths(cfg, year, r, c)
     if not js.exists():
@@ -375,6 +391,7 @@ def checkpoint_ok(cfg: Config, year: int, r: int, c: int) -> dict | None:
 # --------------------------------------------------------------------------------------------------
 # assembly, verification, manifests
 # --------------------------------------------------------------------------------------------------
+# VRT that assembles all chunk GeoTIFFs of a year into the extent (run_year, before the COG copy).
 def write_chunk_vrt(cfg: Config, target: TargetGrid, tiles: list[dict], path: Path) -> Path:
     t = target.transform
     parts = [f'<VRTDataset rasterXSize="{target.width}" rasterYSize="{target.height}">',
@@ -396,8 +413,9 @@ def write_chunk_vrt(cfg: Config, target: TargetGrid, tiles: list[dict], path: Pa
     return path
 
 
+# Stream every block: valid count, sum, min, max, negatives, NaN/Inf.
+# Used by run_year to verify the written COG.
 def raster_stats(path: Path) -> dict:
-    """Stream every block: valid count, sum, min, max, negatives, NaN/Inf."""
     n = 0
     s = 0.0
     mn, mx = math.inf, -math.inf
@@ -422,6 +440,7 @@ def raster_stats(path: Path) -> dict:
             "negative_cells": neg, "nonfinite_cells": nonfinite, **meta}
 
 
+# rio-cogeo validation of the written COG (run_year).
 def validate_cog(path: Path) -> dict:
     try:
         from rio_cogeo.cogeo import cog_validate
@@ -431,6 +450,7 @@ def validate_cog(path: Path) -> dict:
     return {"validated": True, "is_cog": bool(ok), "errors": errors, "warnings": warnings}
 
 
+# SHA-256 of the WorldPop file and every GHSL tile used, for the run report (run_year).
 def upstream_provenance(cfg: Config, year: int, rules: dict) -> dict:
     cache = cfg.work_dir / "sha256_cache.json"
     wp = cfg.worldpop_path(year)
@@ -438,8 +458,7 @@ def upstream_provenance(cfg: Config, year: int, rules: dict) -> dict:
     ghsl = {}
     for kind in ("total", "nres"):
         for e in epochs:
-            import glob as _g
-            files = sorted(_g.glob(cfg.ghsl_glob(kind, e)))
+            files = sorted(glob.glob(cfg.ghsl_glob(kind, e)))
             ghsl[f"{kind}_{e}"] = {Path(f).name: cached_sha256(Path(f), cache) for f in files}
     up = cfg.provenance_extra.get("upstream", {})
     return {
@@ -449,6 +468,7 @@ def upstream_provenance(cfg: Config, year: int, rules: dict) -> dict:
     }
 
 
+# v1 ingestion manifest entry with full provenance for one year (run_year).
 def build_manifest_entry(cfg: Config, year: int, cog: Path, stats: dict, report: dict, rules: dict) -> dict:
     main_rule = next(iter(rules.values()))
     synthetic = cfg.synthetic
@@ -504,6 +524,7 @@ def build_manifest_entry(cfg: Config, year: int, cog: Path, stats: dict, report:
     }
 
 
+# Rebuilds out_dir/manifest.json from the per-year entries (run_year, cli `manifest`).
 def write_manifest(cfg: Config) -> Path:
     entries = []
     for y in cfg.years:
@@ -519,6 +540,8 @@ def write_manifest(cfg: Config) -> Path:
 # --------------------------------------------------------------------------------------------------
 # driver
 # --------------------------------------------------------------------------------------------------
+# Produces one year end-to-end: skip if up to date, plan tiles, reuse checkpoints, compute in a bounded
+# pool, assemble the COG, run QA/mass-balance checks, write report + manifest. Used by cli `run` and tests.
 def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool = False,
              max_tiles: int | None = None) -> dict:
     ensure_proj_data()
@@ -716,6 +739,7 @@ def run_year(cfg: Config, year: int, *, force: bool = False, keep_chunks: bool =
     return report
 
 
+# Pearson/MAE/RMSE/bias from summed moments for the 2011 policy comparison (run_year).
 def _moments_to_metrics(m: dict) -> dict:
     n = m["n"]
     if not n:

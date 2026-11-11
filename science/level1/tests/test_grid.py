@@ -1,4 +1,4 @@
-"""Grid alignment, GHSL tile mosaicking and reprojected-grid (general warp) weight transfer."""
+# Grid alignment, GHSL tile mosaicking and reprojected-grid (general warp) weight transfer.
 
 import numpy as np
 import pytest
@@ -12,6 +12,7 @@ from cgis_level1.grid import (TargetGrid, WeightSource, build_mosaic_vrt, grid_f
 RES = 1 / 1200
 
 
+# Writes a small test GeoTIFF.
 def _tif(path, arr, transform, crs=4326, nodata=None, dtype=None):
     dtype = dtype or arr.dtype.name
     with rasterio.open(path, "w", driver="GTiff", height=arr.shape[0], width=arr.shape[1], count=1, dtype=dtype,
@@ -20,10 +21,12 @@ def _tif(path, arr, transform, crs=4326, nodata=None, dtype=None):
     return path
 
 
+# TargetGrid over a tiny test grid.
 def _target(t, h, w):
     return TargetGrid(CRS.from_epsg(4326).to_wkt(), 4326, t, w, h, 0, 0, h, w)
 
 
+# Checks: half pixel mapping like ghsl.
 def test_half_pixel_mapping_like_ghsl():
     tgt = _target(Affine(RES, 0, 70.0, 0, -RES, 30.0), 100, 100)
     # GHSL tile edge 69.99208307850 (9.5 px west of 70) and 29.0995834 style offset
@@ -32,12 +35,14 @@ def test_half_pixel_mapping_like_ghsl():
     assert m.same_res and m.iu == 9 and m.fx == pytest.approx(0.5) and m.iv == 0 and m.fy == pytest.approx(0.5)
 
 
+# Checks: snapping tiny offsets.
 def test_snapping_tiny_offsets():
     tgt = _target(Affine(RES, 0, 70.0, 0, -RES, 30.0), 10, 10)
     m = source_mapping(tgt, Affine(RES, 0, 70.0 - 5 * RES + 1e-10, 0, -RES, 30.0), (100, 100))
     assert m.fx == 0.0 and m.iu == 5
 
 
+# Checks: mosaic and seam free read.
 def test_mosaic_and_seam_free_read(tmp_path):
     # two GHSL-like tiles side by side, half-pixel offset; reading across the tile seam must equal
     # reading the same values from one unsplit raster
@@ -60,6 +65,7 @@ def test_mosaic_and_seam_free_read(tmp_path):
     assert np.array_equal(np.hstack([left, right]), a)
 
 
+# Checks: outside footprint counted.
 def test_outside_footprint_counted(tmp_path):
     _tif(tmp_path / "s.tif", np.ones((10, 10), np.uint16), Affine(RES, 0, 70.0, 0, -RES, 30.0))
     tgt = _target(Affine(RES, 0, 70.0, 0, -RES, 30.0), 20, 10)
@@ -67,6 +73,7 @@ def test_outside_footprint_counted(tmp_path):
     assert n_out == 100 and v[:10].sum() == 100 and v[10:].sum() == 0
 
 
+# Checks: source nodata becomes missing.
 def test_source_nodata_becomes_missing(tmp_path):
     arr = np.full((5, 5), 7, np.uint16)
     arr[2, 2] = 65535
@@ -76,6 +83,7 @@ def test_source_nodata_becomes_missing(tmp_path):
     assert np.isnan(v[2, 2]) and v[0, 0] == 7
 
 
+# Checks: reprojected grid general path conserves sum.
 def test_reprojected_grid_general_path_conserves_sum(tmp_path):
     # source at 2x coarser resolution: general (GDAL 'sum') path must conserve the extensive total
     src = np.zeros((10, 10), np.float32)
@@ -89,6 +97,7 @@ def test_reprojected_grid_general_path_conserves_sum(tmp_path):
     assert v[6, 6] == pytest.approx(25.0, rel=1e-3)
 
 
+# Checks: bbox snaps to parent lattice.
 def test_bbox_snaps_to_parent_lattice(tmp_path):
     p = _tif(tmp_path / "wp.tif", np.ones((95, 87), np.float32), Affine(RES, 0, 70.0, 0, -RES, 30.0), nodata=-99999)
     g = grid_from_raster(p, 10, (70.0 + 13.2 * RES, 30.0 - 47.5 * RES, 70.0 + 31 * RES, 30.0 - 21 * RES))
@@ -106,6 +115,7 @@ def test_bbox_snaps_to_parent_lattice(tmp_path):
                 cells.add((rr, cc))
 
 
+# Checks: replace retry survives transient lock.
 def test_replace_retry_survives_transient_lock(tmp_path, monkeypatch):
     import os as _os
     from cgis_level1 import grid as g
@@ -114,6 +124,7 @@ def test_replace_retry_survives_transient_lock(tmp_path, monkeypatch):
     calls = {"n": 0}
     real = _os.replace
 
+    # os.replace stand-in that fails twice with PermissionError.
     def flaky(a, b):
         calls["n"] += 1
         if calls["n"] < 3:

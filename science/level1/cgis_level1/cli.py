@@ -1,14 +1,11 @@
-"""Command line: ``python -m cgis_level1 <command> --config <file.toml>``.
-
-Commands
-  make-synthetic   write deterministic SYNTHETIC fixtures
-  run              produce Level 1 COGs + run reports + v1 manifest (restartable)
-  evaluate         GHS-POP evaluation bundles (+ figures)
-  manifest         rebuild manifest.json from per-year entries
-  summary          print a compact table of run/eval results
-  inventory        list every input with size, SHA-256, grid and licence
-  evidence         copy eval bundles, figures, run reports, benchmarks into science/level1 (committable)
-"""
+# Command line: `python -m cgis_level1 <command> --config <file.toml>`.
+#   make-synthetic   write deterministic SYNTHETIC fixtures
+#   run              produce Level 1 COGs + run reports + v1 manifest (restartable)
+#   evaluate         GHS-POP evaluation bundles (+ figures)
+#   manifest         rebuild manifest.json from per-year entries
+#   summary          print a compact table of run/eval results
+#   inventory        list every input with size, SHA-256, grid and licence
+#   evidence         copy eval bundles, figures, run reports, benchmark into science/results/level1/<label>/
 
 from __future__ import annotations
 
@@ -22,6 +19,7 @@ from .config import load_config
 from .grid import ensure_proj_data
 
 
+# Entry point of `python -m cgis_level1` (also the Docker entrypoint).
 def main(argv: list[str] | None = None) -> int:
     ensure_proj_data()
     ap = argparse.ArgumentParser(prog="python -m cgis_level1")
@@ -38,7 +36,7 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--keep-chunks", action="store_true")
             p.add_argument("--max-tiles", type=int, help="debug: only the first N tiles (never a PASS)")
         if name == "evidence":
-            p.add_argument("--label", required=True, help="e.g. india-full, sample-delhi, synthetic")
+            p.add_argument("--label", required=True, help="results folder name under science/results/level1/, e.g. india-full, sample-delhi")
         if name == "inventory":
             p.add_argument("--out", default=None, help="default: <out_dir>/inputs_inventory.json")
         if name == "evaluate":

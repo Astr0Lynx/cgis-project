@@ -1,4 +1,4 @@
-"""Target grid, processing extent, deterministic tiling and source-grid mapping."""
+# Target grid, processing extent, deterministic tiling and source-grid mapping.
 
 from __future__ import annotations
 
@@ -22,9 +22,10 @@ SAME_RES_TOL_PX = 0.01
 SNAP_PX = 1e-3
 
 
+# ``os.replace`` with backoff: on Windows, antivirus/indexer can briefly lock a just-written file
+# (WinError 5/32). The rename stays atomic; only transient PermissionErrors are retried.
+# Used by pipeline (chunks, COG, JSON, sha cache) and build_mosaic_vrt.
 def replace_retry(src, dst, attempts: int = 8) -> None:
-    """``os.replace`` with backoff: on Windows, antivirus/indexer can briefly lock a just-written file
-    (WinError 5/32). The rename stays atomic; only transient PermissionErrors are retried."""
     import time
     for i in range(attempts):
         try:
@@ -36,8 +37,9 @@ def replace_retry(src, dst, attempts: int = 8) -> None:
             time.sleep(0.1 * 2 ** i)
 
 
+# Point PROJ at rasterio's bundled database (avoid foreign proj.db, e.g. from a PostGIS install).
+# Called first by cli.main, pipeline/evaluate workers, scripts/spot_check.py and tests/conftest.py.
 def ensure_proj_data() -> None:
-    """Point PROJ at rasterio's bundled database (avoid foreign proj.db, e.g. from a PostGIS install)."""
     pd = Path(rasterio.__file__).parent / "proj_data"
     if pd.is_dir():
         os.environ["PROJ_DATA"] = str(pd)
@@ -49,10 +51,10 @@ def ensure_proj_data() -> None:
             pass
 
 
+# The WorldPop native grid (counts are never resampled) and the processing extent within it.
+# Built by grid_from_raster; used by pipeline and evaluate for tiling and window transforms.
 @dataclass(frozen=True)
 class TargetGrid:
-    """The WorldPop native grid (counts are never resampled) and the processing extent within it."""
-
     crs_wkt: str
     epsg: int | None
     full_transform: Affine
@@ -63,24 +65,26 @@ class TargetGrid:
     height: int
     width: int
 
+    # Affine transform of the processing extent (full grid shifted by row0/col0).
     @property
     def transform(self) -> Affine:
         return self.full_transform * Affine.translation(self.col0, self.row0)
 
+    # Cell size (x, y) in CRS units.
     @property
     def res(self) -> tuple[float, float]:
         return self.full_transform.a, -self.full_transform.e
 
+    # Full-grid identity recorded in each run report (pipeline.run_year).
     def signature(self) -> dict:
         return {"crs_epsg": self.epsg, "transform": list(self.full_transform)[:6],
                 "width": self.full_width, "height": self.full_height}
 
+    # Deterministic row-major tiles ``(r, c, h, w)`` in extent coordinates.
+    # ``tile_cols`` >= width gives full-width row bands (efficient for strip-organised inputs such as
+    # the WorldPop GeoTIFFs, which store one row per strip).
+    # Used by pipeline.run_year and evaluate.evaluate_year.
     def tiles(self, tile: int, tile_cols: int | None = None) -> list[tuple[int, int, int, int]]:
-        """Deterministic row-major tiles ``(r, c, h, w)`` in extent coordinates.
-
-        ``tile_cols`` >= width gives full-width row bands (efficient for strip-organised inputs such as
-        the WorldPop GeoTIFFs, which store one row per strip).
-        """
         tc = tile_cols or tile
         out = []
         for r in range(0, self.height, tile):
@@ -89,6 +93,8 @@ class TargetGrid:
         return out
 
 
+# Target grid of a WorldPop file, optionally cropped to a bbox snapped outward to the parent-block
+# lattice. Used by pipeline (_target, run_year) and evaluate.evaluate_year.
 def grid_from_raster(path: Path, block: int, bbox: tuple[float, float, float, float] | None = None
                      ) -> TargetGrid:
     with rasterio.open(path) as ds:
@@ -115,24 +121,25 @@ def grid_from_raster(path: Path, block: int, bbox: tuple[float, float, float, fl
         return TargetGrid(ds.crs.to_wkt(), epsg, t, W, H, r0, c0, h, w)
 
 
+# Whole-pixel registration of one year's WorldPop file onto the reference grid.
+# Reference cell (R, C) is file cell (R + dr, C + dc). WorldPop files of different years share the 3
+# arc-second lattice but their *extents* can differ by whole pixels (e.g. the 2010 file has one extra
+# west column). Anything but an integer offset on an identical lattice is refused.
+# Created by register_to; used by pipeline._registration and read_registered.
 @dataclass(frozen=True)
 class Registration:
-    """Whole-pixel registration of one year's WorldPop file onto the reference grid.
-
-    Reference cell (R, C) is file cell (R + dr, C + dc). WorldPop files of different years share the 3
-    arc-second lattice but their *extents* can differ by whole pixels (e.g. the 2010 file has one extra
-    west column). Anything but an integer offset on an identical lattice is refused.
-    """
-
     dc: int
     dr: int
     width: int
     height: int
 
+    # JSON form for the run report.
     def to_dict(self) -> dict:
         return {"dc": self.dc, "dr": self.dr, "file_width": self.width, "file_height": self.height}
 
 
+# Whole-pixel offset of one year's WorldPop file against the reference grid (refuses anything else).
+# Used by pipeline._registration and run_year.
 def register_to(ref: TargetGrid, path: Path) -> Registration:
     with rasterio.open(path) as ds:
         if ds.crs is None or (ds.crs.to_epsg() != ref.epsg and ds.crs.to_wkt() != ref.crs_wkt):
@@ -150,16 +157,18 @@ def register_to(ref: TargetGrid, path: Path) -> Registration:
         return Registration(int(round(dcf)), int(round(drf)), ds.width, ds.height)
 
 
+# Read extent-window (r, c, h, w) of the reference grid from a registered file (float64).
+# Cells outside the file read as ``fill`` (the file's NoData).
+# Used by pipeline.read_worldpop.
 def read_registered(ds, reg: Registration, ref: TargetGrid, r: int, c: int, h: int, w: int,
                     fill: float) -> np.ndarray:
-    """Read extent-window (r, c, h, w) of the reference grid from a registered file (float64).
-    Cells outside the file read as ``fill`` (the file's NoData)."""
     win = Window(ref.col0 + c + reg.dc, ref.row0 + r + reg.dr, w, h)
     return ds.read(1, window=win, boundless=True, fill_value=fill).astype(np.float64)
 
 
+# Valid cell count and sum of file cells that fall OUTSIDE the full reference grid (would be dropped).
+# Used by pipeline.run_year (QA check no_population_outside_reference_grid).
 def outside_reference_stats(ds, reg: Registration, ref: TargetGrid) -> dict:
-    """Valid cell count and sum of file cells that fall OUTSIDE the full reference grid (would be dropped)."""
     nod = ds.nodata
     n, tot = 0, 0.0
     c0, c1 = reg.dc, reg.dc + ref.full_width
@@ -186,8 +195,9 @@ def outside_reference_stats(ds, reg: Registration, ref: TargetGrid) -> dict:
 # --------------------------------------------------------------------------------------------------
 # GHSL tile mosaic
 # --------------------------------------------------------------------------------------------------
+# Write a VRT mosaicking GHSL tiles that lie on one global lattice. Absent (all-ocean) tiles read as 0.
+# Used by pipeline.prepare_vrts.
 def build_mosaic_vrt(pattern: str, vrt_path: Path) -> Path:
-    """Write a VRT mosaicking GHSL tiles that lie on one global lattice. Absent (all-ocean) tiles read as 0."""
     files = sorted(glob.glob(pattern))
     if not files:
         raise FileNotFoundError(f"no GHSL tiles match {pattern}")
@@ -231,15 +241,13 @@ def build_mosaic_vrt(pattern: str, vrt_path: Path) -> Path:
     return vrt_path
 
 
+# Global (tile-independent) mapping from the target grid to a same-resolution source grid.
+# Target full-grid cell (R, C) covers source pixel coordinates ``[C + iu + fx, ... + 1]`` x
+# ``[R + iv + fy, ... + 1]``. Computing ``(iu, fx, iv, fy)`` once for the whole grid makes every tile see
+# bit-identical weights, regardless of tile size.
+# Computed by source_mapping; held by WeightSource.
 @dataclass(frozen=True)
 class SourceMapping:
-    """Global (tile-independent) mapping from the target grid to a same-resolution source grid.
-
-    Target full-grid cell (R, C) covers source pixel coordinates ``[C + iu + fx, ... + 1]`` x
-    ``[R + iv + fy, ... + 1]``. Computing ``(iu, fx, iv, fy)`` once for the whole grid makes every tile see
-    bit-identical weights, regardless of tile size.
-    """
-
     iu: int
     fx: float
     iv: int
@@ -247,6 +255,8 @@ class SourceMapping:
     same_res: bool
 
 
+# Global target-to-source offset split into integer and fractional parts (snapped near 0/1).
+# Used by WeightSource.__init__ and tests/test_grid.py.
 def source_mapping(target: TargetGrid, src_transform: Affine, src_shape: tuple[int, int]) -> SourceMapping:
     tt = target.full_transform
     tx, ty = tt.a, -tt.e
@@ -256,6 +266,7 @@ def source_mapping(target: TargetGrid, src_transform: Affine, src_shape: tuple[i
     u0 = (tt.c - src_transform.c) / sx
     v0 = (src_transform.f - tt.f) / sy
 
+    # Integer/fraction split of a pixel offset with snapping.
     def split(x: float) -> tuple[int, float]:
         i = math.floor(x)
         f = x - i
@@ -270,24 +281,25 @@ def source_mapping(target: TargetGrid, src_transform: Affine, src_shape: tuple[i
     return SourceMapping(iu, fx, iv, fy, same)
 
 
+# Reads a GHSL mosaic as an extensive per-cell quantity on target windows.
+# Opened per worker by pipeline._weights (GHSL total/NRES/POP mosaics).
 class WeightSource:
-    """Reads a GHSL mosaic as an extensive per-cell quantity on target windows."""
-
+    # Opens the mosaic VRT and computes its mapping onto the target grid.
     def __init__(self, vrt: Path, target: TargetGrid, nodata_override: float | None = None):
         self.ds = rasterio.open(vrt)
         self.target = target
         self.nodata = self.ds.nodata if self.ds.nodata is not None else nodata_override
         self.map = source_mapping(target, self.ds.transform, (self.ds.height, self.ds.width))
 
+    # Closes the dataset (pipeline._close_all).
     def close(self) -> None:
         self.ds.close()
 
+    # Return ``(values float64 (h, w), n_outside)`` for extent-window (r, c, h, w).
+    # Cells outside the mosaic footprint read as 0 (GHSL tiles are absent only over open ocean) and are
+    # counted in ``n_outside`` for coverage diagnostics.
+    # Used by pipeline.process_tile and read_reference.
     def read(self, r: int, c: int, h: int, w: int) -> tuple[np.ndarray, int]:
-        """Return ``(values float64 (h, w), n_outside)`` for extent-window (r, c, h, w).
-
-        Cells outside the mosaic footprint read as 0 (GHSL tiles are absent only over open ocean) and are
-        counted in ``n_outside`` for coverage diagnostics.
-        """
         R = self.target.row0 + r
         C = self.target.col0 + c
         m = self.map
@@ -307,8 +319,9 @@ class WeightSource:
         n_out = int((~inside[:h, :w]).sum())
         return vals, n_out
 
+    # Different cell sizes / CRS: GDAL area-weighted ``sum`` warp (extensive quantity).
+    # Fallback of read() when cell sizes differ.
     def _read_general(self, r: int, c: int, h: int, w: int) -> tuple[np.ndarray, int]:
-        """Different cell sizes / CRS: GDAL area-weighted ``sum`` warp (extensive quantity)."""
         from rasterio.warp import Resampling, reproject
 
         dst = np.zeros((h, w), dtype=np.float64)

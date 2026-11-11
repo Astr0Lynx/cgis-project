@@ -16,7 +16,7 @@
       "dataset_id": "india-level2-2011-selection",
       "path": "selected.csv",
       "release": "2011 sampling frame",
-      "citation": "science/level2/SELECTION.md",
+      "citation": "science/level2/config/selection.csv",
       "sha256": "REPLACE_WITH_SHA256",
       "license": "RECORD_PERMITTED_USE",
       "access_status": "pending",

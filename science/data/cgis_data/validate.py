@@ -1,4 +1,4 @@
-"""Data-integrity checks: year coverage, unit semantics, census joins, polygon integrity, coverage holes."""
+# Data-integrity checks: year coverage, unit semantics, census joins, polygon integrity, coverage holes.
 from __future__ import annotations
 
 import collections
@@ -14,10 +14,12 @@ from .harmonize import iter_windows, valid_mask
 from .sources import GHSL_EPOCHS, WORLDPOP_YEARS
 
 
+# Raised by every check here when an input fails integrity rules.
 class ValidationIssue(ValueError):
     pass
 
 
+# Fails on missing, duplicate or unexpected years; used by check_ghsl_epochs and tests.
 def check_year_coverage(years: Iterable[int], expected: Iterable[int] = WORLDPOP_YEARS) -> None:
     got, exp = collections.Counter(years), set(expected)
     dup = sorted(y for y, n in got.items() if n > 1)
@@ -27,18 +29,14 @@ def check_year_coverage(years: Iterable[int], expected: Iterable[int] = WORLDPOP
         raise ValidationIssue(f"year coverage invalid: missing={missing} duplicate={dup} unexpected={extra}")
 
 
+# Checks GHSL total and NRES both cover the required epochs.
 def check_ghsl_epochs(total_years: Iterable[int], nres_years: Iterable[int]) -> None:
     check_year_coverage(total_years, GHSL_EPOCHS)
     check_year_coverage(nres_years, GHSL_EPOCHS)
 
 
+# Guards against count/density/volume confusion from declared units and observed values; used by sample.build_sample.
 def check_units(declared_units: str, raster_path: str, cell_area_m2: float | None = None, block: int = 1024) -> dict:
-    """Guard against count/density/volume confusion using declared units AND observed values.
-
-    * people_per_cell: must not look like a density label; negatives forbidden.
-    * m2_per_cell: no value may exceed the cell area (a per-m2 fraction or a volume would violate this
-      or sit in 0..1); negatives forbidden.
-    """
     low = declared_units.lower()
     if "km2" in low or "density" in low or "per_m2" in low or "m3" in low:
         raise ValidationIssue(f"units {declared_units!r} are a density/volume label")
@@ -62,6 +60,7 @@ def check_units(declared_units: str, raster_path: str, cell_area_m2: float | Non
     return {"min": mn, "max": mx, "valid_cells": n}
 
 
+# Fails on duplicate or blank census codes; used by check_census_join.
 def check_unique_census_codes(codes: Iterable[str]) -> None:
     c = collections.Counter(codes)
     dup = sorted(k for k, v in c.items() if v > 1)
@@ -72,16 +71,16 @@ def check_unique_census_codes(codes: Iterable[str]) -> None:
         raise ValidationIssue("blank census code present")
 
 
+# Unambiguous 1:1 join of census codes and polygon codes; used by census.join_report.
 def check_census_join(census_codes: Iterable[str], polygon_codes: Iterable[str]) -> dict:
-    """Unambiguous 1:1 join: every census code has exactly one polygon and vice versa."""
     check_unique_census_codes(census_codes := list(census_codes))
     check_unique_census_codes(polygon_codes := list(polygon_codes))
     c, p = set(census_codes), set(polygon_codes)
     return {"matched": len(c & p), "census_only": sorted(c - p), "polygon_only": sorted(p - c)}
 
 
+# Polygon validity, sibling overlaps and holes vs an expected footprint (for town/village polygons).
 def check_polygons(features: list[dict], max_overlap_frac: float = 1e-6, expected_footprint=None) -> dict:
-    """Polygon validity, pairwise overlaps (sibling units must not overlap) and holes vs an expected footprint."""
     geoms = []
     for i, f in enumerate(features):
         g = shape(f["geometry"])
@@ -107,8 +106,8 @@ def check_polygons(features: list[dict], max_overlap_frac: float = 1e-6, expecte
     return res
 
 
+# Fraction of cells inside a lon/lat footprint that are NoData.
 def coverage_holes(raster_path: str, footprint_geojson: dict, block: int = 1024) -> dict:
-    """Fraction of cells inside a footprint (lon/lat, raster CRS must be EPSG:4326) that are NoData."""
     from rasterio.features import geometry_mask
     fp = shape(footprint_geojson)
     inside = holes = 0
@@ -124,8 +123,8 @@ def coverage_holes(raster_path: str, footprint_geojson: dict, block: int = 1024)
             "hole_fraction": (holes / inside) if inside else None}
 
 
+# Per-year size/CRS/NoData and whole-pixel offset vs a reference year; used by the `national` and `grids` CLI.
 def worldpop_grid_report(paths: dict[int, str], reference_year: int = 2011) -> dict:
-    """Per-year size/CRS/NoData and whole-pixel lattice offset relative to a reference year (no resampling)."""
     from .harmonize import lattice_offset
     rows = {}
     with rasterio.open(paths[reference_year]) as ref:
@@ -140,7 +139,8 @@ def worldpop_grid_report(paths: dict[int, str], reference_year: int = 2011) -> d
             "all_on_one_lattice": True}
 
 
-def check_admin_layer(path: str, expected_units: int, id_candidates=("shapeID", "shapeName")) -> dict:
+# Count, validity and unique-id checks for a geoBoundaries ADM layer.
+def check_admin_layer(path: str, expected_units: int) -> dict:
     import json
     fc = json.load(open(path))
     feats = fc["features"]

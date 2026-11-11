@@ -1,4 +1,4 @@
-"""End-to-end SYNTHETIC runs: seams, restart/idempotency, QA, manifest contract, evaluation, negatives."""
+# End-to-end SYNTHETIC runs: seams, restart/idempotency, QA, manifest contract, evaluation, negatives.
 
 import json
 import shutil
@@ -14,11 +14,13 @@ from cgis_level1.evaluate import evaluate_year
 from conftest import write_config
 
 
+# Reads band 1 of a raster.
 def _read(cfg, year):
     with rasterio.open(cfg.out_dir / "cog" / f"{cfg.dataset_id(year)}.tif") as ds:
         return ds.read(1), ds.profile, ds.units
 
 
+# Module fixture: one complete synthetic run (all years).
 @pytest.fixture(scope="module")
 def base_run(synthetic_inputs, tmp_path_factory):
     out = tmp_path_factory.mktemp("run100")
@@ -27,6 +29,7 @@ def base_run(synthetic_inputs, tmp_path_factory):
     return cfg, reps
 
 
+# Checks: all checks pass and units.
 def test_all_checks_pass_and_units(base_run):
     cfg, reps = base_run
     for y, r in reps.items():
@@ -44,6 +47,7 @@ def test_all_checks_pass_and_units(base_run):
         assert (arr == -99999).sum() == (wp.read(1) == wp.nodata).sum()
 
 
+# Checks: seam free independent of tile size.
 def test_seam_free_independent_of_tile_size(base_run, synthetic_inputs, tmp_path):
     cfg, _ = base_run
     cfg2 = load_config(write_config(tmp_path / "c.toml", synthetic_inputs, tmp_path, tile=50, workers=2))
@@ -54,6 +58,7 @@ def test_seam_free_independent_of_tile_size(base_run, synthetic_inputs, tmp_path
         assert a.tobytes() == b.tobytes(), f"tile size changed pixels in {y}"
 
 
+# Checks: restart from checkpoints is identical.
 def test_restart_from_checkpoints_is_identical(base_run, synthetic_inputs, tmp_path):
     cfg, _ = base_run
     cfg3 = load_config(write_config(tmp_path / "c.toml", synthetic_inputs, tmp_path, tile=100))
@@ -78,6 +83,7 @@ def test_restart_from_checkpoints_is_identical(base_run, synthetic_inputs, tmp_p
     assert rep2["output"]["sha256"] == rep["output"]["sha256"]
 
 
+# Checks: manifest matches ingestion contract.
 def test_manifest_matches_ingestion_contract(base_run):
     cfg, _ = base_run
     from ingestion.manifest import load_manifest, parse_entry
@@ -98,6 +104,7 @@ def test_manifest_matches_ingestion_contract(base_run):
     assert e11["provenance"]["method"]["post_last_epoch_policy_approval"] == "pending"
 
 
+# Checks: 2011 policy comparison reported.
 def test_2011_policy_comparison_reported(base_run):
     _, reps = base_run
     cmp = reps[2011]["policy_comparison_2011"]
@@ -107,6 +114,7 @@ def test_2011_policy_comparison_reported(base_run):
         assert "vs_ref_metrics" in v
 
 
+# Checks: missing 2011 policy refused.
 def test_missing_2011_policy_refused(synthetic_inputs, tmp_path):
     cfg = load_config(write_config(tmp_path / "c.toml", synthetic_inputs, tmp_path, policy=None))
     with pytest.raises(pipeline.RunError, match="human methodological decision"):
@@ -114,12 +122,14 @@ def test_missing_2011_policy_refused(synthetic_inputs, tmp_path):
     assert pipeline.run_year(cfg, 2010)["status"] == "ok"     # other years unaffected
 
 
+# Checks: missing input refused.
 def test_missing_input_refused(synthetic_inputs, tmp_path):
     cfg = load_config(write_config(tmp_path / "c.toml", synthetic_inputs, tmp_path, years=[2001, 2012]))
     with pytest.raises(pipeline.RunError, match="missing"):
         pipeline.run_year(cfg, 2012)
 
 
+# Checks: grid mismatch between years refused.
 def test_grid_mismatch_between_years_refused(synthetic_inputs, tmp_path):
     inp = tmp_path / "in"
     shutil.copytree(synthetic_inputs, inp)
@@ -134,11 +144,13 @@ def test_grid_mismatch_between_years_refused(synthetic_inputs, tmp_path):
         pipeline.run_year(cfg, 2005)
 
 
+# Checks: config rejects tile not multiple of block.
 def test_config_rejects_tile_not_multiple_of_block(synthetic_inputs, tmp_path):
     with pytest.raises(ConfigError, match="multiple"):
         load_config(write_config(tmp_path / "c.toml", synthetic_inputs, tmp_path, tile=105))
 
 
+# Checks: negative worldpop refused.
 def test_negative_worldpop_refused(synthetic_inputs, tmp_path):
     inp = tmp_path / "in"
     shutil.copytree(synthetic_inputs, inp)
@@ -153,6 +165,7 @@ def test_negative_worldpop_refused(synthetic_inputs, tmp_path):
         pipeline.run_year(cfg, 2001)
 
 
+# Checks: evaluation bundle.
 def test_evaluation_bundle(base_run, tmp_path):
     cfg, _ = base_run
     b = evaluate_year(cfg, 2005, tmp_path / "figs")
@@ -175,6 +188,7 @@ def test_evaluation_bundle(base_run, tmp_path):
         [tuple(t) for t in b3["reference"]["terms"]] == [(2000, pytest.approx(0.8)), (2005, pytest.approx(0.2))]
 
 
+# Checks: inventory and evidence.
 def test_inventory_and_evidence(base_run, tmp_path):
     from cgis_level1.evidence import collect
     from cgis_level1.inventory import build_inventory
@@ -185,13 +199,14 @@ def test_inventory_and_evidence(base_run, tmp_path):
     evaluate_year(cfg, 2011, None)
     b = collect(cfg, "t", dest=tmp_path)
     assert len(b["years"]) == len(cfg.years) and all(r["status"] == "ok" for r in b["years"])
-    assert (tmp_path / "eval" / "t" / "policy_2011_comparison.json").exists()
-    assert (tmp_path / "provenance" / "inputs_inventory.t.json").exists()
+    assert (tmp_path / "t" / "policy_2011_comparison.json").exists()
+    assert (tmp_path / "t" / "inputs_inventory.json").exists()
+    assert (tmp_path / "t" / "benchmark.json").exists()
     assert b["totals"]["max_peak_rss_gib"] > 0
 
 
+# Copy of the inputs where one year's file has `extra_cols_west` extra west columns (like real WorldPop 2010).
 def _shifted_copy(synthetic_inputs, tmp_path, year, extra_cols_west=1, fill_value=0.0):
-    """Copy of the inputs where one year's file has `extra_cols_west` extra west columns (like real WorldPop 2010)."""
     inp = tmp_path / "in"
     shutil.copytree(synthetic_inputs, inp)
     p = inp / "worldpop" / f"ind_ppp_{year}.tif"
@@ -207,6 +222,7 @@ def _shifted_copy(synthetic_inputs, tmp_path, year, extra_cols_west=1, fill_valu
     return inp, arr
 
 
+# Checks: whole pixel extent difference is registered.
 def test_whole_pixel_extent_difference_is_registered(base_run, synthetic_inputs, tmp_path):
     cfg, _ = base_run
     inp, orig = _shifted_copy(synthetic_inputs, tmp_path, 2005, fill_value=0.0)   # extra valid cells hold 0 people
@@ -220,6 +236,7 @@ def test_whole_pixel_extent_difference_is_registered(base_run, synthetic_inputs,
     assert a.tobytes() == b.tobytes()
 
 
+# Checks: population outside reference grid fails qa.
 def test_population_outside_reference_grid_fails_qa(synthetic_inputs, tmp_path):
     inp, _ = _shifted_copy(synthetic_inputs, tmp_path, 2005, fill_value=50.0)     # 150 people outside the grid
     cfg = load_config(write_config(tmp_path / "c.toml", inp, tmp_path))

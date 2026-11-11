@@ -1,3 +1,5 @@
+# Shared pytest setup: puts cgis_level1 and the repository root (ingestion) on sys.path, fixes PROJ, provides
+# the session-wide SYNTHETIC inputs and the config writer used by test_pipeline.py.
 import sys
 from pathlib import Path
 
@@ -12,6 +14,7 @@ from cgis_level1.grid import ensure_proj_data  # noqa: E402
 ensure_proj_data()
 
 
+# Session fixture: SYNTHETIC inputs written once by make_synthetic.
 @pytest.fixture(scope="session")
 def synthetic_inputs(tmp_path_factory):
     from cgis_level1.synthetic import make_synthetic
@@ -20,6 +23,7 @@ def synthetic_inputs(tmp_path_factory):
     return d
 
 
+# Writes a synthetic TOML config for the given inputs/outputs with test overrides (used by all pipeline tests).
 def write_config(path: Path, inputs: Path, out: Path, *, tile=100, workers=1, years=None, block=10,
                  policy="interpolate_2015", extra="") -> Path:
     years = years or [2001, 2005, 2010, 2011]

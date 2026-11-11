@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Documented LAWFUL FALLBACK acquisition of the open (CC BY 4.0) Level 1 inputs, used because the Agent 1
-# source deliveries (science/data, science/inputs) were not yet available on the frozen base. Agent 1 owns
-# acquisition; when its manifests exist, point the config patterns at Agent 1's files instead.
+# Downloads the open (CC BY 4.0 / ODbL) Level 1 inputs into DATA_ROOT, resumable (re-run to continue).
+# Alternative to `python -m cgis_data fetch/tiles` (science/data); both give byte-identical files.
 #
 #   WorldPop Global1 unconstrained India ppp 2001-2011  (~1.85 GB each, ~20.3 GB total)
-#   GHSL GHS-BUILT-S + NRES R2023A 4326_3ss, epochs 2000/2005/2010 (+2015 for D-L1-01 option C)
+#   GHSL GHS-BUILT-S + NRES R2023A 4326_3ss, epochs 2000/2005/2010 (+2015, used only for 2011)
 #   GHS-POP R2023A 4326_3ss, epochs 2000/2005/2010/2015 (evaluation reference)
 #   geoBoundaries gbOpen IND ADM1/ADM2 (diagnostic evaluation zones)
 #

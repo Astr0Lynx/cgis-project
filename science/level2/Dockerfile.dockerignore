@@ -1,3 +1,4 @@
+# Build-context allow-list for science/level2/Dockerfile: only ingestion/ and science/level2/.
 **
 !ingestion/
 !ingestion/**

@@ -1,7 +1,5 @@
-"""GHSL 100 m Mollweide tile index (verified against R6_C26: origin x=6,959,000 y=4,000,000, 10000x10000 px).
-
-Rows R1..R18 run north->south, columns C1..C36 west->east, tiles are 1000 km square.
-"""
+# GHSL tile indexes: 100 m Mollweide (1000 km tiles, R1..R18 x C1..C36) and EPSG:4326 3 arc-second.
+# Origins verified on the real R6_C26 (Mollweide) and R7_C26 (4326) tiles; used by the `tiles` CLI and national checks.
 from __future__ import annotations
 
 import math
@@ -11,12 +9,8 @@ X0, Y0, TILE_M, NROWS, NCOLS = -18_041_000.0, 9_000_000.0, 1_000_000.0, 18, 36
 _T = Transformer.from_crs("EPSG:4326", "ESRI:54009", always_xy=True)
 
 
-def tile_origin(row: int, col: int) -> tuple[float, float]:
-    return X0 + (col - 1) * TILE_M, Y0 - (row - 1) * TILE_M
-
-
+# Mollweide (row, col) tiles intersecting a lon/lat bbox (edges densified); used by the `tiles` CLI.
 def tiles_for_bbox(bbox_wgs84: tuple[float, float, float, float], densify: int = 25) -> list[tuple[int, int]]:
-    """(row, col) tiles intersecting a lon/lat bbox (edges densified because Mollweide is curved)."""
     w, s, e, n = bbox_wgs84
     pts = []
     for i in range(densify + 1):
@@ -28,8 +22,8 @@ def tiles_for_bbox(bbox_wgs84: tuple[float, float, float, float], densify: int =
     return [(r, c) for r in range(max(r0, 1), min(r1, NROWS) + 1) for c in range(max(c0, 1), min(c1, NCOLS) + 1)]
 
 
-INDIA_BBOX = (68.0, 6.5, 97.5, 37.2)        # mainland + Andaman/Nicobar excluded? see below
-# Andaman & Nicobar (92.2-94.3E, 6.7-13.7N) lie inside this bbox; Lakshadweep (71.5-74.0E, 8.0-12.5N) too.
+# India bbox; includes Andaman & Nicobar (92.2-94.3E, 6.7-13.7N) and Lakshadweep (71.5-74.0E, 8.0-12.5N).
+INDIA_BBOX = (68.0, 6.5, 97.5, 37.2)
 
 
 # ---- EPSG:4326 3 arc-second product (the primary GHSL grid) -------------------------------------------------
@@ -41,10 +35,12 @@ _R7C26 = (69.99208307850779, 29.099583419121082)
 TILE_DEG_4326 = TILE_PX_4326 * PIX_4326
 
 
+# Upper-left lon/lat of a 4326_3ss tile; checked against WorldPop's lattice in tests.
 def tile_origin_4326(row: int, col: int) -> tuple[float, float]:
     return _R7C26[0] + (col - 26) * TILE_DEG_4326, _R7C26[1] - (row - 7) * TILE_DEG_4326
 
 
+# 4326_3ss (row, col) tiles intersecting a lon/lat bbox; used by the `tiles` CLI and national.check_ghsl_tiles.
 def tiles_for_bbox_4326(bbox_wgs84: tuple[float, float, float, float]) -> list[tuple[int, int]]:
     w, s, e, n = bbox_wgs84
     c0, c1 = (math.floor((x - _R7C26[0]) / TILE_DEG_4326) + 26 for x in (w, e))

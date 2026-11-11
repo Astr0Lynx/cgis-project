@@ -1,4 +1,5 @@
-"""CLI: python -m cgis_data {inventory|probe|fetch|crop} ..."""
+# CLI: python -m cgis_data {inventory|probe|fetch|tiles|national|census-join|grids}.
+# Writes provenance records to science/results/data/ and downloads to the git-ignored data/incoming/.
 from __future__ import annotations
 
 import argparse
@@ -10,27 +11,30 @@ from . import fetch as F
 from . import sources as S
 
 REPO = Path(__file__).resolve().parents[3]
-STATE = REPO / "science" / "inputs" / "source_state.json"
+RESULTS = REPO / "science" / "results" / "data"   # committed provenance records and integrity reports
+STATE = RESULTS / "source_state.json"
 DEFAULT_ROOT = REPO / "data"      # git-ignored
 
 
+# Reads the shared download state (sizes, sha256, local paths); used by every subcommand in main().
 def _state():
     return F.read_state(STATE)
 
 
+# Parses the subcommand and runs it; entry point of `python -m cgis_data`.
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="cgis_data")
     sub = ap.add_subparsers(dest="cmd", required=True)
     inv = sub.add_parser("inventory", help="write source_inventory.json from registry + state")
-    inv.add_argument("--out", default=str(REPO / "science/docs/source_inventory.json"))
+    inv.add_argument("--out", default=str(RESULTS / "source_inventory.json"))
     pr = sub.add_parser("probe", help="HEAD every available source URL and record sizes (no downloads)")
     fe = sub.add_parser("fetch", help="resumable download of unrestricted sources")
     fe.add_argument("source_ids", nargs="+")
     fe.add_argument("--root", default=str(DEFAULT_ROOT))
-    nat = sub.add_parser("national", help="national integrity report -> science/inputs/national_validation.json")
+    nat = sub.add_parser("national", help="national integrity report -> science/results/data/national_validation.json")
     nat.add_argument("--root", default=str(DEFAULT_ROOT))
     nat.add_argument("--step", type=int, default=16)
-    sub.add_parser("census-join", help="real Census PCA district totals <-> Census-coded polygons -> science/inputs/census_district_join.json")
+    sub.add_parser("census-join", help="real Census PCA district totals <-> Census-coded polygons -> science/results/data/census_district_join.json")
     sub.add_parser("grids", help="lattice/shape report for the downloaded WorldPop years")
     ti = sub.add_parser("tiles", help="fetch only the GHSL tiles intersecting a bbox (or India)")
     ti.add_argument("source_ids", nargs="+")
@@ -82,7 +86,7 @@ def main(argv=None) -> int:
                "coverage": {y: N.coverage_vs_footprint(p, fp, a.step) for y, p in sorted(wp.items())},
                "ghsl_tiles": N.check_ghsl_tiles(st, root, ref, [s.source_id for s in S.all_sources() if s.tiles])}
         rep["elapsed_s"], rep["peak_rss_mb"] = round(_t.time() - t0, 1), N.peak_rss_mb()
-        (REPO / "science/inputs/national_validation.json").write_text(json.dumps(rep, indent=1, default=str) + "\n")
+        (RESULTS / "national_validation.json").write_text(json.dumps(rep, indent=1, default=str) + "\n")
         print("wrote national_validation.json", rep["elapsed_s"], "s", rep["peak_rss_mb"], "MB")
     elif a.cmd == "census-join":
         import pyogrio
@@ -97,7 +101,7 @@ def main(argv=None) -> int:
         rep["inputs"] = {k: {"sha256": st[k]["sha256"]} for k in ("india-census-2011-pca-state-district",
                                                                  "india-datameet-census2011-districts")}
         rep["polygon_only_names"] = [str(g.DISTRICT[i]) for i, c in enumerate(g.censuscode) if str(int(c)) in rep["polygon_only"]]
-        (REPO / "science/inputs/census_district_join.json").write_text(json.dumps(rep, indent=1, default=str) + "\n")
+        (RESULTS / "census_district_join.json").write_text(json.dumps(rep, indent=1, default=str) + "\n")
         print(json.dumps({k: rep[k] for k in ("census_districts", "polygons", "matched", "census_only", "polygon_only", "polygon_only_names", "state_code_mismatches", "sum_tot_p", "official_total_matches", "invalid_geometries")}, default=str))
     elif a.cmd == "grids":
         from .validate import worldpop_grid_report

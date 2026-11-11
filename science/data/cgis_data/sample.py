@@ -1,12 +1,9 @@
-"""Build the real regional sample delivery (WorldPop + GHSL + manifest) from downloaded originals.
-
-Originals live under data/incoming (git-ignored); derived scientific inputs go to data/work/<sample>/ and the
-delivery (manifest-relative rasters/) under data/outputs/<sample>/. Originals are never modified.
-"""
+# Builds a real regional sample delivery (WorldPop + GHSL windows + v1 manifest) from downloaded originals.
+# Originals stay in data/incoming; outputs go to data/outputs/<sample>/ (git-ignored). Run from Python, e.g.
+# build_sample(Path('data'), state, 'hyderabad-region', (77.9, 16.9, 79.1, 17.9), 2011, [(8, 26)]).
 from __future__ import annotations
 
 import json
-import resource
 import time
 import zipfile
 from pathlib import Path
@@ -17,11 +14,12 @@ from . import harmonize as H
 from . import manifest as M
 from . import sources as S
 from . import validate as V
-from .fetch import sha256_file
+from .national import peak_rss_mb
 
 NODATA = -99999.0
 
 
+# Extracts the .tif of a GHSL tile zip once; used by build_sample.
 def _extract_tile(zip_path: Path, outdir: Path) -> Path:
     outdir.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path) as z:
@@ -32,6 +30,7 @@ def _extract_tile(zip_path: Path, outdir: Path) -> Path:
     return dest
 
 
+# Crops WorldPop, copies aligned GHSL windows, checks units and writes manifest + sample_report.json.
 def build_sample(root: Path, state: dict, name: str, bbox: tuple, worldpop_year: int, tiles: list[tuple[int, int]],
                  out_manifest: bool = True) -> dict:
     t0 = time.time()
@@ -83,7 +82,7 @@ def build_sample(root: Path, state: dict, name: str, bbox: tuple, worldpop_year:
             geographic_target=f"sample:{name}", dataset_id=f"{sid}-{name}"))
 
     report["elapsed_s"] = round(time.time() - t0, 1)
-    report["peak_rss_mb"] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)
+    report["peak_rss_mb"] = peak_rss_mb()
     if out_manifest:
         M.write_manifest(deliv / "manifest.json", entries)
     (deliv / "sample_report.json").write_text(json.dumps(report, indent=2, default=str) + "\n")

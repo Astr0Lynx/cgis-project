@@ -1,3 +1,4 @@
+# Tests for national.py (footprint coverage and duplicate-year detection).
 import numpy as np
 import rasterio
 from rasterio.transform import from_origin
@@ -6,6 +7,7 @@ from shapely.geometry import box
 from cgis_data import national as N
 
 
+# Writes a small WorldPop-like raster.
 def _wp(tmp_path, d, nodata=-99999.0):
     p = tmp_path / "w.tif"
     with rasterio.open(p, "w", driver="GTiff", height=d.shape[0], width=d.shape[1], count=1, dtype="float32",
@@ -14,6 +16,7 @@ def _wp(tmp_path, d, nodata=-99999.0):
     return str(p)
 
 
+# Coverage counts holes inside and populated cells outside the footprint.
 def test_coverage_reports_holes_and_outside_data(tmp_path):
     d = np.ones((40, 40)); d[5:10, 5:10] = -99999                  # hole inside; data also exists outside footprint
     fp = box(70.0, 26.0, 74.0, 30.0)                                 # = top 40 rows x 40 cols grid is 70-74 / 26-30
@@ -23,6 +26,7 @@ def test_coverage_reports_holes_and_outside_data(tmp_path):
     assert r2["populated_outside_footprint"] > 0
 
 
+# Identical checksums across years and missing checksums are reported.
 def test_duplicate_year_checksums():
     st = {f"india-worldpop-unconstrained-{y}": {"sha256": "a" if y in (2003, 2004) else str(y)} for y in range(2001, 2012)}
     st["india-worldpop-unconstrained-2001"]["sha256"] = None

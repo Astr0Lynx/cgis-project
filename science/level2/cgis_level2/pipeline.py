@@ -1,4 +1,5 @@
-"""Versioned handoff, resource limits and per-town resumable publication."""
+# Level 2 run: validates the config and inputs, builds each town into a checksummed checkpoint folder, enforces
+# the memory budget and writes run.json plus the v1 ingestion manifest.
 
 import hashlib
 import json
@@ -14,7 +15,7 @@ from time import perf_counter
 import psutil
 import rasterio
 
-from ingestion.paths import sha256_file
+from ingestion.importer import sha256_file
 
 from .figures import plot_town
 from .inputs import MODELS, Source, read_json, read_legend, read_level1, read_towns
@@ -24,10 +25,12 @@ ARTIFACTS = ("population.tif", "comparison.tif", "evaluation.png", "report.json"
 GIB = 1024 ** 3
 
 
+# Canonical JSON text (sorted keys, no NaN); used for output files and fingerprints.
 def _encode(data):
     return json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
 
 
+# Atomically writes canonical JSON; used by run, synthetic.make_fixture and tests.
 def _write_json(path, data):
     with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, encoding="utf-8", newline="\n",
                                      delete=False) as stream:
@@ -44,6 +47,7 @@ def _write_json(path, data):
         temporary.unlink(missing_ok=True)
 
 
+# (commit, dirty) from CGIS_LEVEL2_BUILD_COMMIT or git; used by run for provenance and the real-mode check.
 def _model_revision():
     build_commit = os.environ.get("CGIS_LEVEL2_BUILD_COMMIT", "")
     if re.fullmatch(r"[0-9a-f]{40}", build_commit):
@@ -59,6 +63,7 @@ def _model_revision():
         return None, True
 
 
+# Peak resident memory of this process in bytes (Windows peak_wset or getrusage); used by run.
 def _peak_rss(proc):
     memory = proc.memory_info()
     if hasattr(memory, "peak_wset"):
@@ -68,6 +73,7 @@ def _peak_rss(proc):
     return int(peak * 1024 if platform.system() == "Linux" else peak)
 
 
+# Validates the method block (real mode: approved hard mask, non-zero coverage cut-offs); used by run and tests.
 def _method(cfg, synthetic):
     method = cfg["method"]
     if method["primary"] not in MODELS:
@@ -83,6 +89,7 @@ def _method(cfg, synthetic):
     return method
 
 
+# Verifies a town folder against its checkpoint.json and returns (report, checksums); used by run.
 def _checkpoint(path, fingerprint):
     marker = read_json(path / "checkpoint.json")
     if (marker["fingerprint"] != fingerprint or set(marker["sha256"]) != set(ARTIFACTS)
@@ -91,6 +98,7 @@ def _checkpoint(path, fingerprint):
     return read_json(path / "report.json"), marker["sha256"]
 
 
+# Builds the v1 manifest entry for one town; used by run.
 def _manifest_entry(folder, output, report, checksums, cfg, provenance):
     synthetic = cfg["mode"] == "synthetic"
     prefix = "synthetic-" if synthetic else ""
@@ -116,6 +124,8 @@ def _manifest_entry(folder, output, report, checksums, cfg, provenance):
     }
 
 
+# Runs every selected town (or only one as a pilot) and returns the manifest or pilot report path; used by the
+# CLI and tests.
 def run(config_path, *, only=None):
     started = perf_counter()
     config_path = Path(config_path).resolve()
@@ -133,6 +143,7 @@ def run(config_path, *, only=None):
         raise ValueError("memory_limit_gib must be between 0.25 and 8 GiB")
     proc = psutil.Process()
 
+    # Raises MemoryError once peak RSS exceeds the configured budget; called between blocks.
     def guard():
         if _peak_rss(proc) > limit * GIB:
             raise MemoryError(f"process peak RSS exceeds configured {limit} GiB")

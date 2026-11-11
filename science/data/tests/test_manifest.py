@@ -1,3 +1,4 @@
+# Tests for manifest.py and vector_sample.py against the repository's ingestion manifest parser.
 import json
 import sys
 from pathlib import Path
@@ -12,6 +13,7 @@ REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO))           # reuse the ORIGINAL ingestion manifest parser (read-only)
 
 
+# A raster entry parses with ingestion.manifest.parse_entry.
 def test_entry_parses_with_original_ingestion_parser(make_raster, tmp_path):
     from ingestion.manifest import parse_entry
     src = next(s for s in S.all_sources() if s.source_id == "india-worldpop-unconstrained-2005")
@@ -23,6 +25,7 @@ def test_entry_parses_with_original_ingestion_parser(make_raster, tmp_path):
     assert spec.dataset_id == "india-worldpop-unconstrained-2005"
 
 
+# A CRS without an EPSG code is refused.
 def test_non_epsg_crs_is_refused_with_actionable_message(make_raster):
     src = next(s for s in S.all_sources() if s.source_id == "india-ghsl-built-total-2010")
     p = make_raster("moll.tif", data=np.ones((8, 8)), crs="ESRI:54009")
@@ -30,12 +33,14 @@ def test_non_epsg_crs_is_refused_with_actionable_message(make_raster):
         M.raster_entry(src, "rasters/x.tif", p, processing_steps=[])
 
 
+# Duplicate (dataset_id, version) is rejected.
 def test_duplicate_dataset_version_rejected(tmp_path):
     e = {"dataset_id": "a", "version": 1}
     with pytest.raises(ValueError):
         M.write_manifest(tmp_path / "m.json", [e, dict(e)])
 
 
+# Vector sample entry parses; invalid source polygons are rejected.
 def test_vector_sample_entry_parses_and_rejects_invalid(tmp_path):
     from cgis_data.vector_sample import make_vector_sample
     from ingestion.manifest import parse_entry

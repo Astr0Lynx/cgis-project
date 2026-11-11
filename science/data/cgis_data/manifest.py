@@ -1,4 +1,4 @@
-"""Build ingestion manifest v1 entries (compatible with ingestion/manifest.py) with explicit provenance."""
+# Builds ingestion manifest v1 entries (accepted by ingestion/manifest.py) with explicit provenance.
 from __future__ import annotations
 
 import json
@@ -15,6 +15,7 @@ SCHEMA_PRODUCT_LEVEL = "source"
 ALLOWED_UNITS = {"people_per_cell", "m2_per_cell"}
 
 
+# Current repository commit, or 'unknown'; used by raster_entry for provenance.
 def git_commit(repo: str | Path = ".") -> str:
     try:
         return subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
@@ -22,6 +23,7 @@ def git_commit(repo: str | Path = ".") -> str:
         return "unknown"
 
 
+# Builds one v1 raster manifest entry with expect block and provenance; used by sample.build_sample.
 def raster_entry(src: Source, file_rel: str, abs_path: str | Path, *, processing_steps: list[str],
                  upstream_checksums: dict[str, str] | None = None, geographic_target: str = "India",
                  code_commit: str | None = None, version: int = 1, dataset_id: str | None = None) -> dict:
@@ -30,7 +32,7 @@ def raster_entry(src: Source, file_rel: str, abs_path: str | Path, *, processing
     with rasterio.open(abs_path) as ds:
         epsg = ds.crs.to_epsg()
         if epsg is None:
-            raise ValueError(f"{abs_path}: CRS has no EPSG code; the importer requires one (reproject or file A4 CR)")
+            raise ValueError(f"{abs_path}: CRS has no EPSG code; the importer requires one (reproject first)")
         expect = {"crs": f"EPSG:{epsg}", "nodata": ds.nodata, "dtype": ds.dtypes[0],
                   "width": ds.width, "height": ds.height}
     return {
@@ -49,6 +51,7 @@ def raster_entry(src: Source, file_rel: str, abs_path: str | Path, *, processing
     }
 
 
+# Writes a v1 manifest, rejecting duplicate (dataset_id, version); used by sample.build_sample.
 def write_manifest(path: str | Path, entries: list[dict]) -> None:
     ids = [(e["dataset_id"], e["version"]) for e in entries]
     if len(ids) != len(set(ids)):

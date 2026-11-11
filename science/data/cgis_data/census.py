@@ -1,4 +1,4 @@
-"""Census 2011 PCA (district level) <-> Census-coded polygon join checks on real files."""
+# Census 2011 PCA (district level) <-> Census-coded polygon join on real files; used by the `census-join` CLI.
 from __future__ import annotations
 
 import openpyxl
@@ -6,8 +6,8 @@ import openpyxl
 from .validate import check_census_join
 
 
+# District 'Total' rows of the PCA workbook keyed by the national district code; used by the `census-join` CLI.
 def read_pca_districts(xlsx_path: str) -> dict[str, dict]:
-    """District rows (Level == DISTRICT, TRU == Total) keyed by the NATIONAL sequential district code string."""
     ws = openpyxl.load_workbook(xlsx_path, read_only=True).active
     hdr = [str(c) for c in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
     ix = {h: i for i, h in enumerate(hdr)}
@@ -21,9 +21,9 @@ def read_pca_districts(xlsx_path: str) -> dict[str, dict]:
     return out
 
 
+# 1:1 join report on the national district code (unmatched, state mismatches, population total); used by `census-join`.
 def join_report(pca: dict[str, dict], polygon_codes: list, polygon_states: list, invalid_geometry_names: list[str],
                 official_total: int | None = None) -> dict:
-    """1:1 join on the national district code; reports unmatched codes, state-code agreement and population total."""
     codes = [str(int(c)) for c in polygon_codes]
     j = check_census_join(pca.keys(), codes)              # raises on duplicates within either side (no silent de-duplication)
     st_mismatch = [c for c, s in zip(codes, polygon_states) if c in pca and pca[c]["state"] != int(s)]

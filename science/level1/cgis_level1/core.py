@@ -1,12 +1,9 @@
-"""Pure-NumPy scientific core (no I/O). Every function here has golden-value tests in ``tests/test_core.py``.
-
-Conventions
------------
-* Arrays are 2-D, north-up, row-major. Counts and areas are extensive quantities: values per *cell*.
-* ``NaN`` marks missing weight inputs inside the core; integer/float source NoData is converted to NaN by
-  the I/O layer before the core sees it.
-* All arithmetic is float64; outputs are cast to float32 only when written.
-"""
+# Pure-NumPy scientific core of Level 1 (no I/O); golden-value tests in tests/test_core.py.
+# Conventions:
+# * Arrays are 2-D, north-up, row-major. Counts and areas are extensive quantities: values per *cell*.
+# * ``NaN`` marks missing weight inputs inside the core; integer/float source NoData is converted to NaN by
+#   the I/O layer before the core sees it.
+# * All arithmetic is float64; outputs are cast to float32 only when written.
 
 from __future__ import annotations
 
@@ -18,6 +15,7 @@ import numpy as np
 # --------------------------------------------------------------------------------------------------
 # Step 1 — residential built-up surface per GHSL epoch
 # --------------------------------------------------------------------------------------------------
+# Per-tile/per-year counters of the residential step; aggregated in pipeline.run_year.
 @dataclass
 class ResidentialStats:
     cells: int = 0
@@ -25,6 +23,7 @@ class ResidentialStats:
     nres_gt_total_m2: float = 0.0     # surplus NRES area removed by the clip
     missing: int = 0                  # cells where total or NRES is NaN/NoData
 
+    # Adds another tile's counters (pipeline.run_year).
     def add(self, o: "ResidentialStats") -> None:
         self.cells += o.cells
         self.nres_gt_total += o.nres_gt_total
@@ -32,12 +31,11 @@ class ResidentialStats:
         self.missing += o.missing
 
 
+# ``R = max(total - NRES, 0)`` on one grid, both in m² of built-up *surface* per cell.
+# NaN in either input propagates to NaN (missing weight), never silently to zero. Both inputs must be
+# surfaces from the same GHSL release and grid; mixing GHS-BUILT-V (volume) is a caller error.
+# Used by pipeline.process_tile (per GHSL epoch).
 def residential(total: np.ndarray, nres: np.ndarray) -> tuple[np.ndarray, ResidentialStats]:
-    """``R = max(total - NRES, 0)`` on one grid, both in m² of built-up *surface* per cell.
-
-    NaN in either input propagates to NaN (missing weight), never silently to zero. Both inputs must be
-    surfaces from the same GHSL release and grid; mixing GHS-BUILT-V (volume) is a caller error.
-    """
     if total.shape != nres.shape:
         raise ValueError(f"total {total.shape} and NRES {nres.shape} grids differ")
     t = total.astype(np.float64, copy=False)
@@ -56,27 +54,27 @@ def residential(total: np.ndarray, nres: np.ndarray) -> tuple[np.ndarray, Reside
 # --------------------------------------------------------------------------------------------------
 # Step 2 — temporal weights
 # --------------------------------------------------------------------------------------------------
+# ``R_year = sum_k coef_k * R_epoch_k`` followed by ``max(., 0)`` (only extrapolation can go negative).
+# Built by temporal_rule; applied by apply_rule (pipeline.rules_for_year/process_tile).
 @dataclass(frozen=True)
 class TemporalRule:
-    """``R_year = sum_k coef_k * R_epoch_k`` followed by ``max(., 0)`` (only extrapolation can go negative)."""
-
     year: int
     terms: tuple[tuple[int, float], ...]
     kind: str           # exact | interpolate | hold | extrapolate
     description: str
 
+    # Epochs this rule reads.
     @property
     def epochs(self) -> tuple[int, ...]:
         return tuple(e for e, _ in self.terms)
 
 
+# Linear interpolation between bracketing epochs; explicit, approved policy beyond the last epoch.
+# ``epochs`` are the required anchor epochs (2000/2005/2010). ``extra_epochs`` (e.g. 2015) are used *only*
+# by ``policy_2011='interpolate_2015'``. Years before the first epoch are refused.
+# Used by pipeline.rules_for_year and tests/test_core.py.
 def temporal_rule(year: int, epochs: tuple[int, ...], policy_2011: str | None = None,
                   extra_epochs: tuple[int, ...] = ()) -> TemporalRule:
-    """Linear interpolation between bracketing epochs; explicit, approved policy beyond the last epoch.
-
-    ``epochs`` are the required anchor epochs (2000/2005/2010). ``extra_epochs`` (e.g. 2015) are used *only*
-    by ``policy_2011='interpolate_2015'``. Years before the first epoch are refused.
-    """
     ep = tuple(sorted(epochs))
     if year in ep:
         return TemporalRule(year, ((year, 1.0),), "exact", f"GHSL epoch {year} used directly")
@@ -91,8 +89,7 @@ def temporal_rule(year: int, epochs: tuple[int, ...], policy_2011: str | None = 
     # year > last epoch
     if policy_2011 is None:
         raise ValueError(f"year {year} is after the last GHSL epoch {ep[-1]}: an explicit, approved policy "
-                         f"(one of hold_2010 | extrapolate_linear | interpolate_2015) is required — "
-                         "see METHODOLOGY_DECISION.md")
+                         f"(one of hold_2010 | extrapolate_linear | interpolate_2015) is required")
     last, prev = ep[-1], ep[-2]
     if policy_2011 == "hold_2010":
         return TemporalRule(year, ((last, 1.0),), "hold", f"hold last epoch {last} constant")
@@ -111,6 +108,7 @@ def temporal_rule(year: int, epochs: tuple[int, ...], policy_2011: str | None = 
     raise ValueError(f"unknown policy {policy_2011!r}")
 
 
+# Weighted sum of epoch weights, clipped at 0 for extrapolation (pipeline.process_tile).
 def apply_rule(rule: TemporalRule, r_by_epoch: dict[int, np.ndarray]) -> np.ndarray:
     out = None
     for e, c in rule.terms:
@@ -125,14 +123,13 @@ def apply_rule(rule: TemporalRule, r_by_epoch: dict[int, np.ndarray]) -> np.ndar
 # --------------------------------------------------------------------------------------------------
 # Step 3 — grid alignment of weights (same-resolution sub-pixel shift, area-overlap exact)
 # --------------------------------------------------------------------------------------------------
+# Area-overlap transfer of an extensive per-cell quantity between two grids of identical cell size.
+# ``src`` has shape (h+1, w+1); target cell (r, c) covers source pixel coordinates
+# ``[c+fx, c+fx+1] x [r+fy, r+fy+1]`` with ``0 <= fx, fy < 1``. Each source cell's quantity is split by
+# overlap area (uniform-within-cell assumption), so sum is conserved in the interior.
+# NaN in any contributing source cell with non-zero overlap yields NaN.
+# Used by grid.WeightSource.read.
 def shift_weights(src: np.ndarray, fx: float, fy: float) -> np.ndarray:
-    """Area-overlap transfer of an extensive per-cell quantity between two grids of identical cell size.
-
-    ``src`` has shape (h+1, w+1); target cell (r, c) covers source pixel coordinates
-    ``[c+fx, c+fx+1] x [r+fy, r+fy+1]`` with ``0 <= fx, fy < 1``. Each source cell's quantity is split by
-    overlap area (uniform-within-cell assumption), so sum is conserved in the interior.
-    NaN in any contributing source cell with non-zero overlap yields NaN.
-    """
     if not (0.0 <= fx < 1.0 and 0.0 <= fy < 1.0):
         raise ValueError("fractional offsets must be in [0, 1)")
     s = src.astype(np.float64, copy=False)
@@ -153,6 +150,7 @@ def shift_weights(src: np.ndarray, fx: float, fy: float) -> np.ndarray:
 # --------------------------------------------------------------------------------------------------
 # Step 4 — parent-support redistribution  p_ai = P_a * R_ai / sum_j R_aj
 # --------------------------------------------------------------------------------------------------
+# Per-tile/per-year redistribution counters and mass balance; aggregated in pipeline.run_year.
 @dataclass
 class RedistStats:
     parents: int = 0                 # parents (blocks) with >=1 valid WorldPop cell
@@ -167,6 +165,7 @@ class RedistStats:
     max_parent_rel_err: float = 0.0
     negative_out: int = 0
 
+    # Adds another tile's counters (pipeline.run_year).
     def add(self, o: "RedistStats") -> None:
         for k in ("parents", "parents_zero_weight", "parents_populated", "valid_cells",
                   "weight_missing_cells", "negative_out"):
@@ -178,31 +177,32 @@ class RedistStats:
         self.max_parent_rel_err = max(self.max_parent_rel_err, o.max_parent_rel_err)
 
 
-def _blocksum(a: np.ndarray, k: int) -> np.ndarray:
+# Sum over non-overlapping k x k blocks (shape must be a multiple of k); used here and in evaluate.eval_tile.
+def blocksum(a: np.ndarray, k: int) -> np.ndarray:
     h, w = a.shape
     return a.reshape(h // k, k, w // k, k).sum(axis=(1, 3))
 
 
+# Repeats each block value over its k x k cells (redistribute_blocks).
 def _expand(a: np.ndarray, k: int) -> np.ndarray:
     return np.repeat(np.repeat(a, k, axis=0), k, axis=1)
 
 
+# Redistribute WorldPop counts within k x k parent blocks proportionally to residential weight.
+# * ``pop``: WorldPop counts (float); ``valid``: True where WorldPop has data. Only valid cells are
+#   eligible targets and only valid cells contribute to ``P_a`` — population never moves into water /
+#   out-of-coverage cells, and every eligible cell belongs to exactly one parent.
+# * ``weight``: residential surface R on the same grid (NaN = missing -> treated as 0 and counted).
+# * Zero-weight parents (sum R == 0): ``fallback='worldpop'`` keeps WorldPop's own distribution
+#   (identity), ``'uniform'`` spreads ``P_a`` evenly over the valid cells.
+# * Shape must be a multiple of k (the I/O layer pads partial edge blocks with invalid cells).
+#
+# Returns float array (NaN where invalid) and statistics including per-parent mass balance computed
+# on the *cast* output (what is actually written).
+# Used by pipeline.process_tile and tests/test_core.py.
 def redistribute_blocks(pop: np.ndarray, valid: np.ndarray, weight: np.ndarray, k: int,
                         fallback: str = "worldpop", out_dtype=np.float32
                         ) -> tuple[np.ndarray, RedistStats]:
-    """Redistribute WorldPop counts within k x k parent blocks proportionally to residential weight.
-
-    * ``pop``: WorldPop counts (float); ``valid``: True where WorldPop has data. Only valid cells are
-      eligible targets and only valid cells contribute to ``P_a`` — population never moves into water /
-      out-of-coverage cells, and every eligible cell belongs to exactly one parent.
-    * ``weight``: residential surface R on the same grid (NaN = missing -> treated as 0 and counted).
-    * Zero-weight parents (sum R == 0): ``fallback='worldpop'`` keeps WorldPop's own distribution
-      (identity), ``'uniform'`` spreads ``P_a`` evenly over the valid cells.
-    * Shape must be a multiple of k (the I/O layer pads partial edge blocks with invalid cells).
-
-    Returns float array (NaN where invalid) and statistics including per-parent mass balance computed
-    on the *cast* output (what is actually written).
-    """
     if pop.shape != valid.shape or pop.shape != weight.shape:
         raise ValueError("pop/valid/weight shapes differ")
     h, w = pop.shape
@@ -218,9 +218,9 @@ def redistribute_blocks(pop: np.ndarray, valid: np.ndarray, weight: np.ndarray, 
     if np.any(r < 0):
         raise ValueError("negative residential weight")
 
-    P = _blocksum(p, k)
-    S = _blocksum(r, k)
-    N = _blocksum(valid.astype(np.int64), k)
+    P = blocksum(p, k)
+    S = blocksum(r, k)
+    N = blocksum(valid.astype(np.int64), k)
     Pe, Se, Ne = _expand(P, k), _expand(S, k), _expand(N, k)
     pos = Se > 0
     with np.errstate(invalid="ignore", divide="ignore"):
@@ -235,7 +235,7 @@ def redistribute_blocks(pop: np.ndarray, valid: np.ndarray, weight: np.ndarray, 
 
     # mass balance on the cast values that will be written
     oc = np.where(valid, out_cast.astype(np.float64), 0.0)
-    Pout = _blocksum(oc, k)
+    Pout = blocksum(oc, k)
     has = N > 0
     abs_err = np.abs(Pout - P)
     rel_err = np.where(P > 0, abs_err / np.where(P > 0, P, 1.0), 0.0)
@@ -250,15 +250,14 @@ def redistribute_blocks(pop: np.ndarray, valid: np.ndarray, weight: np.ndarray, 
     return out_cast, st
 
 
+# Second pass of the two-pass *zone-parent* mode (e.g. rasterized district IDs as parents).
+# ``P_zone``, ``S_zone``, ``N_zone`` are national per-zone sums of WorldPop, residential weight and valid
+# cell counts from pass 1 (:func:`zone_sums`). Zone id 0 (or negative) = no parent -> output keeps
+# WorldPop value (identity), so no population is lost.
+# Zone-parent mode; tested in tests/test_core.py, not wired into the pipeline.
 def redistribute_zones(pop: np.ndarray, valid: np.ndarray, weight: np.ndarray, zones: np.ndarray,
                        P_zone: np.ndarray, S_zone: np.ndarray, N_zone: np.ndarray,
                        fallback: str = "worldpop", out_dtype=np.float32) -> np.ndarray:
-    """Second pass of the two-pass *zone-parent* mode (e.g. rasterized district IDs as parents).
-
-    ``P_zone``, ``S_zone``, ``N_zone`` are national per-zone sums of WorldPop, residential weight and valid
-    cell counts from pass 1 (:func:`zone_sums`). Zone id 0 (or negative) = no parent -> output keeps
-    WorldPop value (identity), so no population is lost.
-    """
     p = np.where(valid, pop.astype(np.float64), 0.0)
     r = np.where(valid & ~np.isnan(weight), weight.astype(np.float64), 0.0)
     z = np.where(valid & (zones > 0), zones, 0).astype(np.int64)
@@ -271,9 +270,10 @@ def redistribute_zones(pop: np.ndarray, valid: np.ndarray, weight: np.ndarray, z
     return np.where(valid, out, np.nan).astype(out_dtype)
 
 
+# Pass-1 accumulation for zone-parent mode (bincount; bounded memory: O(nzones)).
+# Zone-parent mode; tested in tests/test_core.py, not wired into the pipeline.
 def zone_sums(pop: np.ndarray, valid: np.ndarray, weight: np.ndarray, zones: np.ndarray, nzones: int
               ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Pass-1 accumulation for zone-parent mode (bincount; bounded memory: O(nzones))."""
     p = np.where(valid, pop.astype(np.float64), 0.0).ravel()
     r = np.where(valid & ~np.isnan(weight), weight.astype(np.float64), 0.0).ravel()
     z = np.where(valid & (zones > 0), zones, 0).astype(np.int64).ravel()
@@ -281,3 +281,10 @@ def zone_sums(pop: np.ndarray, valid: np.ndarray, weight: np.ndarray, zones: np.
         raise ValueError("zone id exceeds nzones")
     return (np.bincount(z, weights=p, minlength=nzones), np.bincount(z, weights=r, minlength=nzones),
             np.bincount(z, weights=valid.ravel().astype(np.float64), minlength=nzones))
+
+
+# Summed moments of model x vs reference y (1-D float64) for streaming Pearson/MAE/RMSE.
+# Used by pipeline.process_tile (2011 policy comparison) and evaluate.eval_tile.
+def moments(x: np.ndarray, y: np.ndarray) -> dict:
+    return {"n": int(x.size), "sx": float(x.sum()), "sy": float(y.sum()), "sxx": float((x * x).sum()),
+            "syy": float((y * y).sum()), "sxy": float((x * y).sum()), "sad": float(np.abs(x - y).sum())}

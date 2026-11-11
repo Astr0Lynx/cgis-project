@@ -1,4 +1,4 @@
-"""Peak-RSS / disk / time measurement for the process tree, with an enforced memory budget."""
+# Peak-RSS / disk / time measurement for the process tree, with an enforced memory budget.
 
 from __future__ import annotations
 
@@ -11,7 +11,10 @@ from pathlib import Path
 import psutil
 
 
+# Background thread sampling RSS of the process tree, peak/free disk, with a budget flag.
+# Used as a context manager by pipeline.run_year and evaluate.evaluate_year.
 class ResourceMonitor:
+    # Sets the budget and starts the clock.
     def __init__(self, budget_gb: float, interval: float = 0.25, watch_dir: Path | None = None):
         self.budget = budget_gb * 1024 ** 3
         self.interval = interval
@@ -25,6 +28,7 @@ class ResourceMonitor:
         self.t0 = time.time()
         self.cpu0 = psutil.Process().cpu_times()
 
+    # Total RSS of this process and its children.
     def _sample(self) -> int:
         me = psutil.Process(os.getpid())
         total = 0
@@ -41,6 +45,7 @@ class ResourceMonitor:
         self.peak_children = max(self.peak_children, len(procs) - 1)
         return total
 
+    # Sampling loop (thread target).
     def _run(self) -> None:
         while not self._stop.is_set():
             rss = self._sample()
@@ -52,14 +57,17 @@ class ResourceMonitor:
                 self.min_free_disk = free if self.min_free_disk is None else min(self.min_free_disk, free)
             self._stop.wait(self.interval)
 
+    # Starts sampling.
     def __enter__(self) -> "ResourceMonitor":
         self._t.start()
         return self
 
+    # Stops sampling.
     def __exit__(self, *exc) -> None:
         self._stop.set()
         self._t.join()
 
+    # Resource summary written into run reports and eval bundles.
     def report(self) -> dict:
         return {
             "elapsed_s": round(time.time() - self.t0, 2),

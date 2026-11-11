@@ -1,18 +1,15 @@
-"""Independent spot-check of a national Level 1 COG.
-
-Recomputes randomly chosen 10x10 parents from the RAW inputs (WorldPop file + individual GHSL tile files,
-located by coordinates, no VRT and no cgis_level1 redistribution code) with a deliberately naive loop
-implementation of  p_i = P * R_i / sum R  and compares to the published COG.
-
-    python science/level1/scripts/spot_check.py --year 2003 [--n 300] [--seed 1]
-"""
+# Independent spot-check of a national Level 1 COG.
+# Recomputes randomly chosen 10x10 parents from the RAW inputs (WorldPop file + individual GHSL tile files,
+# located by coordinates, no VRT and no cgis_level1 redistribution code) with a deliberately naive loop
+# implementation of  p_i = P * R_i / sum R  and compares to the published COG.
+#
+#     python science/level1/scripts/spot_check.py --year 2003 [--n 300] [--seed 1]
 
 from __future__ import annotations
 
 import argparse
 import glob
 import json
-import math
 import random
 import sys
 from pathlib import Path
@@ -29,8 +26,9 @@ ensure_proj_data()
 K = 10
 
 
+# Value of the GHSL cell containing (lon, lat), searching the tiles directly.
+# Used by weight().
 def ghsl_value(kind_dir: str, lon: float, lat: float) -> float:
-    """Value of the GHSL cell containing (lon, lat), searching the tiles directly."""
     for f in glob.glob(str(ROOT / "data/incoming/ghsl" / kind_dir / "*.tif")):
         with rasterio.open(f) as ds:
             b = ds.bounds
@@ -40,7 +38,9 @@ def ghsl_value(kind_dir: str, lon: float, lat: float) -> float:
     return 0.0
 
 
+# Residential weight of one cell for a year/policy, recomputed by hand from raw tiles (main).
 def weight(year: int, epochs, lon: float, lat: float, policy: str) -> float:
+    # Residential surface of one epoch.
     def R(e):
         t = ghsl_value(f"GHS_BUILT_S_E{e}_GLOBE_R2023A_4326_3ss", lon, lat)
         n = ghsl_value(f"GHS_BUILT_S_NRES_E{e}_GLOBE_R2023A_4326_3ss", lon, lat)
@@ -58,6 +58,7 @@ def weight(year: int, epochs, lon: float, lat: float, policy: str) -> float:
     return max(1.2 * R(2010) - 0.2 * R(2005), 0.0)
 
 
+# CLI: samples random populated parents and compares them with the COG; prints/writes a JSON result.
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--year", type=int, required=True)

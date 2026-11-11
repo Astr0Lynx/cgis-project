@@ -1,12 +1,10 @@
-"""Deterministic SYNTHETIC fixtures that mimic the real input geometry.
-
-* WorldPop-like grid: EPSG:4326, 3 arc-second cells, origin on the integer-degree lattice, a size that is
-  *not* a multiple of the parent block (partial edge parents), a NoData "sea" and NoData holes.
-* GHSL-like grids: same cell size but shifted by half a cell (as GHSL R2023A 4326_3ss is relative to
-  WorldPop), split into two tiles (VRT mosaic), uint16 m2, with NRES > total cells and zero areas.
-* GHS-POP-like counts for epochs 2000/2005/2010/2015.
-Values are generated from a fixed seed; nothing here is a real population estimate.
-"""
+# Deterministic SYNTHETIC fixtures that mimic the real input geometry.
+# * WorldPop-like grid: EPSG:4326, 3 arc-second cells, origin on the integer-degree lattice, a size that is
+#   *not* a multiple of the parent block (partial edge parents), a NoData "sea" and NoData holes.
+# * GHSL-like grids: same cell size but shifted by half a cell (as GHSL R2023A 4326_3ss is relative to
+#   WorldPop), split into two tiles (VRT mosaic), uint16 m2, with NRES > total cells and zero areas.
+# * GHS-POP-like counts for epochs 2000/2005/2010/2015.
+# Values are generated from a fixed seed; nothing here is a real population estimate.
 
 from __future__ import annotations
 
@@ -26,6 +24,7 @@ YEARS = list(range(2001, 2012))
 EPOCHS = [2000, 2005, 2010, 2015]
 
 
+# Writes one tiled, deflate GeoTIFF fixture (make_synthetic).
 def _write(path: Path, arr: np.ndarray, transform: Affine, nodata, dtype: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with rasterio.open(path, "w", driver="GTiff", height=arr.shape[0], width=arr.shape[1], count=1,
@@ -34,6 +33,7 @@ def _write(path: Path, arr: np.ndarray, transform: Affine, nodata, dtype: str) -
         ds.write(arr.astype(dtype), 1)
 
 
+# Writes all SYNTHETIC inputs under `out` and returns their paths. Used by cli `make-synthetic` and tests/conftest.py.
 def make_synthetic(out: Path, seed: int = 20261107) -> dict:
     rng = np.random.default_rng(seed)
     yy, xx = np.mgrid[0:H, 0:W]
@@ -59,7 +59,6 @@ def make_synthetic(out: Path, seed: int = 20261107) -> dict:
     gh, gw = H + 6, W + 6
     gx0, gy0 = X0 - 3.5 * RES, Y0 + 3.5 * RES
     gyy, gxx = np.mgrid[0:gh, 0:gw]
-    gland = np.pad(land, 3, constant_values=False)
     gland = np.pad(land, ((3, 3), (3, 3)), constant_values=False)
     cell_m2 = 8500.0
     gtown = 2000 * np.exp(-(((gyy - 83) ** 2 + (gxx - 73) ** 2) / 300.0)) + \

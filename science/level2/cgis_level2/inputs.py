@@ -1,4 +1,5 @@
-"""Read the versioned Level 1 manifest and Agent 1's local Census and LULC delivery."""
+# Input readers: checksummed sources, the v1 Level 1 manifest, Census selection/PCA/polygons, the LULC legend
+# and raster or vector land cover resampled to the fine grid.
 
 import csv
 import json
@@ -20,7 +21,7 @@ from shapely.geometry import box, shape
 from shapely.strtree import STRtree
 
 from ingestion.manifest import SHA256_RE, load_manifest, parse_entry
-from ingestion.paths import sha256_file
+from ingestion.importer import sha256_file
 
 from .grid import AREA_EPS, CRS, north_up, polygon_in_grid
 
@@ -31,10 +32,12 @@ MORPHOLOGIES = {"urban", "peri-urban", "rural"}
 MODELS = ("soft", "hard")
 
 
+# Reads a UTF-8 (BOM-tolerant) JSON file; used across the package and tests.
 def read_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
 
+# Fails unless `expected` is a valid SHA-256 equal to the file's; used by Source.read and read_level1.
 def _verify(path, expected):
     if not isinstance(expected, str) or not SHA256_RE.fullmatch(expected):
         raise ValueError(f"valid sha256 is required for {path.name}")
@@ -42,11 +45,13 @@ def _verify(path, expected):
         raise ValueError(f"checksum mismatch for {path.name}")
 
 
+# One configured input file with its metadata (citation, licence, access record, checksum).
 @dataclass(frozen=True)
 class Source:
     path: Path
     metadata: dict
 
+    # Validates metadata (real mode needs an authorised access record) and the checksum; used by pipeline.run.
     @classmethod
     def read(cls, root, raw, synthetic):
         fields = ("dataset_id", "release", "citation", "license")
@@ -61,6 +66,8 @@ class Source:
         return cls(path, {k: v for k, v in raw.items() if k != "path"})
 
 
+# Loads the configured 2011 Level 1 entry from its v1 manifest and verifies it (real mode: accepted national
+# checksum and provenance); used by pipeline.run.
 def read_level1(root, raw, synthetic):
     path = root / raw["manifest"]
     if read_json(path).get("manifest_version") != 1:
@@ -82,6 +89,7 @@ def read_level1(root, raw, synthetic):
     return spec
 
 
+# A selected settlement with its Census total and EPSG:6933 polygon.
 @dataclass(frozen=True)
 class Town:
     census_id: str
@@ -93,6 +101,7 @@ class Town:
     polygon: object
 
 
+# Reads a CSV keyed by unique, well-formed census_id; used by read_towns.
 def _by_id(path):
     with path.open(newline="", encoding="utf-8-sig") as stream:
         out = {}
@@ -104,6 +113,8 @@ def _by_id(path):
         return out
 
 
+# Joins selection, PCA totals and polygons by Census ID and enforces names, vintage, coverage of strata and
+# no polygon overlaps; used by pipeline.run.
 def read_towns(selection, pca, boundaries, synthetic):
     selected, census = _by_id(selection.path), _by_id(pca.path)
     if not 1 <= len(selected) <= 100:
@@ -156,6 +167,7 @@ def read_towns(selection, pca, boundaries, synthetic):
     return towns
 
 
+# One legend class with its soft sensitivity weight and hard-mask eligibility.
 @dataclass(frozen=True)
 class LandClass:
     code: int
@@ -165,6 +177,8 @@ class LandClass:
     hard: float
 
 
+# Builds {code: LandClass} from legend.json and method.class_weights, requiring a one-to-one match; used by
+# pipeline.run.
 def read_legend(source, model):
     rows = read_json(source.path)["classes"]
     weights = model["class_weights"]
@@ -186,7 +200,9 @@ def read_legend(source, model):
     return result
 
 
+# Categorical LULC raster warped (nearest) onto the fine grid; used by model.build_town.
 class RasterLandCover:
+    # Opens the raster and a WarpedVRT on the fine grid inside `stack`.
     def __init__(self, stack, source, grid, legend):
         src = stack.enter_context(rasterio.open(source.path))
         north_up(src)
@@ -199,11 +215,14 @@ class RasterLandCover:
             dtype="int32", nodata=LULC_NODATA, resampling=Resampling.nearest, warp_mem_limit=64,
         ))
 
+    # Class codes for one fine-grid window.
     def read(self, window):
         return self.vrt.read(1, window=window)
 
 
+# Vector LULC (GeoPackage/GeoJSON) rasterised at fine-cell centres; used by model.build_town.
 class VectorLandCover:
+    # Loads features inside the grid bounds, maps class tokens to codes and builds a spatial index.
     def __init__(self, source, grid, legend):
         self.grid = grid
         field = source.metadata["class_field"]
@@ -229,6 +248,7 @@ class VectorLandCover:
                 self.codes.append(code_by_token[token])
         self.tree = STRtree(self.geometries)
 
+    # Class codes for one window; fails on conflicting positive-area overlaps at a cell centre.
     def read(self, window):
         affine = window_transform(window, self.grid.transform)
         height, width = int(window.height), int(window.width)

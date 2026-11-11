@@ -1,4 +1,4 @@
-"""Evaluation figures: national residual maps (coarse support) and representative 100 m zooms."""
+# Evaluation figures: national residual maps (coarse support) and representative 100 m zooms.
 
 from __future__ import annotations
 
@@ -15,11 +15,14 @@ from rasterio.windows import Window  # noqa: E402
 from . import pipeline as P  # noqa: E402
 
 
+# imshow extent [left, right, bottom, top] of a block grid at support s (year_figures).
 def _extent(target, s: int, shape) -> list[float]:
     t = target.transform
     return [t.c, t.c + shape[1] * s * t.a, t.f + shape[0] * s * t.e, t.f]
 
 
+# National Level 1 / GHS-POP / residual map at the coarsest support plus zooms in the zoom years.
+# Used by evaluate.evaluate_year; returns the PNG file names.
 def year_figures(cfg, year: int, target, grids: dict, out_dir: Path) -> list[str]:
     out_dir.mkdir(parents=True, exist_ok=True)
     files = []
@@ -61,6 +64,7 @@ def year_figures(cfg, year: int, target, grids: dict, out_dir: Path) -> list[str
     return files
 
 
+# 100 m WorldPop | Level 1 | GHS-POP panels for one configured bbox (year_figures).
 def zoom_figure(cfg, year: int, target, name: str, bbox, out_dir: Path) -> Path | None:
     import rasterio
     inv = ~target.transform

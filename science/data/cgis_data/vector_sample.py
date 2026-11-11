@@ -1,4 +1,4 @@
-"""Vector sample for the importer: admin polygons intersecting a bbox (real geoBoundaries, DIAGNOSTIC – not Census codes)."""
+# Vector sample for the importer: geoBoundaries polygons intersecting a bbox (diagnostic, no Census codes).
 from __future__ import annotations
 
 import json
@@ -9,9 +9,9 @@ from shapely.geometry import box, mapping, shape
 from .fetch import sha256_file
 
 
+# Writes <out_dir>/vectors/<name>.geojson (whole intersecting polygons) and returns its v1 manifest entry.
 def make_vector_sample(adm_geojson: str, bbox, out_dir: Path, name: str, level: str, source_sha256: str,
                        upstream_url: str, license_: str, id_prefix: str) -> dict:
-    """Write `<out_dir>/vectors/<name>.geojson` (whole polygons that intersect bbox; geometry unchanged) and return a manifest entry."""
     fc = json.load(open(adm_geojson))
     bb = box(*bbox)
     feats = []

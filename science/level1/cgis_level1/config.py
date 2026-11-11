@@ -1,9 +1,7 @@
-"""Deterministic TOML run configuration.
-
-Relative paths in a config resolve against ``paths.root`` (itself relative to the config file's directory),
-so the same config works from any working directory. The SHA-256 of the config file is recorded in every
-output's provenance.
-"""
+# Deterministic TOML run configuration.
+# Relative paths in a config resolve against ``paths.root`` (itself relative to the config file's directory),
+# so the same config works from any working directory. The SHA-256 of the config file is recorded in every
+# output's provenance.
 
 from __future__ import annotations
 
@@ -17,10 +15,12 @@ POLICIES_2011 = ("hold_2010", "extrapolate_linear", "interpolate_2015")
 FALLBACKS = ("worldpop", "uniform")
 
 
+# Raised by load_config for invalid TOML or values.
 class ConfigError(ValueError):
     pass
 
 
+# Validated run configuration; created by load_config, passed to every pipeline/evaluate function.
 @dataclass(frozen=True)
 class Config:
     path: Path
@@ -59,23 +59,28 @@ class Config:
     mass_abs_tol: float
     provenance_extra: dict[str, Any] = field(default_factory=dict)
 
+    # Resolves a config path against paths.root.
     def resolve(self, p: str) -> Path:
         q = Path(p)
         return q if q.is_absolute() else (self.root / q)
 
+    # WorldPop file of one year.
     def worldpop_path(self, year: int) -> Path:
         return self.resolve(self.worldpop_pattern.format(year=year))
 
+    # Resolved glob of GHSL tiles for kind total|nres|pop and one epoch.
     def ghsl_glob(self, kind: str, epoch: int) -> str:
         g = {"total": self.ghsl_total_glob, "nres": self.ghsl_nres_glob, "pop": self.ghs_pop_glob}[kind]
         if g is None:
             raise ConfigError(f"no glob configured for GHSL {kind}")
         return str(self.resolve(g.format(epoch=epoch)))
 
+    # Output dataset id of one year (prefix + year).
     def dataset_id(self, year: int) -> str:
         return f"{self.dataset_prefix}{year}"
 
 
+# Dotted-key lookup with default and type check (load_config).
 def _get(d: dict, dotted: str, default: Any = ..., typ: type | tuple | None = None) -> Any:
     cur: Any = d
     for part in dotted.split("."):
@@ -89,6 +94,7 @@ def _get(d: dict, dotted: str, default: Any = ..., typ: type | tuple | None = No
     return cur
 
 
+# Parses and validates a TOML config. Used by cli.main, pipeline._worker_init and tests.
 def load_config(path: str | Path) -> Config:
     p = Path(path).resolve()
     raw_bytes = p.read_bytes()

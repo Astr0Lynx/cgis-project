@@ -1,4 +1,4 @@
-"""Input inventory: every input file with size, SHA-256, grid, units and licence (machine-readable)."""
+# Input inventory: every input file with size, SHA-256, grid, units and licence (machine-readable).
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from .config import Config
 from .pipeline import atomic_json, cached_sha256
 
 
+# CRS, size, dtype, NoData, transform and bounds of a raster input (build_inventory).
 def _raster_meta(p: Path) -> dict:
     with rasterio.open(p) as ds:
         return {"crs": ds.crs.to_string() if ds.crs else None, "width": ds.width, "height": ds.height,
@@ -20,10 +21,13 @@ def _raster_meta(p: Path) -> dict:
                 "bounds": list(ds.bounds)}
 
 
+# Lists every configured input with size, SHA-256, grid and licence and writes it to `out`.
+# Used by cli `inventory` and tests.
 def build_inventory(cfg: Config, out: Path) -> dict:
     cache = cfg.work_dir / "sha256_cache.json"
     items = []
 
+    # Appends one file record.
     def add(kind, p: Path, units, extra=None):
         rec = {"kind": kind, "file": p.as_posix().replace(cfg.root.as_posix() + "/", ""),
                "size_bytes": p.stat().st_size, "sha256": cached_sha256(p, cache), "units": units}

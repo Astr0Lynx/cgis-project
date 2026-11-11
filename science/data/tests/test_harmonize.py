@@ -1,3 +1,4 @@
+# Tests for harmonize.py (sums, crop, block sum, area-conserving and categorical warps).
 import numpy as np
 import pytest
 import rasterio
@@ -6,6 +7,7 @@ from rasterio.transform import from_origin
 from cgis_data import harmonize as H
 
 
+# block_sum conserves counts and keeps all-NoData blocks NoData.
 def test_block_sum_conserves_counts_and_keeps_nodata(make_raster, tmp_path):
     rng = np.random.default_rng(0)
     d = rng.integers(0, 50, (16, 16)).astype("float32")
@@ -21,18 +23,21 @@ def test_block_sum_conserves_counts_and_keeps_nodata(make_raster, tmp_path):
         assert ds.nodata == -99999 and ds.res == (0.04, 0.04)
 
 
+# raster_sum skips NoData cells.
 def test_raster_sum_ignores_nodata(make_raster):
     d = np.ones((8, 8), "float32"); d[0, :] = -99999
     s, nv, nn = H.raster_sum(make_raster(data=d))
     assert (s, nv, nn) == (56.0, 56, 8)
 
 
+# NaN NoData is handled by raster_sum.
 def test_nan_nodata(make_raster):
     d = np.ones((8, 8), "float32"); d[0, 0] = np.nan
     s, nv, nn = H.raster_sum(make_raster(data=d, nodata=float("nan")))
     assert (s, nv, nn) == (63.0, 63, 1)
 
 
+# crop_to_bbox keeps values, NoData, CRS and dtype; non-intersecting bbox fails.
 def test_crop_to_bbox_preserves_values_and_georef(make_raster, tmp_path):
     src = make_raster(data=np.arange(100, dtype="float32").reshape(10, 10))   # lon 77..77.1 lat 17.9..18
     out = str(tmp_path / "c.tif")
@@ -46,8 +51,8 @@ def test_crop_to_bbox_preserves_values_and_georef(make_raster, tmp_path):
         H.crop_to_bbox(src, out, (10, 10, 11, 11))
 
 
+# Mollweide -> 4326 area warp conserves total area within 2 % and keeps NoData.
 def test_mollweide_to_4326_area_conserved(make_raster, tmp_path):
-    """Non-EPSG source CRS (ESRI:54009) -> EPSG:4326 with area-conserving warp; NoData stays NoData."""
     from pyproj import Transformer
     x0, y0 = Transformer.from_crs("EPSG:4326", "ESRI:54009", always_xy=True).transform(77.0, 18.0)
     rng = np.random.default_rng(1)
@@ -65,6 +70,7 @@ def test_mollweide_to_4326_area_conserved(make_raster, tmp_path):
         assert ds.nodata == -1.0 and (a == -1.0).any() and (a[a != -1.0] >= 0).all()
 
 
+# Categorical warp introduces no new class codes.
 def test_categorical_nearest_never_creates_new_classes(make_raster, tmp_path):
     from pyproj import Transformer
     classes = np.array([1, 3, 7, 12], dtype="uint8")
@@ -79,6 +85,7 @@ def test_categorical_nearest_never_creates_new_classes(make_raster, tmp_path):
     assert vals <= set(classes.tolist()) and vals
 
 
+# Geodesic cell area shrinks with latitude and is ~100 m-cell sized.
 def test_cell_area_decreases_with_latitude():
     t = from_origin(77.0, 40.0, 0.001, 0.001)
     rows = H.cell_area_m2_rows(t, 3)

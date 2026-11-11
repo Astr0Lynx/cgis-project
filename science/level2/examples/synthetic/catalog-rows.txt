@@ -1,5 +1,0 @@
-                dataset_id                 | version | status | product_level | year |      units      |    crs    | nodata |          group_id           |                         checksum_sha256
--------------------------------------------+---------+--------+---------------+------+-----------------+-----------+--------+-----------------------------+------------------------------------------------------------------
- synthetic-india-l2-pop-2011-fixture-alpha |       1 | ready  | level2        | 2011 | people_per_cell | EPSG:6933 | -99999 | synthetic-india-level2-2011 | 5dc5ce1221fd066d6dae8f14fe59c1d61e942be19e1fa721eeae60f70d546b8c
- synthetic-india-l2-pop-2011-fixture-beta  |       1 | ready  | level2        | 2011 | people_per_cell | EPSG:6933 | -99999 | synthetic-india-level2-2011 | 29c9a258f050936362485d75181510812ccf27532900482c2570e9d081eb9c62
-(2 rows)
