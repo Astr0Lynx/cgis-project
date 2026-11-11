@@ -1,0 +1,95 @@
+{
+  "approval": "approved:maitz18:2026-11-07",
+  "comparison": {
+    "extrapolate_linear": {
+      "cells_diff_gt_0p5": 15456343,
+      "max_abs_diff_vs_main": 4603.386856079102,
+      "sum_abs_diff_vs_main": 60406286.008540034,
+      "sum_out": 1210854976.7156408,
+      "vs_ref_metrics": {
+        "bias": -0.09258741309549379,
+        "mae": 2.9213114491611463,
+        "n": 393921894,
+        "pearson": 0.5570049663193601,
+        "rmse": 18.939581585397416,
+        "sum_model": 1210854976.7156408,
+        "sum_reference": 1247327185.842778
+      },
+      "weight_sum_m2": 28044004377.199997,
+      "zero_weight_parents": 1199634
+    },
+    "hold_2010": {
+      "cells_diff_gt_0p5": 18595588,
+      "max_abs_diff_vs_main": 4603.386856079102,
+      "sum_abs_diff_vs_main": 66505494.73265382,
+      "sum_out": 1210854976.7111135,
+      "vs_ref_metrics": {
+        "bias": -0.09258741310698637,
+        "mae": 2.921072774172653,
+        "n": 393921894,
+        "pearson": 0.5574210206433533,
+        "rmse": 18.938789040288217,
+        "sum_model": 1210854976.7111135,
+        "sum_reference": 1247327185.842778
+      },
+      "weight_sum_m2": 27391644369.0,
+      "zero_weight_parents": 1199634
+    },
+    "interpolate_2015": {
+      "sum_out": 1210854976.7012773,
+      "vs_ref_metrics": {
+        "bias": -0.09258741313195662,
+        "mae": 2.9023856973801045,
+        "n": 393921894,
+        "pearson": 0.5613064894405232,
+        "rmse": 18.817515144801703,
+        "sum_model": 1210854976.7012773,
+        "sum_reference": 1247327185.842778
+      },
+      "weight_sum_m2": 28213149766.800007,
+      "zero_weight_parents": 1186872
+    }
+  },
+  "main_policy": "interpolate_2015",
+  "temporal": {
+    "extrapolate_linear": {
+      "description": "linear extrapolation of trend 2005->2010, clipped at 0",
+      "kind": "extrapolate",
+      "terms": [
+        [
+          2005,
+          -0.2
+        ],
+        [
+          2010,
+          1.2
+        ]
+      ]
+    },
+    "hold_2010": {
+      "description": "hold last epoch 2010 constant",
+      "kind": "hold",
+      "terms": [
+        [
+          2010,
+          1.0
+        ]
+      ]
+    },
+    "interpolate_2015": {
+      "description": "linear interpolation 2010->2015 (additional authorized epoch), w=0.2000",
+      "kind": "interpolate",
+      "terms": [
+        [
+          2010,
+          0.8
+        ],
+        [
+          2015,
+          0.2
+        ]
+      ]
+    }
+  },
+  "year": 2011
+}

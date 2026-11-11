@@ -1,0 +1,196 @@
+{
+  "checks": {
+    "all_planned_tiles_processed": true,
+    "chunks_equal_cog": true,
+    "is_cog": true,
+    "national_mass_balance": true,
+    "no_negative": true,
+    "no_nonfinite": true,
+    "parent_mass_balance": true,
+    "rss_within_budget": true,
+    "valid_cells_preserved": true
+  },
+  "config": "C:\\Users\\maith\\Desktop\\cybergis_proj\\cgis-project\\science\\level1\\config\\synthetic.toml",
+  "config_sha256": "c9d8dbcc0b781b43ba64ced9b5357fd2624040a1ddd7a842047674b19af0b202",
+  "dataset_id": "synthetic-india-l1-pop-2005",
+  "finished_at": "2026-11-07T17:22:20+00:00",
+  "ghsl_outside_footprint_cells": 0,
+  "grid": {
+    "block": 10,
+    "extent_col0": 0,
+    "extent_height": 230,
+    "extent_is_full_worldpop_grid": true,
+    "extent_row0": 0,
+    "extent_width": 245,
+    "full": {
+      "crs_epsg": 4326,
+      "height": 230,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "width": 245
+    },
+    "nonempty_tiles": 8,
+    "tile_cols": 100,
+    "tile_size": 100,
+    "tiles": 9
+  },
+  "main_policy": null,
+  "mass_balance": {
+    "abs_error": 1.6227830201387405e-05,
+    "max_parent_abs_error": 3.62396240234375e-05,
+    "max_parent_rel_error": 4.90453374975175e-08,
+    "parents": 526,
+    "parents_zero_weight": 347,
+    "population_in_zero_weight_parents": 86390.18812997115,
+    "rel_error": 6.344408181989814e-11,
+    "sum_level1_out": 255781.622760082,
+    "sum_worldpop_in": 255781.62274385418,
+    "tolerance": {
+      "abs": 0.001,
+      "rel": 1e-06
+    }
+  },
+  "output": {
+    "cog_validation": {
+      "errors": [],
+      "is_cog": true,
+      "validated": true,
+      "warnings": []
+    },
+    "path": "C:\\Users\\maith\\Desktop\\cybergis_proj\\cgis-project\\data\\level1-synthetic\\outputs\\cog\\synthetic-india-l1-pop-2005.tif",
+    "sha256": "e9a1a49d2627c50b239cd165af5e000c6af5aa139b72786fc84b644018e0ed46",
+    "size_bytes": 172844,
+    "stats": {
+      "bounds": [
+        77.0,
+        12.808333333333334,
+        77.20416666666667,
+        13.0
+      ],
+      "compression": "DEFLATE",
+      "crs": "EPSG:4326",
+      "dtype": "float32",
+      "epsg": 4326,
+      "height": 230,
+      "max": 115.12775421142578,
+      "min": 0.0,
+      "negative_cells": 0,
+      "nodata": -99999.0,
+      "nonfinite_cells": 0,
+      "overviews": [],
+      "res": [
+        0.0008333333333333334,
+        0.0008333333333333334
+      ],
+      "sum": 255781.622760082,
+      "transform": [
+        0.0008333333333333334,
+        0.0,
+        77.0,
+        0.0,
+        -0.0008333333333333334,
+        13.0
+      ],
+      "units": "people_per_cell",
+      "valid_cells": 51084,
+      "width": 245
+    }
+  },
+  "policy_2011_approval": null,
+  "policy_comparison_2011": null,
+  "redistribution": {
+    "max_parent_abs_err": 3.62396240234375e-05,
+    "max_parent_rel_err": 4.90453374975175e-08,
+    "negative_out": 0,
+    "parents": 526,
+    "parents_populated": 526,
+    "parents_zero_weight": 347,
+    "pop_zero_weight": 86390.18812997115,
+    "sum_in": 255781.62274385418,
+    "sum_out": 255781.622760082,
+    "valid_cells": 51084,
+    "weight_missing_cells": 0
+  },
+  "residential": {
+    "2005": {
+      "cells": 51084,
+      "missing": 0,
+      "nres_gt_total": 29,
+      "nres_gt_total_m2": 1007.0000000006032
+    }
+  },
+  "resources": {
+    "assemble": {
+      "budget_exceeded": false,
+      "elapsed_s": 0.11,
+      "max_worker_processes": 0,
+      "min_free_disk_gib": 45.94,
+      "peak_rss_bytes": 88854528,
+      "peak_rss_gib": 0.083,
+      "rss_budget_gib": 4.0,
+      "sampling_interval_s": 0.25
+    },
+    "chunk_bytes": 191024,
+    "compute": {
+      "budget_exceeded": false,
+      "elapsed_s": 1.59,
+      "max_worker_processes": 2,
+      "min_free_disk_gib": 45.94,
+      "peak_rss_bytes": 227110912,
+      "peak_rss_gib": 0.212,
+      "rss_budget_gib": 4.0,
+      "sampling_interval_s": 0.25
+    },
+    "sum_tile_cpu_s": 0.5,
+    "workers": 2
+  },
+  "software": {
+    "cgis_level1": "1.0.0",
+    "commit": "83f97cf07fbda7f6dd9a7354c94499c01f8ca1ee",
+    "dirty_worktree": false,
+    "gdal": "3.12.1",
+    "numpy": "2.5.3",
+    "rasterio": "1.5.0"
+  },
+  "started_at": "2026-11-07T17:22:18+00:00",
+  "status": "ok",
+  "synthetic": true,
+  "temporal": {
+    "None": {
+      "description": "GHSL epoch 2005 used directly",
+      "kind": "exact",
+      "terms": [
+        [
+          2005,
+          1.0
+        ]
+      ]
+    }
+  },
+  "upstream": {
+    "ghsl_built_s": {
+      "tiles_sha256": {
+        "nres_2005": {
+          "nres_E2005_C0.tif": "9d27750c23b95bf6e5e437255e71871f35c03cc579e644226994d85bbf098fb0",
+          "nres_E2005_C1.tif": "49c29c13c7f3373da0483202702e79934753ce9fdf0fd1a8c046f47caae7d701"
+        },
+        "total_2005": {
+          "total_E2005_C0.tif": "d760e8e77306abbdc73215b38344dbb4392a70ca774e9953894311c6e3f4ba97",
+          "total_E2005_C1.tif": "059ccb8b41d4c15daf72357ccdeacb317585ef72d1178540df37ed9b0df8d45f"
+        }
+      }
+    },
+    "worldpop": {
+      "dataset_id": "india-worldpop-unconstrained-2005",
+      "file": "ind_ppp_2005.tif",
+      "sha256": "b35f1c4ef1a3805248767c038c06fdfbb1fe0bd862d1d6bcb279eb3652c578f7"
+    }
+  },
+  "year": 2005
+}

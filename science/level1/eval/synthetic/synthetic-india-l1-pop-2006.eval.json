@@ -1,0 +1,263 @@
+{
+  "config_sha256": "c9d8dbcc0b781b43ba64ced9b5357fd2624040a1ddd7a842047674b19af0b202",
+  "coverage": {
+    "note": "'*_in_extent' terms cover the rectangular processing extent, which includes neighbouring countries where WorldPop-India is NoData; use 'within_<zones>' for national coverage.",
+    "reference_cells_with_pop_outside_mask": 243,
+    "reference_fraction_outside_mask": 0.0018320916471211966,
+    "reference_outside_level1_valid_mask": 326.9366499995563,
+    "reference_total_in_extent": 178449.94300000145,
+    "within_synthetic_districts": {
+      "fraction_outside_mask": 0.0018320916471214986,
+      "level1_outside_all_zones": 0.0,
+      "level1_total_inside_zones": 261255.43471200514,
+      "reference_inside_zones_and_level1_mask": 178123.00635000193,
+      "reference_inside_zones_outside_level1_mask": 326.9366499996104,
+      "reference_total_inside_zones": 178449.94300000154
+    }
+  },
+  "dataset_id": "synthetic-india-l1-pop-2006",
+  "figures": [
+    "synthetic-india-l1-pop-2006_national_s50.png"
+  ],
+  "generated_at": "2026-11-07T17:22:42+00:00",
+  "level1_sha256": "6f02b09989e75e51b51d54a17d8ad4b916a9ae8b7ef1a5a9fc9008af2a6b3599",
+  "reference": {
+    "caveat": "GHS-POP is a modelled product (census disaggregated with GHSL built-up), not ground truth; agreement measures consistency between two models.",
+    "product": "GHS-POP R2023A 3 arc-second",
+    "reference_temporal": "interpolated",
+    "regridding": "exact area-overlap sub-pixel shift of counts onto the WorldPop grid",
+    "terms": [
+      [
+        2005,
+        0.8
+      ],
+      [
+        2010,
+        0.2
+      ]
+    ]
+  },
+  "resources": {
+    "budget_exceeded": false,
+    "elapsed_s": 0.98,
+    "max_worker_processes": 2,
+    "min_free_disk_gib": 45.84,
+    "peak_rss_bytes": 316260352,
+    "peak_rss_gib": 0.295,
+    "rss_budget_gib": 4.0,
+    "sampling_interval_s": 0.25
+  },
+  "supports": {
+    "s1": {
+      "cells_m": "~100 m native",
+      "level1": {
+        "bias_mean": 1.6273672453606451,
+        "mae": 2.31078330333086,
+        "n": 51084,
+        "pearson": 0.9665208628077127,
+        "r2_vs_reference": 0.7958184531916052,
+        "rel_bias_total": 0.46671359340664004,
+        "rmse": 3.932813627650528,
+        "sum_model": 261255.43471200514,
+        "sum_reference": 178123.00635000196
+      },
+      "level1_vs_worldpop": {
+        "bias_mean": -1.4715579865764994e-09,
+        "mae": 0.9628032317498056,
+        "n": 51084,
+        "pearson": 0.9746417627909493,
+        "r2_vs_reference": 0.9482290645609688,
+        "rel_bias_total": -2.877379322469872e-10,
+        "rmse": 2.510994227749931,
+        "sum_model": 261255.43471200514,
+        "sum_reference": 261255.43478717824
+      },
+      "sample": {
+        "design": "systematic: every 3th row and column of the WorldPop grid",
+        "level1": {
+          "bias_mean": 1.659041088115729,
+          "mae": 2.3495679991245977,
+          "median_abs_rel_residual_ref_gt0": 0.7005400657653806,
+          "median_abs_residual": 1.2817650437355044,
+          "n": 5737,
+          "p95_abs_residual": 8.184909629821775,
+          "pearson": 0.96530567846159,
+          "pearson_log1p": 0.703873985282867,
+          "r2_vs_reference": 0.7898450081036013,
+          "rel_bias_total": 0.4779128382232475,
+          "rmse": 3.9736856611818516,
+          "spearman": 0.2930984395648142,
+          "sum_model": 29433.514122520108,
+          "sum_reference": 19915.595400000173
+        },
+        "worldpop_baseline": {
+          "bias_mean": 1.6496155961978518,
+          "mae": 2.194251791766045,
+          "median_abs_rel_residual_ref_gt0": 0.6382555580864403,
+          "median_abs_residual": 1.1593659520149233,
+          "n": 5737,
+          "p95_abs_residual": 7.596152487785012,
+          "pearson": 0.9736816270387691,
+          "pearson_log1p": 0.7289386167866285,
+          "r2_vs_reference": 0.8248139097584524,
+          "rel_bias_total": 0.47519767726286466,
+          "rmse": 3.6280516747289697,
+          "spearman": 0.34287534523118257,
+          "sum_model": 29379.440075387247,
+          "sum_reference": 19915.595400000173
+        }
+      },
+      "worldpop_baseline": {
+        "bias_mean": 1.6273672468322031,
+        "mae": 2.168201581729337,
+        "n": 51084,
+        "pearson": 0.9744082288573717,
+        "r2_vs_reference": 0.8283345052881104,
+        "rel_bias_total": 0.46671359382866917,
+        "rmse": 3.606090535333989,
+        "sum_model": 261255.43478717824,
+        "sum_reference": 178123.00635000196
+      }
+    },
+    "s10": {
+      "approx_size_m": 1000,
+      "block_cells": 10,
+      "level1": {
+        "bias_mean": 158.04644175285782,
+        "mae": 158.04644175285782,
+        "median_abs_rel_residual_ref_gt0": 0.7374790740661196,
+        "median_abs_residual": 117.1299930407494,
+        "n": 526,
+        "p95_abs_residual": 349.19714228634876,
+        "pearson": 0.9988434938325361,
+        "pearson_log1p": 0.9897772952206263,
+        "r2_vs_reference": 0.904513798615854,
+        "rel_bias_total": 0.46671359340664004,
+        "rmse": 257.36401916805204,
+        "spearman": 0.5650324287238648,
+        "sum_model": 261255.43471200514,
+        "sum_reference": 178123.00635000196
+      },
+      "level1_minus_worldpop_max_abs": 9.918212890625e-05,
+      "n_blocks": 526,
+      "worldpop_baseline": {
+        "bias_mean": 158.04644189577243,
+        "mae": 158.04644189577243,
+        "median_abs_rel_residual_ref_gt0": 0.7374790704104706,
+        "median_abs_residual": 117.1299930407494,
+        "n": 526,
+        "p95_abs_residual": 349.1971375775818,
+        "pearson": 0.998843493885692,
+        "pearson_log1p": 0.9897772952427457,
+        "r2_vs_reference": 0.9045137978533109,
+        "rel_bias_total": 0.46671359382866917,
+        "rmse": 257.36402019569346,
+        "spearman": 0.5650324287238648,
+        "sum_model": 261255.43478717824,
+        "sum_reference": 178123.00635000196
+      }
+    },
+    "s50": {
+      "approx_size_m": 5000,
+      "block_cells": 50,
+      "level1": {
+        "bias_mean": 3463.8511817501326,
+        "mae": 3463.8511817501326,
+        "median_abs_rel_residual_ref_gt0": 0.7289531895999809,
+        "median_abs_residual": 2825.2980152157356,
+        "n": 24,
+        "p95_abs_residual": 4792.168683668843,
+        "pearson": 0.9996524838087301,
+        "pearson_log1p": 0.9983459069226145,
+        "r2_vs_reference": 0.8863477226794082,
+        "rel_bias_total": 0.46671359340664004,
+        "rmse": 5068.237161330131,
+        "spearman": 0.9852173913043477,
+        "sum_model": 261255.43471200514,
+        "sum_reference": 178123.00635000196
+      },
+      "level1_minus_worldpop_max_abs": 9.554624557495117e-05,
+      "n_blocks": 24,
+      "worldpop_baseline": {
+        "bias_mean": 3463.851184882345,
+        "mae": 3463.851184882345,
+        "median_abs_rel_residual_ref_gt0": 0.72895319076035,
+        "median_abs_residual": 2825.2980166897864,
+        "n": 24,
+        "p95_abs_residual": 4792.168681572809,
+        "pearson": 0.9996524838103068,
+        "pearson_log1p": 0.9983459069118151,
+        "r2_vs_reference": 0.8863477219758826,
+        "rel_bias_total": 0.46671359382866917,
+        "rmse": 5068.2371770167265,
+        "spearman": 0.9852173913043477,
+        "sum_model": 261255.43478717824,
+        "sum_reference": 178123.00635000196
+      }
+    },
+    "zone_synthetic_districts": {
+      "conservation_vs_worldpop": {
+        "max_abs_diff": 205.88723301468417,
+        "max_rel_diff": 0.0028139669342139087,
+        "note": "zones are not unions of parents; small cross-boundary transfers are expected"
+      },
+      "level1": {
+        "bias_mean": 41566.214181001604,
+        "mae": 41566.214181001604,
+        "median_abs_rel_residual_ref_gt0": 0.509849052424273,
+        "median_abs_residual": 41566.214181001604,
+        "n": 2,
+        "p95_abs_residual": 54242.73689991343,
+        "pearson": 1.0,
+        "pearson_log1p": 0.9999999999999999,
+        "r2_vs_reference": -0.03349973166258935,
+        "rel_bias_total": 0.4667135934066403,
+        "rmse": 43887.78984459659,
+        "spearman": 0.9999999999999999,
+        "sum_model": 261255.43471200514,
+        "sum_reference": 178123.00635000193
+      },
+      "n_zones": 2,
+      "source": "SYNTHETIC zones",
+      "unassigned_level1": 0.0,
+      "unassigned_worldpop": 0.0,
+      "worldpop_baseline": {
+        "bias_mean": 41566.21421858815,
+        "mae": 41566.21421858815,
+        "median_abs_rel_residual_ref_gt0": 0.508384332930582,
+        "median_abs_residual": 41566.21421858815,
+        "n": 2,
+        "p95_abs_residual": 54428.035413385296,
+        "pearson": 0.9999999999999999,
+        "pearson_log1p": 0.9999999999999999,
+        "r2_vs_reference": -0.03663448041774431,
+        "rel_bias_total": 0.46671359382866945,
+        "rmse": 43954.2983426548,
+        "spearman": 0.9999999999999999,
+        "sum_model": 261255.43478717824,
+        "sum_reference": 178123.00635000193
+      },
+      "zones": [
+        {
+          "ghs_pop": 132232.14709999933,
+          "level1": 187883.3865242363,
+          "level1_minus_worldpop": -205.88723301468417,
+          "name": "SYNTHETIC West",
+          "worldpop": 188089.27375725098,
+          "zone_id": "syn-d1"
+        },
+        {
+          "ghs_pop": 45890.859250002606,
+          "level1": 73372.04818776884,
+          "level1_minus_worldpop": 205.88715784158558,
+          "name": "SYNTHETIC East",
+          "worldpop": 73166.16102992726,
+          "zone_id": "syn-d2"
+        }
+      ]
+    }
+  },
+  "synthetic": true,
+  "units": "people_per_cell (sum over support)",
+  "year": 2006
+}

@@ -1,0 +1,4890 @@
+{
+  "config": "india_full.toml",
+  "config_sha256": "350aa479164b7e710e54f5003d03d9fe60e12458d2b1f4bb8082da485a049891",
+  "files": [
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2001",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2001.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "9df5687737ccdedec2924ccd59e1e197c02f89e6d1d8f32e76caac28715c37c4",
+      "size_bytes": 1838961247,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2001
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2002",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2002.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "7e74d502fe1948aaabcacd541f05f76afe432d2327176e9b4c61c61e001dddc6",
+      "size_bytes": 1839076965,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2002
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2003",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2003.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "9a6258db471688de4a5073c1859b2f61d4dde1b363822e774574eacf1f5fdeee",
+      "size_bytes": 1839301688,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2003
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2004",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2004.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "4e78bb14a84b1d8facca0333a5d5aa2250c4447e8fe5cde7f4248033f9bb9f03",
+      "size_bytes": 1831889526,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2004
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2005",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2005.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "adb011731cfa8fe512be24b240565cbcb5f3c93bd90aea2827fa58db9857b11e",
+      "size_bytes": 1840223955,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2005
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2006",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2006.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "88ea6ef18ea8937691dc938c5a1aaf6b28143674fedfc82e1e29031811775247",
+      "size_bytes": 1838792857,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2006
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2007",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2007.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "3d43343eff4895daa4c3f9750cc005d27a791ae2606c13b1231f172b7370d81a",
+      "size_bytes": 1835812597,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2007
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2008",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2008.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "7b8ae695dfb2d0853dc8c7883360cfb7340299f2483f3ba786d9d8a6f0849310",
+      "size_bytes": 1842319542,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2008
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2009",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2009.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "f52e260f049e757d31d83202f7798b3628aba069a67d49721b9aa55648159e07",
+      "size_bytes": 1844404374,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2009
+    },
+    {
+      "bounds": [
+        68.184583075,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2010",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2010.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "ca8d2677fc78a9b9a8dc58c33da31cf275d0bdb76a7ed646ec0f9b65383392cc",
+      "size_bytes": 1847017335,
+      "transform": [
+        0.0008333333299977189,
+        0.0,
+        68.184583075,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35076,
+      "year": 2010
+    },
+    {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "crs": "EPSG:4326",
+      "dataset_id": "india-worldpop-unconstrained-2011",
+      "dtype": "float32",
+      "file": "data/incoming/worldpop/ind_ppp_2011.tif",
+      "height": 34497,
+      "kind": "worldpop_ppp",
+      "nodata": -99999.0,
+      "sha256": "ff6a2b3e57af9476523ce9ea0bbe457104cb6501cdbbf24349698e8d3ea362ef",
+      "size_bytes": 1849514894,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "width": 35075,
+      "year": 2011
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        29.099583419121082,
+        69.9920830785043,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "62d83c36adc780e5217485f6c05ee76a2f0ac4712fe3faad93955c68f6c9800b",
+      "size_bytes": 8384430,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        29.099583419121082,
+        79.99208303889648,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "dc7e9fbe1bfe05d4880d1af66438151e431e973d4ec342e93b24182ef7be1658",
+      "size_bytes": 27961280,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        29.099583419121082,
+        89.99208299928867,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "b647d9bc27ef6ae556eea2bcbb1944c904d6e67a845f15d3b6f8e6609e5b9822",
+      "size_bytes": 2183903,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        29.099583419121082,
+        99.99208295968086,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "1336e7abcd49a53d281c2511ad45990aa1d7f37c7dc999d58a05cfa428735d3b",
+      "size_bytes": 2039359,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        19.099583459366997,
+        69.9920830785043,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "9f94a4f0a5f2621e1ea76585b443c897bf0d7ce9320244bf228ced82921ae4bd",
+      "size_bytes": 7449189,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        19.099583459366997,
+        79.99208303889648,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "0a2efe00641ee7ff69b58e7bb11d23e019983e504de1b2b7fd3ff3fc296fe7ed",
+      "size_bytes": 39401968,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        19.099583459366997,
+        89.99208299928867,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "84a4d587c1589394399ab0888e1ca47b08edcf8a470951f8901af0127ea959ae",
+      "size_bytes": 46934655,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        19.099583459366997,
+        99.99208295968086,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "2ddf112618c00bf2d00f0f1a67b1761ad33ac983098b95d6d25aa6c15ed19b45",
+      "size_bytes": 19783976,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        9.09958349961291,
+        79.99208303889648,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "9cd8cbcadc15e3fdc346cf94e885705e6f406dfa02af2b91bc1b7f14466a97ec",
+      "size_bytes": 28403294,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        9.09958349961291,
+        89.99208299928867,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "62363015f5bc440d668dd674f6985e56524955276603697204724718784d3f72",
+      "size_bytes": 5359658,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        9.09958349961291,
+        99.99208295968086,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "357a8ce79abb38a7c0a59a699ccad81cde7461cca7e4d9efdd942efcb5078276",
+      "size_bytes": 8230412,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        -0.9004164601411819,
+        79.99208303889648,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "a2253775a31dbb51d67af296ace7bded0821ba4b2b0b36513f1e7291ee8e4444",
+      "size_bytes": 3141217,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        -0.9004164601411819,
+        89.99208299928867,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "93f416e8cc28395633ee5e0df3237c9ff8b1199c9c9189433f3f5883ed2979f3",
+      "size_bytes": 3901064,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        -0.9004164601411819,
+        99.99208295968086,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "1050d2b3b183e9b3ba6e1af65e1e6ec542350e6ff18bba20ee41f2a364885a04",
+      "size_bytes": 5534933,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        29.099583419121082,
+        69.9920830785043,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "1d8fcefb641546de62fb87073471c5300f9a0d7479c40427d3dc5009beba778a",
+      "size_bytes": 8851971,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        29.099583419121082,
+        79.99208303889648,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "decb8cffe4029c816b5f98da05de941f395b22e38639a3c870109b5b262129b8",
+      "size_bytes": 31940176,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        29.099583419121082,
+        89.99208299928867,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "ca632ba62f3e61d16c2e78713a5d44aefac480f6b3a4082fe306c38300813d8d",
+      "size_bytes": 2297830,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        29.099583419121082,
+        99.99208295968086,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "98adc16b87ec8939eeaed07fea9ae3f4882e859d082a70db24f64bbee311be70",
+      "size_bytes": 2066725,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        19.099583459366997,
+        69.9920830785043,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "0326bd6b2ded859f884f37ff4b75e2a0662b643b39ad950415a7b231fe29b029",
+      "size_bytes": 7939794,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        19.099583459366997,
+        79.99208303889648,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "20898d857ce4d15734afdd522f08e66669535f7b238eea49d79e9786ec314a16",
+      "size_bytes": 45495273,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        19.099583459366997,
+        89.99208299928867,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "eedaf99635ec632f1c7e631b97df9df6220068d97a0d75265562b2e3b22c80f8",
+      "size_bytes": 52420602,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        19.099583459366997,
+        99.99208295968086,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "3fa243fb4fdc512d7d0420f835e24f0915d30e639495560d2a4dcdf39bb61250",
+      "size_bytes": 21427918,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        9.09958349961291,
+        79.99208303889648,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "385bcda6c170b5b6336e8ce407551e9ad51e466b1db1f9aa916f30b7908b764b",
+      "size_bytes": 32076326,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        9.09958349961291,
+        89.99208299928867,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "b1b46682c54c0247d8e2a23f481dc624e8a9d1ecd910275759bf0c804ac72247",
+      "size_bytes": 5635999,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        9.09958349961291,
+        99.99208295968086,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "cb1febfbc68453e1ff4e22aa5a9d55d5e698bb638e13b54f7fd6ad943af4bc0e",
+      "size_bytes": 8586347,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        -0.9004164601411819,
+        79.99208303889648,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "b07004915056ee61b4c9b84235fa666d952033a781f1b99f0578608915a85e85",
+      "size_bytes": 3225019,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        -0.9004164601411819,
+        89.99208299928867,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "a585e6c9cfe221eda5a819e2e25b97d791dfb34d0eba7728cec835d4c9b8cb4c",
+      "size_bytes": 4290706,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        -0.9004164601411819,
+        99.99208295968086,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "99113b653cf227dfe12cb3bab037ba0be01f7e2446cc5f310efe3b142b70427b",
+      "size_bytes": 5740519,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        29.099583419121082,
+        69.9920830785043,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "e6bf86fc967d1788638a94fe57ad82ab67346c121f5ebdc2c04335b0b5eaa97a",
+      "size_bytes": 9264461,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        29.099583419121082,
+        79.99208303889648,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "687b617d0d883cbbf725af17244ecc2dab94332f8ae9917959e78d1f2b15fc8e",
+      "size_bytes": 35560601,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        29.099583419121082,
+        89.99208299928867,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "c1f3bf78414b5c7003b9c4eebe7df2dddc88e1a96d207d2c9332247d10b3f120",
+      "size_bytes": 2403593,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        29.099583419121082,
+        99.99208295968086,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "e1059e272c40e8a7b98fa80dd61c2e1aebc47416cb4698cde22a9f6170824dbc",
+      "size_bytes": 2086482,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        19.099583459366997,
+        69.9920830785043,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "c3d5ab97caead601bbb67a6394ba71764d9586a605f16394eea4eacc6b7c66c3",
+      "size_bytes": 8392945,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        19.099583459366997,
+        79.99208303889648,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "f84e72a5b770c10bf7d1afb57b50388fd56bac844cac3e4568c155ca4c3cd8d7",
+      "size_bytes": 51089284,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        19.099583459366997,
+        89.99208299928867,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "de20896943f861e811027a850e0f1e339232e5007f789acf0e3af87d1770916e",
+      "size_bytes": 57383737,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        19.099583459366997,
+        99.99208295968086,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "2775f44ffb536e21921a15422109d3bc8085ba0988ed0659923f0699e2822ac7",
+      "size_bytes": 22910220,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        9.09958349961291,
+        79.99208303889648,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "73629f9e925b45f1bd7f4376f0e6b63ec188e057231702597e0e0bdb35621376",
+      "size_bytes": 35336817,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        9.09958349961291,
+        89.99208299928867,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "598e71375b047d6292268c9e0d04eba3af752a837aae091622a6798ec271680d",
+      "size_bytes": 5881751,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        9.09958349961291,
+        99.99208295968086,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "0a4daa89bc3512e054b96456bbece8eb78ccada4e81fab98868a55324967581d",
+      "size_bytes": 8922729,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        -0.9004164601411819,
+        79.99208303889648,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "9e09c8470889c6e207de1b99c881abf025ae20043debac9653f8cd3b822d4205",
+      "size_bytes": 3298876,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        -0.9004164601411819,
+        89.99208299928867,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "f5f0c1a78fcdb54f4138bf27720e14376992867c6ad99fd13798ba2c35c0a9cd",
+      "size_bytes": 4637958,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        -0.9004164601411819,
+        99.99208295968086,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "e5c5d3a99c5ee396759e6f8574c518964aef5027783b27398f112c351184a2bb",
+      "size_bytes": 5928195,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        29.099583419121082,
+        69.9920830785043,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "4a61af287d961ca13b71ec2207a9a89ea99f1bde60387c78b48cd71bca0a6de7",
+      "size_bytes": 9754203,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        29.099583419121082,
+        79.99208303889648,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "6bb2ec010cbabf326f0211cb561fdac1908fedaa51ff6eb7ebc7095df30895d2",
+      "size_bytes": 40407554,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        29.099583419121082,
+        89.99208299928867,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "272b04af9c2483442e57d6afc6fd22cf7d4d776a5e55fd7b4714ab88b5b6c6fa",
+      "size_bytes": 2522251,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        29.099583419121082,
+        99.99208295968086,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "e08c74cd781f836cb0fbdd79e0d41bcd7d30854349094e10f5d5bfa432f74747",
+      "size_bytes": 2104115,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        19.099583459366997,
+        69.9920830785043,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "e41f83cd8540acd279592c585f32607fccaee73c26768e8fd023395b8496c059",
+      "size_bytes": 8988427,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        19.099583459366997,
+        79.99208303889648,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "fa21bf0d2a7ec79977883571a11df7282d7ba69e525dc996f54f7007c96e11f3",
+      "size_bytes": 58426526,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        19.099583459366997,
+        89.99208299928867,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "75ec28371340af5ffa70c8c3049dbc1157f02b2ac0143a627d3434b1eec0f423",
+      "size_bytes": 63571208,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        19.099583459366997,
+        99.99208295968086,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "ca876b74d99cf6a8bc9ef556aa6292e48636678b907fe0fc025c4f85397266a2",
+      "size_bytes": 24716824,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        9.09958349961291,
+        79.99208303889648,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "ee341ae3a6ffdf1d9b569425cd20e95e3e5f23c18760f3fc9498970913c33697",
+      "size_bytes": 39292120,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        9.09958349961291,
+        89.99208299928867,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "d2d3e528c95f06bbfc8ac40a9faf732d284dc106c6a662de6be8d442650d5111",
+      "size_bytes": 6203998,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        9.09958349961291,
+        99.99208295968086,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "3b011ac36d4fb1531096e26609c00d63628021cb5edcc618cdf6caae011c92e6",
+      "size_bytes": 9362472,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        -0.9004164601411819,
+        79.99208303889648,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "0652b37440e5914bd27d358d896f10185e655113f4574c0aed8c6672ed16f4bf",
+      "size_bytes": 3377704,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        -0.9004164601411819,
+        89.99208299928867,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "a953bfd901a2b13a1d5d9f01026ca16f45bb57b43dcb085f17f7a93d9699d9f5",
+      "size_bytes": 5152389,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        -0.9004164601411819,
+        99.99208295968086,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_total",
+      "nodata": null,
+      "sha256": "7098d14ee5fe380e29e930cbbfa234a2d6a117b2f26a025742156d8c8f6c4446",
+      "size_bytes": 6146238,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811546,
+        29.099583419121082,
+        69.99208307850779,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "4872fa668efca499d33b3b15e01aca6435c89509cb4ac3d3c36e46c03822781b",
+      "size_bytes": 1525759,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        59.99208311811546,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        29.099583419121082,
+        79.99208303890012,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "fccbe7deae60c94b425e41cb2c2fbfa60b74a9bed465273d2269fe1c883c6a1e",
+      "size_bytes": 1726805,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        29.099583419121082,
+        89.99208299929248,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "2d06c5e9376ea17033e046c2b3821f82a2f2ea78ef85af2c7121bd66d971ab2d",
+      "size_bytes": 1384600,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        29.099583419121082,
+        99.99208295968478,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "09bf1a0efbc5aeba8e51b9f11ed23eeb0f6be36e269062a7f872def16e5533f5",
+      "size_bytes": 1419483,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811546,
+        19.099583459366997,
+        69.99208307850779,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "e773f6dbb4545e55b1365eabdec16ef01e14d36cc320d2c595349143457c2380",
+      "size_bytes": 1472634,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        59.99208311811546,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        19.099583459366997,
+        79.99208303890012,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "9396e773a8f1bd529fdd5dec5d87bec36c3e27cfd6ae71a02f6edf87dfe5f1b5",
+      "size_bytes": 2074881,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        19.099583459366997,
+        89.99208299929248,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "9eafdd2f6bc3097af376e7739d58fe0c64c144c5a877d1527576052bff314815",
+      "size_bytes": 1817002,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        19.099583459366997,
+        99.99208295968478,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "ec49d1d7f22822e0dbe709f7d9c491700502dcf9cf47a36dac75ac2680d7f434",
+      "size_bytes": 1586634,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        9.09958349961291,
+        79.99208303890012,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "0be8ddb137fa965adb5471cafa059bd36a0342bc9926df458a3bd7ad23acdaf0",
+      "size_bytes": 2046334,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        9.09958349961291,
+        89.99208299929248,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "5aab7079da24ffd5587ce38ca9edf9a46301bdddb201daab8b3ade5e670dc685",
+      "size_bytes": 1449593,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        9.09958349961291,
+        99.99208295968478,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "99c57db81e2c4886734a2a8e46bc887dcb3f54e11a4952db2935492d16a6339c",
+      "size_bytes": 1517846,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        -0.9004164601411819,
+        79.99208303890012,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "f647145e0f59fb4570d9ecb8aba5b63d9d9e196530a840d3d51f8a190ee4aabe",
+      "size_bytes": 1465270,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        -0.9004164601411819,
+        89.99208299929248,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "e65dacd2ffb7c1e1e7903fe2a3f820b6996b9c148921e0487da6a3ef986681c1",
+      "size_bytes": 1432793,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        -0.9004164601411819,
+        99.99208295968478,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "9a98aa6bc1ac52fbad316c5eabed878d85ebdc5aeed6254e073c967f881b7dde",
+      "size_bytes": 1472781,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811546,
+        29.099583419121082,
+        69.99208307850779,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "fd5668a1257d8f0ab81d2f98161c77bcfe0c9b7e89a7890c2411a1b00c2fe303",
+      "size_bytes": 1532285,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        59.99208311811546,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        29.099583419121082,
+        79.99208303890012,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "c383e13536b1a6f7fb5e3ff3f7300dd3e235fd074faec620518ad232a181cca5",
+      "size_bytes": 1750479,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        29.099583419121082,
+        89.99208299929248,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "bdc4dc418b17b215b01deb7691a69d8586398f42593aba79186fa26cc0e5e389",
+      "size_bytes": 1385672,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        29.099583419121082,
+        99.99208295968478,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "bb776eecd2fe826a360e2e088d3ac910a91929093d76c9742aae9dea0ea5d0fb",
+      "size_bytes": 1421454,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811546,
+        19.099583459366997,
+        69.99208307850779,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "f8e6df2fbd60171589a1ecc1d8cdef4a0f827c7b08f7af78d4d82f746524e638",
+      "size_bytes": 1479070,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        59.99208311811546,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        19.099583459366997,
+        79.99208303890012,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "f0f41cc7bb5790534aa5bcbb4fe04acb962e5dac5b6369627468a5a1e608c3ba",
+      "size_bytes": 2149045,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        19.099583459366997,
+        89.99208299929248,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "e84e3e8dce2073d1b64922d3da9871ff76efe9610d31b751391357ef373a3e03",
+      "size_bytes": 1860555,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        19.099583459366997,
+        99.99208295968478,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "14887b88ddb7bbb2a516d4c14a100df21a59fadb7d999f5ea7f89e9a4eb2043e",
+      "size_bytes": 1597610,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        9.09958349961291,
+        79.99208303890012,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "34207cf28d894af7601d112d5a1c13d80735927b6ae5215446574c060cc9a49b",
+      "size_bytes": 2110143,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        9.09958349961291,
+        89.99208299929248,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "f48872c0ef6e9e484d1b909f66059d0a9df1adadf393340893bef7910f67e0eb",
+      "size_bytes": 1455484,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        9.09958349961291,
+        99.99208295968478,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "0206c7026459a1bcda53a76eff75ab757deffb48b9a4893cd2337c2887175d35",
+      "size_bytes": 1525753,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        -0.9004164601411819,
+        79.99208303890012,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "d671927d6aeac362345e12b09f2dd6674cafdbfd036d31a90c1aa51c69453355",
+      "size_bytes": 1468590,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        -0.9004164601411819,
+        89.99208299929248,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "3ca49578d07c21bcb82cd7db0d53f88eb77211eff57b7ea1880e1bc9ba3ac63f",
+      "size_bytes": 1435390,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        -0.9004164601411819,
+        99.99208295968478,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "7789845667ea38e4b9b11d2f8fc3a1cd02731c98fa6ae6c7654b5a425744c4ec",
+      "size_bytes": 1476075,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811546,
+        29.099583419121082,
+        69.99208307850779,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "9b2f3aa53c65a250f5e88d388baed91e5797018f1648a06bd85c1adafb2fa98b",
+      "size_bytes": 1538190,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        59.99208311811546,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        29.099583419121082,
+        79.99208303890012,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "9491ed6209c24a36dfabd216af77040f249083a9965fe89b98135b7751337d9c",
+      "size_bytes": 1768675,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        29.099583419121082,
+        89.99208299929248,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "07556f02d9788577f28e3298bafc37f63a366ecc475dac4d3ae2e54ee60e33ae",
+      "size_bytes": 1386670,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        29.099583419121082,
+        99.99208295968478,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "00138b4a439c57ecaa1b85d7a0ca0e7576a56328a4d2d881806dc78c27a30a62",
+      "size_bytes": 1422851,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811546,
+        19.099583459366997,
+        69.99208307850779,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "9f4fc8924c7513b65433f809aabdffbfce56fcb49b7e19f1b100d0f899bfd7f1",
+      "size_bytes": 1483803,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        59.99208311811546,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        19.099583459366997,
+        79.99208303890012,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "a9131b3cbfe0b4f664f5fae1a5adc03cc25b34c5b9bddaf511b6e0bf3f48b0ec",
+      "size_bytes": 2206669,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        19.099583459366997,
+        89.99208299929248,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "a0177f2663369ca4835555d1abe3581ef9e49c0fc95f673585f449ff4c0ac8c0",
+      "size_bytes": 1895612,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        19.099583459366997,
+        99.99208295968478,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "76dfdd53b26ccdbc30415d06ae7d98a17630058ea7e5f7e4a58147f2ff1ee681",
+      "size_bytes": 1606105,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        9.09958349961291,
+        79.99208303890012,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "332cd9f9ef34396e4cf1124497ced9201896ce556d9447bd5c5c0fc2b6a42f0c",
+      "size_bytes": 2157781,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        9.09958349961291,
+        89.99208299929248,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "1d61602ae9c3347b7a4b0c85ae1e38a18b6642bc625b7aab3628ffe0c1b02e5a",
+      "size_bytes": 1460534,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        9.09958349961291,
+        99.99208295968478,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "80dd25fc6a2c9ee81a6e58ff18c4cedf5cab9590f8728aa0438f878a7e1d4d76",
+      "size_bytes": 1531735,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        -0.9004164601411819,
+        79.99208303890012,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "e575dee3c956be10479a59875061e18a0c21cf05ce7b41ed93c102430852c277",
+      "size_bytes": 1471691,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        -0.9004164601411819,
+        89.99208299929248,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "575beefcfb12aedb0c30ebbf11d8885f5b1877e4c04b6c35e7e224d7d54ff751",
+      "size_bytes": 1437652,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        -0.9004164601411819,
+        99.99208295968478,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "b56c4afeef2ea7dd5cdbfc29d907acb9375e916f511d3883cfe0dda6a733841f",
+      "size_bytes": 1478639,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811546,
+        29.099583419121082,
+        69.99208307850779,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "01dad21928c88bc47a4a6d03668e50ad5a48048ccb42052edf8c33a8b9ac790d",
+      "size_bytes": 1547391,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        59.99208311811546,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        29.099583419121082,
+        79.99208303890012,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "5ee234e602511c7b5e2dd3bd589d8568b2664ef1b6999006218cba7d4adfd6d0",
+      "size_bytes": 1799831,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        29.099583419121082,
+        89.99208299929248,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "f8095691da2b9cdf77eeeacf32cf614467fd46e69bfbf8eb2bda126b71747ce9",
+      "size_bytes": 1387930,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        29.099583419121082,
+        99.99208295968478,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "3ed195fed304fe55ca63ac7d651d78a8251ab4973297821129706f76c02ede27",
+      "size_bytes": 1424840,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811546,
+        19.099583459366997,
+        69.99208307850779,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "73aa353fa508807cc19aba7e9d09964f6791a281afc9790bc4ddd949ec9f33fb",
+      "size_bytes": 1490897,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        59.99208311811546,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        19.099583459366997,
+        79.99208303890012,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "cd2a5910c1bed1f556cc1b3604e6de501da545453ba4759b2589abab080e6138",
+      "size_bytes": 2288652,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        19.099583459366997,
+        89.99208299929248,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "0b6cb787dc1781909ee81b032f3b7d323c51601c826d482ae09e368044ed158d",
+      "size_bytes": 1938034,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        19.099583459366997,
+        99.99208295968478,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "d537dd0cf60683639cf0af86607c37165541e0d01a62b5bafead65315b81c5ab",
+      "size_bytes": 1619602,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        9.09958349961291,
+        79.99208303890012,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "92320ef59826fd3bfa1cf8374d06fa33fdd7e642deef29401131976b59d73cbf",
+      "size_bytes": 2220145,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        9.09958349961291,
+        89.99208299929248,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "f07a0abb7ae261d3d4b1aae743b8e96acd6e376b13c2d08d10f6f17acf6ca6be",
+      "size_bytes": 1470842,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        9.09958349961291,
+        99.99208295968478,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "2d1627636edcfd6249946eaefdaa0161f29ecdee3674606ebd9c62c71123c166",
+      "size_bytes": 1540421,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850779,
+        -0.9004164601411819,
+        79.99208303890012,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "7584b795443d166e8f36b40546eb38169a3b37357c0d760ae617231099cbc555",
+      "size_bytes": 1474415,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        69.99208307850779,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303890015,
+        -0.9004164601411819,
+        89.99208299929248,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "9d1d97ef304e711ef9543b4b198f60c47ad3042f6af052939428be9a9c33719a",
+      "size_bytes": 1442038,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        79.99208303890015,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929245,
+        -0.9004164601411819,
+        99.99208295968478,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "uint16",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghsl_built_s_nres",
+      "nodata": null,
+      "sha256": "f25abefba6924df6c72b04829d501f30805053e82f3558bdc1304293ca214915",
+      "size_bytes": 1481785,
+      "transform": [
+        0.000833333330032694,
+        0.0,
+        89.99208299929245,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "m2_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811509,
+        29.099583419121316,
+        69.99208307850739,
+        39.099583378875366
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "70e385b9b710a63855ba5ecba61e468a96f6a9cc5277af3ba7a12b7d7ff195f1",
+      "size_bytes": 29601030,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        59.99208311811509,
+        0.0,
+        -0.000833333329979504,
+        39.099583378875366
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850739,
+        29.099583419121316,
+        79.9920830388997,
+        39.099583378875366
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "de342401d1cbb55d7520f557da526744cba2502b2ca5dd7208f7c76a689fe828",
+      "size_bytes": 103049947,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        69.99208307850739,
+        0.0,
+        -0.000833333329979504,
+        39.099583378875366
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889972,
+        29.099583419121316,
+        89.99208299929202,
+        39.099583378875366
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "2b06247452cd4bbb1da0c92f5989d91fad5ea7a3b4a4e63ebece0558730db6c3",
+      "size_bytes": 8905325,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        79.99208303889972,
+        0.0,
+        -0.000833333329979504,
+        39.099583378875366
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929202,
+        29.099583419121316,
+        99.99208295968432,
+        39.099583378875366
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "dd30573eb513803ab370b6e6e69ae54b9b4d95b9f6ae6acb96b024790edcd0c9",
+      "size_bytes": 13317478,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        89.99208299929202,
+        0.0,
+        -0.000833333329979504,
+        39.099583378875366
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811509,
+        19.099583459367267,
+        69.99208307850739,
+        29.099583419121316
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "ccfd9a2e9a9feec742845265cad46175d0069f1723dadc26c3e87bfe89c00d70",
+      "size_bytes": 26095882,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        59.99208311811509,
+        0.0,
+        -0.000833333329979504,
+        29.099583419121316
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850739,
+        19.099583459367267,
+        79.9920830388997,
+        29.099583419121316
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "cbe587d98bbfe3428c8ffd0af0dbd4841f9f0f2e23a89f06805c2c25ce88a4be",
+      "size_bytes": 144382946,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        69.99208307850739,
+        0.0,
+        -0.000833333329979504,
+        29.099583419121316
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889972,
+        19.099583459367267,
+        89.99208299929202,
+        29.099583419121316
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "97ad96747554f71a042d4ea044fee0855b43effce02ad279893774efc18bb074",
+      "size_bytes": 175723646,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        79.99208303889972,
+        0.0,
+        -0.000833333329979504,
+        29.099583419121316
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929202,
+        19.099583459367267,
+        99.99208295968432,
+        29.099583419121316
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "a67ec6fd4d7427a4f8723d7b8b7481f26d5ed6c10fdd87cfb72b65a64e3a4ec1",
+      "size_bytes": 74845653,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        89.99208299929202,
+        0.0,
+        -0.000833333329979504,
+        29.099583419121316
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850739,
+        9.09958349961322,
+        79.9920830388997,
+        19.099583459367267
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "9db7f060651371db9cdcdc597440f7178b21966a24b090907d0eef1a062ef37e",
+      "size_bytes": 103796300,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        69.99208307850739,
+        0.0,
+        -0.000833333329979504,
+        19.099583459367267
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889972,
+        9.09958349961322,
+        89.99208299929202,
+        19.099583459367267
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "8595d2841a2b886c4e1d87f2c907b77c88303674755577593c41def15940b420",
+      "size_bytes": 17940023,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        79.99208303889972,
+        0.0,
+        -0.000833333329979504,
+        19.099583459367267
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929202,
+        9.09958349961322,
+        99.99208295968432,
+        19.099583459367267
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "76560f0ce0e119cb9441c99ce2c162875ac455b413eb9048bbd3272e73f4d998",
+      "size_bytes": 29357277,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        89.99208299929202,
+        0.0,
+        -0.000833333329979504,
+        19.099583459367267
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850739,
+        -0.9004164601408302,
+        79.9920830388997,
+        9.099583499613217
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "2dc089487eb17d8bb8b6dc376cc9e64bd251a1830833345134298021663c1c3e",
+      "size_bytes": 9630080,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        69.99208307850739,
+        0.0,
+        -0.000833333329979504,
+        9.099583499613217
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889972,
+        -0.9004164601408302,
+        89.99208299929202,
+        9.099583499613217
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "1eaedc56d729b43271d79a6d6373f29a55a17b70b91b89fdfc42423502b0fb24",
+      "size_bytes": 13070526,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        79.99208303889972,
+        0.0,
+        -0.000833333329979504,
+        9.099583499613217
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929202,
+        -0.9004164601408302,
+        99.99208295968432,
+        9.099583499613217
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2000,
+      "file": "data/incoming/ghsl/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "10e5212964547645e501dc59a2812fe13baffe6a9e65d2fc432f946d5adacb1a",
+      "size_bytes": 18557332,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        89.99208299929202,
+        0.0,
+        -0.000833333329979504,
+        9.099583499613217
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811378,
+        29.099583419120577,
+        69.99208307850604,
+        39.09958337887475
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "af188f964f9794e4c66db16f5115512683a770da9aff9301cc7fc438eff5f184",
+      "size_bytes": 31337678,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        59.99208311811378,
+        0.0,
+        -0.0008333333299795143,
+        39.09958337887475
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850603,
+        29.099583419120577,
+        79.99208303889829,
+        39.09958337887475
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "14e190f2f16600941b7ad94e7c09ffded4b6a475b1b2dcdc57676792ea54de39",
+      "size_bytes": 119239271,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        69.99208307850603,
+        0.0,
+        -0.0008333333299795143,
+        39.09958337887475
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.9920830388983,
+        29.099583419120577,
+        89.99208299929056,
+        39.09958337887475
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "54792be813af8bd9fa3aaef5b20179bdccf6e2dfa6e0283fff2dac88a94298b2",
+      "size_bytes": 9417058,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        79.9920830388983,
+        0.0,
+        -0.0008333333299795143,
+        39.09958337887475
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929055,
+        29.099583419120577,
+        99.9920829596828,
+        39.09958337887475
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "4dd16b12ffe034db5a84e6e63bf02baab0c7ca46b0f8ffcd7f5c72bbe48c18e3",
+      "size_bytes": 13350016,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        89.99208299929055,
+        0.0,
+        -0.0008333333299795143,
+        39.09958337887475
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811378,
+        19.099583459366407,
+        69.99208307850604,
+        29.099583419120577
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "436ef2c304dd49c71780ac8f8f0a07f3b278098926a573f56e6efb1e147686f0",
+      "size_bytes": 27990338,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        59.99208311811378,
+        0.0,
+        -0.0008333333299795143,
+        29.099583419120577
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850603,
+        19.099583459366407,
+        79.99208303889829,
+        29.099583419120577
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "805dd64b9ca49910ca27339cc6024f88db2a5e7b9d9fd004766c5b9cb3c2d0d2",
+      "size_bytes": 169446739,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        69.99208307850603,
+        0.0,
+        -0.0008333333299795143,
+        29.099583419120577
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.9920830388983,
+        19.099583459366407,
+        89.99208299929056,
+        29.099583419120577
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "cbead083f5c2cbda44d54f722543cc792c504c4dbc0ea6a999634fa7d9d4317d",
+      "size_bytes": 197987388,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        79.9920830388983,
+        0.0,
+        -0.0008333333299795143,
+        29.099583419120577
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929055,
+        19.099583459366407,
+        99.9920829596828,
+        29.099583419120577
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "f136548e6869ce8b3e49b7a46e0862055b1e51053f8eafd66b57265756bc943c",
+      "size_bytes": 81652543,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        89.99208299929055,
+        0.0,
+        -0.0008333333299795143,
+        29.099583419120577
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850603,
+        9.099583499612228,
+        79.99208303889829,
+        19.0995834593664
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "24c5e5dfe4456913fbb8799038a57a2c5cc63a8eca101abf4757d03fa2dfbc43",
+      "size_bytes": 118394439,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        69.99208307850603,
+        0.0,
+        -0.0008333333299795143,
+        19.0995834593664
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.9920830388983,
+        9.099583499612228,
+        89.99208299929056,
+        19.0995834593664
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "7782a7107175aa2a5354641e80fe78e0a1cee69100825bb40efade6577649fda",
+      "size_bytes": 18888745,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        79.9920830388983,
+        0.0,
+        -0.0008333333299795143,
+        19.0995834593664
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929055,
+        9.099583499612228,
+        99.9920829596828,
+        19.0995834593664
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "1917d282d3d132fa206fc352cfbbdcff7a5d940d6829b5e852c0d55f89d4b3f8",
+      "size_bytes": 30688395,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        89.99208299929055,
+        0.0,
+        -0.0008333333299795143,
+        19.0995834593664
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850603,
+        -0.9004164601419351,
+        79.99208303889829,
+        9.099583499612237
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "bee708208aa3278d0d6860410643343e4a2f310417acc0b714960bcd639b9783",
+      "size_bytes": 9896642,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        69.99208307850603,
+        0.0,
+        -0.0008333333299795143,
+        9.099583499612237
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.9920830388983,
+        -0.9004164601419351,
+        89.99208299929056,
+        9.099583499612237
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "340d9241669c6194c4f75983e92457bef254ea19c74713f09df20761bbd9be33",
+      "size_bytes": 14754581,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        79.9920830388983,
+        0.0,
+        -0.0008333333299795143,
+        9.099583499612237
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929055,
+        -0.9004164601419351,
+        99.9920829596828,
+        9.099583499612237
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2005,
+      "file": "data/incoming/ghsl/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "a2ddd49fe17438a7281ff2d1e0d11ef8a04cb0c67b827a3ee7883070c27d8c84",
+      "size_bytes": 19323029,
+      "transform": [
+        0.0008333333300326878,
+        0.0,
+        89.99208299929055,
+        0.0,
+        -0.0008333333299795143,
+        9.099583499612237
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811509,
+        29.099583419121316,
+        69.99208307850739,
+        39.099583378875366
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "dfc2c16e0b6e48fce27a9cbef5abaf825d263c09ea46f7c6b03a95ff3714817c",
+      "size_bytes": 33074524,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        59.99208311811509,
+        0.0,
+        -0.000833333329979504,
+        39.099583378875366
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850739,
+        29.099583419121316,
+        79.9920830388997,
+        39.099583378875366
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "6d46ef21cb16dffd43c7e21c2bd891d197147751350e760149002a0dd56a1237",
+      "size_bytes": 135304276,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        69.99208307850739,
+        0.0,
+        -0.000833333329979504,
+        39.099583378875366
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889972,
+        29.099583419121316,
+        89.99208299929202,
+        39.099583378875366
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "5e1eeb2ca5c51357e99cb0d82c7f23bd7f6acc9bf0a653e073692384c7ad8327",
+      "size_bytes": 9786956,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        79.99208303889972,
+        0.0,
+        -0.000833333329979504,
+        39.099583378875366
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929202,
+        29.099583419121316,
+        99.99208295968432,
+        39.099583378875366
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "22eda68ca7076033e6c688d81de2a1a705f157b2aa219e8608d652ac01d9ea38",
+      "size_bytes": 13282734,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        89.99208299929202,
+        0.0,
+        -0.000833333329979504,
+        39.099583378875366
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.99208311811509,
+        19.099583459367267,
+        69.99208307850739,
+        29.099583419121316
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "17ac47bd95bd87ece2a1940a71249ed9b73ec58f284a7be8e19e59bd0f1c280f",
+      "size_bytes": 29981677,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        59.99208311811509,
+        0.0,
+        -0.000833333329979504,
+        29.099583419121316
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850739,
+        19.099583459367267,
+        79.9920830388997,
+        29.099583419121316
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "328c9f15317a837583bca4b26dba696ebd396af4b70a3a38efbd0ab4810bfb6b",
+      "size_bytes": 194653679,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        69.99208307850739,
+        0.0,
+        -0.000833333329979504,
+        29.099583419121316
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889972,
+        19.099583459367267,
+        89.99208299929202,
+        29.099583419121316
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "2483475297150aa769eae582b5d5be249b6945e08d09c05d4c31d5fe22472e2c",
+      "size_bytes": 220099952,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        79.99208303889972,
+        0.0,
+        -0.000833333329979504,
+        29.099583419121316
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929202,
+        19.099583459367267,
+        99.99208295968432,
+        29.099583419121316
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "f709f0f593107aab6f557427e905e0b613a821660f94458e7bbdfbab63ac468f",
+      "size_bytes": 88282539,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        89.99208299929202,
+        0.0,
+        -0.000833333329979504,
+        29.099583419121316
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850739,
+        9.09958349961322,
+        79.9920830388997,
+        19.099583459367267
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "fbdf7589bad634d75d1e413563aad69c9360311824f92af2f83774ac6d6adaf4",
+      "size_bytes": 132575659,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        69.99208307850739,
+        0.0,
+        -0.000833333329979504,
+        19.099583459367267
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889972,
+        9.09958349961322,
+        89.99208299929202,
+        19.099583459367267
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "c14b82e256e8cb5b31f3be2e359d9417bed339164a4753b8efe96f666f6ae486",
+      "size_bytes": 19892901,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        79.99208303889972,
+        0.0,
+        -0.000833333329979504,
+        19.099583459367267
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929202,
+        9.09958349961322,
+        99.99208295968432,
+        19.099583459367267
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "e98dd1019909181cdbc28df21672f195e05c551cdb5ff113db286ec1ce93fd5a",
+      "size_bytes": 32221526,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        89.99208299929202,
+        0.0,
+        -0.000833333329979504,
+        19.099583459367267
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.99208307850739,
+        -0.9004164601408302,
+        79.9920830388997,
+        9.099583499613217
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "bf1e155ecefc50b6b284a6dd83f950e480801e488becb73c9f9047157acca6bd",
+      "size_bytes": 10167114,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        69.99208307850739,
+        0.0,
+        -0.000833333329979504,
+        9.099583499613217
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889972,
+        -0.9004164601408302,
+        89.99208299929202,
+        9.099583499613217
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "dd0716e06e8e7139687536450bc6fafa9d831202659071f436ae0885b568fee3",
+      "size_bytes": 16352016,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        79.99208303889972,
+        0.0,
+        -0.000833333329979504,
+        9.099583499613217
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299929202,
+        -0.9004164601408302,
+        99.99208295968432,
+        9.099583499613217
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2010,
+      "file": "data/incoming/ghsl/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "ece354dd86a8367294b7906570a89827d055a0d53471534a36dafb8595824907",
+      "size_bytes": 20139804,
+      "transform": [
+        0.0008333333300326924,
+        0.0,
+        89.99208299929202,
+        0.0,
+        -0.000833333329979504,
+        9.099583499613217
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        29.099583419121082,
+        69.9920830785043,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "f6c400f69e817d6f50233dbaa32d928deef127655b9eda144e4e3a578c2633af",
+      "size_bytes": 35315592,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        29.099583419121082,
+        79.99208303889648,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "2ff6376cb2ab3b2711ed06ee990d72334ef4c41d0597f448458cf9134f9b85f8",
+      "size_bytes": 158390137,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        29.099583419121082,
+        89.99208299928867,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "6e89edcdafa15bb02a33f461345bd2ea3b7a1776730de92a1b25758f82383084",
+      "size_bytes": 10458920,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        29.099583419121082,
+        99.99208295968086,
+        39.09958337887517
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "6d60111fc0f90f563bb2bb588d883661faf1c4e6f634657a2dae9e16cd59dab3",
+      "size_bytes": 13304788,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        39.09958337887517
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        59.992083118112106,
+        19.099583459366997,
+        69.9920830785043,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "d23a908fd1ea9bc9ef88de1c4bc7d62a2b86424478943d009c10a15089af74c6",
+      "size_bytes": 32907013,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        59.992083118112106,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        19.099583459366997,
+        79.99208303889648,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "6addb1e9a3fc74d7eb3e9bf8d3a3f85b4e992a41081226c49a9785331faa2979",
+      "size_bytes": 229288760,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        19.099583459366997,
+        89.99208299928867,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "8c6086ae0c9ac3ea9a1928b7bd6423fc3eb74ca3e3ccd623cf61cf84cc306d32",
+      "size_bytes": 249933309,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        19.099583459366997,
+        99.99208295968086,
+        29.099583419121082
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "9e0ac432972cfdde100d3c9094c5acfd16d39cbed2a177a8f254488430028a69",
+      "size_bytes": 97241365,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        29.099583419121082
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        9.09958349961291,
+        79.99208303889648,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "ac80a28627ca5bc065283d4a5826a5f6796f16973a4a948178f8d78bda689647",
+      "size_bytes": 151031001,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        9.09958349961291,
+        89.99208299928867,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "5b76a7d3d3c7bcdb65ecd1fa5d57b1361b8dbfb84a47baee81654c8eb3dc39e4",
+      "size_bytes": 21373578,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        9.09958349961291,
+        99.99208295968086,
+        19.099583459366997
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "6b1757e3f8802af54df2bbd75e0cb4e7fefcba8bc770443799c011b9465d4b31",
+      "size_bytes": 34232067,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        19.099583459366997
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        69.9920830785043,
+        -0.9004164601411819,
+        79.99208303889648,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "d256f0b19b5996e84895ef98464b755404e6fda5bd7bdff3cd0eca58f26662cb",
+      "size_bytes": 10510453,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        69.9920830785043,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        79.99208303889648,
+        -0.9004164601411819,
+        89.99208299928867,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "d6aff5c0b009a01cc45ca881cd8c3393c5ba3fac882897dce167cd4219799649",
+      "size_bytes": 18949565,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        79.99208303889648,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "bounds": [
+        89.99208299928867,
+        -0.9004164601411819,
+        99.99208295968086,
+        9.099583499612905
+      ],
+      "crs": "EPSG:4326",
+      "dtype": "float64",
+      "epoch": 2015,
+      "file": "data/incoming/ghsl/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif",
+      "height": 12000,
+      "kind": "ghs_pop",
+      "nodata": null,
+      "sha256": "90fb902cc1ed3a0930916a10a11d247a14a3e2a2d45b6ecf5308032a849cecbe",
+      "size_bytes": 21173464,
+      "transform": [
+        0.0008333333300326821,
+        0.0,
+        89.99208299928867,
+        0.0,
+        -0.0008333333299795073,
+        9.099583499612905
+      ],
+      "units": "people_per_cell",
+      "width": 12000
+    },
+    {
+      "citation": "geoBoundaries gbOpen IND ADM1 (DataMeet / ECI, CC BY 2.5 IN), build 9469f09 - diagnostic zones only",
+      "file": "data/incoming/boundaries/geoBoundaries-IND-ADM1.geojson",
+      "kind": "zones",
+      "layer": "state_adm1",
+      "sha256": "47aa0acb6f69868daee49143276f3ce323f18905ba7d38d0a86816b405028736",
+      "size_bytes": 46170854,
+      "units": "polygons"
+    },
+    {
+      "citation": "geoBoundaries gbOpen IND ADM2 (Pathways Data / LGD, ODbL 1.0), build 9469f09 - diagnostic zones only",
+      "file": "data/incoming/boundaries/geoBoundaries-IND-ADM2.geojson",
+      "kind": "zones",
+      "layer": "district_adm2",
+      "sha256": "8bef6929fd65432e7dc775e7c44473e84efff064ebddbfd6b834e6291546db40",
+      "size_bytes": 48317735,
+      "units": "polygons"
+    }
+  ],
+  "free_disk_bytes_at_data_root": 39164510208,
+  "generated_at": "2026-11-07T20:47:41+00:00",
+  "licenses": {
+    "ghsl": "CC BY 4.0 - European Commission, Joint Research Centre (JRC), GHSL Data Package 2023",
+    "worldpop": "CC BY 4.0 - WorldPop (www.worldpop.org), doi:10.5258/SOTON/WP00645"
+  },
+  "missing": [],
+  "n_files": 181,
+  "synthetic": false,
+  "total_bytes": 25077210916,
+  "upstream": {
+    "ghsl_built_s": {
+      "doi_total": "10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA",
+      "product": "GHS-BUILT-S R2023A total and NRES, 4326 3ss, V1-0",
+      "url_template": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
+    },
+    "worldpop": {
+      "doi": "10.5258/SOTON/WP00645",
+      "product": "WorldPop Global1 unconstrained individual countries 2000-2020, 100 m (3 arc-second), ppp",
+      "url_template": "https://data.worldpop.org/GIS/Population/Global_2000_2020/{year}/IND/ind_ppp_{year}.tif"
+    }
+  }
+}

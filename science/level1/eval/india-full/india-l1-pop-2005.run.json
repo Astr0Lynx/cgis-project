@@ -1,0 +1,245 @@
+{
+  "checks": {
+    "all_planned_tiles_processed": true,
+    "chunks_equal_cog": true,
+    "is_cog": true,
+    "national_mass_balance": true,
+    "no_negative": true,
+    "no_nonfinite": true,
+    "no_population_outside_reference_grid": true,
+    "parent_mass_balance": true,
+    "rss_within_budget": true,
+    "valid_cells_preserved": true
+  },
+  "config": "C:\\Users\\maith\\Desktop\\cybergis_proj\\cgis-project\\science\\level1\\config\\india_full.toml",
+  "config_sha256": "350aa479164b7e710e54f5003d03d9fe60e12458d2b1f4bb8082da485a049891",
+  "dataset_id": "india-l1-pop-2005",
+  "finished_at": "2026-11-07T20:17:06+00:00",
+  "ghsl_outside_footprint_cells": 0,
+  "grid": {
+    "block": 10,
+    "extent_col0": 0,
+    "extent_height": 34497,
+    "extent_is_full_worldpop_grid": true,
+    "extent_row0": 0,
+    "extent_width": 35075,
+    "full": {
+      "crs_epsg": 4326,
+      "height": 34497,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "width": 35075
+    },
+    "nonempty_tiles": 172,
+    "outside_reference_grid": {
+      "dropped_sum": 0.0,
+      "dropped_valid_cells": 0
+    },
+    "registration_to_reference": {
+      "dc": 0,
+      "dr": 0,
+      "file_height": 34497,
+      "file_width": 35075
+    },
+    "tile_cols": 35100,
+    "tile_size": 200,
+    "tiles": 173
+  },
+  "main_policy": null,
+  "mass_balance": {
+    "abs_error": 0.0017702579498291016,
+    "max_parent_abs_error": 0.000732421875,
+    "max_parent_rel_error": 5.960334095799139e-08,
+    "parents": 4017858,
+    "parents_zero_weight": 1210211,
+    "population_in_zero_weight_parents": 103208697.72290698,
+    "rel_error": 1.6129896578497346e-12,
+    "sum_level1_out": 1097501116.1486087,
+    "sum_worldpop_in": 1097501116.150379,
+    "tolerance": {
+      "abs": 0.001,
+      "rel": 1e-05
+    }
+  },
+  "output": {
+    "cog_validation": {
+      "errors": [],
+      "is_cog": true,
+      "validated": true,
+      "warnings": []
+    },
+    "path": "C:\\Users\\maith\\Desktop\\cybergis_proj\\cgis-project\\data\\outputs\\level1\\cog\\india-l1-pop-2005.tif",
+    "sha256": "d76cc9db6562f6cf80704155a9b74637617ad0feeaf97b04bb9bfac240708665",
+    "size_bytes": 1168972701,
+    "stats": {
+      "bounds": [
+        68.185416408,
+        6.753750174,
+        97.414582958,
+        35.501250059
+      ],
+      "compression": "DEFLATE",
+      "crs": "EPSG:4326",
+      "dtype": "float32",
+      "epsg": 4326,
+      "height": 34497,
+      "max": 18713.08984375,
+      "min": 0.0,
+      "negative_cells": 0,
+      "nodata": -99999.0,
+      "nonfinite_cells": 0,
+      "overviews": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128
+      ],
+      "res": [
+        0.0008333333300071276,
+        0.0008333333299997101
+      ],
+      "sum": 1097501116.1486087,
+      "transform": [
+        0.0008333333300071276,
+        0.0,
+        68.185416408,
+        0.0,
+        -0.0008333333299997101,
+        35.501250059
+      ],
+      "units": "people_per_cell",
+      "valid_cells": 393921894,
+      "width": 35075
+    }
+  },
+  "policy_2011_approval": null,
+  "policy_comparison_2011": null,
+  "redistribution": {
+    "max_parent_abs_err": 0.000732421875,
+    "max_parent_rel_err": 5.960334095799139e-08,
+    "negative_out": 0,
+    "parents": 4017858,
+    "parents_populated": 4016940,
+    "parents_zero_weight": 1210211,
+    "pop_zero_weight": 103208697.72290698,
+    "sum_in": 1097501116.150379,
+    "sum_out": 1097501116.1486096,
+    "valid_cells": 393921894,
+    "weight_missing_cells": 0
+  },
+  "residential": {
+    "2005": {
+      "cells": 393921894,
+      "missing": 0,
+      "nres_gt_total": 0,
+      "nres_gt_total_m2": 0.0
+    }
+  },
+  "resources": {
+    "assemble": {
+      "budget_exceeded": false,
+      "elapsed_s": 155.84,
+      "max_worker_processes": 0,
+      "min_free_disk_gib": 34.2,
+      "peak_rss_bytes": 1807228928,
+      "peak_rss_gib": 1.683,
+      "rss_budget_gib": 12.0,
+      "sampling_interval_s": 0.25
+    },
+    "chunk_bytes": 844013824,
+    "compute": {
+      "budget_exceeded": false,
+      "elapsed_s": 145.6,
+      "max_worker_processes": 4,
+      "min_free_disk_gib": 35.53,
+      "peak_rss_bytes": 3674378240,
+      "peak_rss_gib": 3.422,
+      "rss_budget_gib": 12.0,
+      "sampling_interval_s": 0.25
+    },
+    "sum_tile_cpu_s": 566.3,
+    "workers": 4
+  },
+  "software": {
+    "cgis_level1": "1.0.0",
+    "commit": "058889b179793d2649fd26ca5b4a10133b8071ed",
+    "dirty_worktree": false,
+    "gdal": "3.12.1",
+    "numpy": "2.5.3",
+    "rasterio": "1.5.0"
+  },
+  "started_at": "2026-11-07T20:12:05+00:00",
+  "status": "ok",
+  "synthetic": false,
+  "temporal": {
+    "None": {
+      "description": "GHSL epoch 2005 used directly",
+      "kind": "exact",
+      "terms": [
+        [
+          2005,
+          1.0
+        ]
+      ]
+    }
+  },
+  "upstream": {
+    "ghsl_built_s": {
+      "doi_total": "10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA",
+      "product": "GHS-BUILT-S R2023A total and NRES, 4326 3ss, V1-0",
+      "tiles_sha256": {
+        "nres_2005": {
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif": "fd5668a1257d8f0ab81d2f98161c77bcfe0c9b7e89a7890c2411a1b00c2fe303",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif": "c383e13536b1a6f7fb5e3ff3f7300dd3e235fd074faec620518ad232a181cca5",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif": "bdc4dc418b17b215b01deb7691a69d8586398f42593aba79186fa26cc0e5e389",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif": "bb776eecd2fe826a360e2e088d3ac910a91929093d76c9742aae9dea0ea5d0fb",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif": "f8e6df2fbd60171589a1ecc1d8cdef4a0f827c7b08f7af78d4d82f746524e638",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif": "f0f41cc7bb5790534aa5bcbb4fe04acb962e5dac5b6369627468a5a1e608c3ba",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif": "e84e3e8dce2073d1b64922d3da9871ff76efe9610d31b751391357ef373a3e03",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif": "14887b88ddb7bbb2a516d4c14a100df21a59fadb7d999f5ea7f89e9a4eb2043e",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif": "34207cf28d894af7601d112d5a1c13d80735927b6ae5215446574c060cc9a49b",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif": "f48872c0ef6e9e484d1b909f66059d0a9df1adadf393340893bef7910f67e0eb",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif": "0206c7026459a1bcda53a76eff75ab757deffb48b9a4893cd2337c2887175d35",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif": "d671927d6aeac362345e12b09f2dd6674cafdbfd036d31a90c1aa51c69453355",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif": "3ca49578d07c21bcb82cd7db0d53f88eb77211eff57b7ea1880e1bc9ba3ac63f",
+          "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif": "7789845667ea38e4b9b11d2f8fc3a1cd02731c98fa6ae6c7654b5a425744c4ec"
+        },
+        "total_2005": {
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.tif": "1d8fcefb641546de62fb87073471c5300f9a0d7479c40427d3dc5009beba778a",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.tif": "decb8cffe4029c816b5f98da05de941f395b22e38639a3c870109b5b262129b8",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.tif": "ca632ba62f3e61d16c2e78713a5d44aefac480f6b3a4082fe306c38300813d8d",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.tif": "98adc16b87ec8939eeaed07fea9ae3f4882e859d082a70db24f64bbee311be70",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.tif": "0326bd6b2ded859f884f37ff4b75e2a0662b643b39ad950415a7b231fe29b029",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.tif": "20898d857ce4d15734afdd522f08e66669535f7b238eea49d79e9786ec314a16",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.tif": "eedaf99635ec632f1c7e631b97df9df6220068d97a0d75265562b2e3b22c80f8",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.tif": "3fa243fb4fdc512d7d0420f835e24f0915d30e639495560d2a4dcdf39bb61250",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.tif": "385bcda6c170b5b6336e8ce407551e9ad51e466b1db1f9aa916f30b7908b764b",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.tif": "b1b46682c54c0247d8e2a23f481dc624e8a9d1ecd910275759bf0c804ac72247",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.tif": "cb1febfbc68453e1ff4e22aa5a9d55d5e698bb638e13b54f7fd6ad943af4bc0e",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.tif": "b07004915056ee61b4c9b84235fa666d952033a781f1b99f0578608915a85e85",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.tif": "a585e6c9cfe221eda5a819e2e25b97d791dfb34d0eba7728cec835d4c9b8cb4c",
+          "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.tif": "99113b653cf227dfe12cb3bab037ba0be01f7e2446cc5f310efe3b142b70427b"
+        }
+      },
+      "url_template": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
+    },
+    "worldpop": {
+      "dataset_id": "india-worldpop-unconstrained-2005",
+      "doi": "10.5258/SOTON/WP00645",
+      "file": "ind_ppp_2005.tif",
+      "product": "WorldPop Global1 unconstrained individual countries 2000-2020, 100 m (3 arc-second), ppp",
+      "sha256": "adb011731cfa8fe512be24b240565cbcb5f3c93bd90aea2827fa58db9857b11e",
+      "url_template": "https://data.worldpop.org/GIS/Population/Global_2000_2020/{year}/IND/ind_ppp_{year}.tif"
+    }
+  },
+  "year": 2005
+}

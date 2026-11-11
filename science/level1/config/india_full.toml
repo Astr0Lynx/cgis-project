@@ -1,0 +1,90 @@
+# India-wide Level 1, 2001-2011 inclusive (REAL inputs). Inputs are NOT in Git: see science/level1/README.md
+# "Inputs" for the exact download commands and science/level1/provenance/INPUTS.md for checksums.
+[paths]
+root = "../../.."                      # repository root
+work_dir = "data/work/level1"          # checkpoints, VRTs, restart log (git-ignored /data/)
+out_dir = "data/outputs/level1"        # COGs, manifests, run reports, eval bundles
+
+[run]
+name = "india-full"
+synthetic = false
+years = [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011]
+tile_size = 200                        # rows per tile (multiple of parent.block and of every eval support)
+tile_cols = 35100                      # >= WorldPop width (35075): full-width row bands (inputs are row strips)
+workers = 4                            # bounded worker pool
+max_rss_gb = 12                        # hard budget for the whole process tree on the 16 GB target
+
+[parent]
+block = 10                             # 10 x 10 WorldPop cells = 30 arc-seconds (~0.85-0.93 km in India)
+zero_weight_fallback = "worldpop"      # parents with no residential surface keep WorldPop's distribution
+
+[inputs.worldpop]
+# WorldPop Global1 unconstrained, individual countries 2000-2020, 3 arc-second, people per pixel (ppp)
+pattern = "data/incoming/worldpop/ind_ppp_{year}.tif"
+
+[inputs.ghsl]
+# GHS-BUILT-S R2023A built-up SURFACE (m2 per cell), 4326 3 arc-second tiles; NRES = non-residential surface
+total_glob = "data/incoming/ghsl/GHS_BUILT_S_E{epoch}_GLOBE_R2023A_4326_3ss/*.tif"
+nres_glob = "data/incoming/ghsl/GHS_BUILT_S_NRES_E{epoch}_GLOBE_R2023A_4326_3ss/*.tif"
+epochs = [2000, 2005, 2010]
+
+[inputs.ghs_pop]
+glob = "data/incoming/ghsl/GHS_POP_E{epoch}_GLOBE_R2023A_4326_3ss/*.tif"
+epochs = [2000, 2005, 2010, 2015]
+
+[temporal]
+# Post-2010 policy: see science/level1/METHODOLOGY_DECISION.md (decision D-L1-01).
+policy_2011 = "interpolate_2015"
+policy_2011_approval = "approved:maitz18:2026-11-07"   # D-L1-01 option C signed off by the project owner (METHODOLOGY_DECISION.md)
+compare_2011_policies = true
+
+[output]
+nodata = -99999.0
+dataset_prefix = "india-l1-pop-"
+version = 1
+
+[evaluation]
+supports = [1, 10, 100]                # ~100 m, ~1 km, ~10 km
+sample_step = 17                       # systematic 1/289 sample of native cells for 100 m Spearman
+
+[evaluation.zoom_regions]
+delhi = [76.84, 28.40, 77.35, 28.88]
+mumbai = [72.77, 18.88, 73.10, 19.30]
+kolkata = [88.20, 22.40, 88.55, 22.75]
+bengaluru = [77.45, 12.85, 77.78, 13.10]
+rural_bihar = [85.00, 25.50, 85.40, 25.85]
+
+[evaluation.zones.state_adm1]
+path = "data/incoming/boundaries/geoBoundaries-IND-ADM1.geojson"
+id_property = "shapeID"
+name_property = "shapeName"
+citation = "geoBoundaries gbOpen IND ADM1 (DataMeet / ECI, CC BY 2.5 IN), build 9469f09 - diagnostic zones only"
+
+[evaluation.zones.district_adm2]
+path = "data/incoming/boundaries/geoBoundaries-IND-ADM2.geojson"
+id_property = "shapeID"
+name_property = "shapeName"
+citation = "geoBoundaries gbOpen IND ADM2 (Pathways Data / LGD, ODbL 1.0), build 9469f09 - diagnostic zones only"
+
+[qa]
+# Documented BEFORE execution: float32 output, float64 accumulation.
+mass_rel_tol = 1e-5                    # national and per-parent relative tolerance
+mass_abs_tol = 1e-3                    # per-parent absolute tolerance (people)
+
+[provenance]
+zoom_years = [2001, 2006, 2011]
+reference_product = "GHS-POP R2023A (GHS_POP_E{epoch}_GLOBE_R2023A_4326_3ss V1-0)"
+
+[provenance.licenses]
+worldpop = "CC BY 4.0 - WorldPop (www.worldpop.org), doi:10.5258/SOTON/WP00645"
+ghsl = "CC BY 4.0 - European Commission, Joint Research Centre (JRC), GHSL Data Package 2023"
+
+[provenance.upstream.worldpop]
+product = "WorldPop Global1 unconstrained individual countries 2000-2020, 100 m (3 arc-second), ppp"
+doi = "10.5258/SOTON/WP00645"
+url_template = "https://data.worldpop.org/GIS/Population/Global_2000_2020/{year}/IND/ind_ppp_{year}.tif"
+
+[provenance.upstream.ghsl_built_s]
+product = "GHS-BUILT-S R2023A total and NRES, 4326 3ss, V1-0"
+doi_total = "10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA"
+url_template = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"

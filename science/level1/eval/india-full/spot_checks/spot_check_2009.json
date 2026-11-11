@@ -1,0 +1,12 @@
+{
+ "year": 2009,
+ "parents_checked": 40,
+ "empty_parents_skipped": 89,
+ "seed": 2009,
+ "max_rel_cell_diff": 5.528349718012992e-08,
+ "max_parent_rel_err": 1.382108563399862e-08,
+ "failures": [],
+ "tolerance": 1e-05,
+ "pass": true,
+ "method": "independent naive recomputation from raw WorldPop + GHSL tile files (no VRT, no core)"
+}

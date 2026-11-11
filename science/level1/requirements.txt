@@ -1,0 +1,9 @@
+# cgis_level1 runtime (pinned; rasterio wheels bundle GDAL + PROJ). Tested versions.
+rasterio==1.5.0
+numpy==2.5.3
+scipy==1.18.1
+matplotlib==3.10.5
+psutil==5.9.8
+affine==2.4.0
+shapely==2.1.2
+rio-cogeo==7.0.4

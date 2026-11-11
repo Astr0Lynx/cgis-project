@@ -1,0 +1,60 @@
+    + OneOrMore(oneOf(["_", "^"]) - p.placeable)("subsuper")
+
+tests/test_pipeline.py::test_evaluation_bundle
+  /usr/local/lib/python3.12/site-packages/matplotlib/_mathtext.py:2146: PyparsingDeprecationWarning: 'unquoteResults' argument is deprecated, use 'unquote_results'
+    p.math_string   = QuotedString('$', '\\', unquoteResults=False)
+
+tests/test_pipeline.py::test_evaluation_bundle
+  /usr/local/lib/python3.12/site-packages/matplotlib/_mathtext.py:2147: PyparsingDeprecationWarning: 'leaveWhitespace' deprecated - use 'leave_whitespace'
+    p.non_math      = Regex(r"(?:(?:\\[$])|[^$])*").leaveWhitespace()
+
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+  /usr/local/lib/python3.12/site-packages/matplotlib/_mathtext.py:2170: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    result = self._expression.parseString(s)
+
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+  /usr/local/lib/python3.12/site-packages/matplotlib/_mathtext.py:2197: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    return self._math_expression.parseString(toks[0][1:-1], parseAll=True)
+
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+  /usr/local/lib/python3.12/site-packages/pyparsing/util.py:466: PyparsingDeprecationWarning: 'parseAll' argument is deprecated, use 'parse_all'
+    return fn(self, *args, **kwargs)
+
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+tests/test_pipeline.py::test_evaluation_bundle
+  /usr/local/lib/python3.12/site-packages/matplotlib/_mathtext.py:2178: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    ParserElement.resetCache()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+====================== 47 passed, 220 warnings in 10.90s =======================
