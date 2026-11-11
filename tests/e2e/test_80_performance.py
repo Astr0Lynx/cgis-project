@@ -1,8 +1,5 @@
-"""Latency measurements on the synthetic fixtures (informational; recorded in e2e/perf.json).
-
-These numbers are for a 64x64 raster on one local machine. They show the stack responds within
-interactive time; they are NOT a benchmark of real Phase 1 data.
-"""
+# Informational latency measurements on the synthetic fixtures, written to e2e/perf.json.
+# A 64x64 raster on one machine: shows interactive response times, NOT a benchmark of real data.
 
 from __future__ import annotations
 
@@ -17,6 +14,7 @@ from conftest import API, OGC, RASTER_2001, TILES, TOWN_A, TOWNS, ogc_max_zoom
 RUNS = 15
 
 
+# Calls fn once to warm up, then RUNS times, and returns median/p95/max in ms. Used by test_record_latencies.
 def measure(fn):
     fn()                                   # warm-up (caches, connection pool)
     samples = []
@@ -29,6 +27,7 @@ def measure(fn):
             "p95_ms": round(samples[int(0.95 * (RUNS - 1))], 1), "max_ms": round(samples[-1], 1)}
 
 
+# Records latencies for the main read and processing routes; every p95 is under 10 s.
 def test_record_latencies(http, state_dir):
     t = morecantile.tms.get("WebMercatorQuad").tile(78.015, 17.985, ogc_max_zoom(http, RASTER_2001))
     zonal = {"dataset_id": RASTER_2001, "aoi": TOWN_A, "aoi_crs": "EPSG:4326"}

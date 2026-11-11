@@ -1,4 +1,4 @@
-"""OGC API - Tiles publication and the vendor-specific TiTiler routes (TEST_PLAN 5; P0 7)."""
+# OGC API - Tiles publication (pygeoapi) and the vendor-specific TiTiler routes under /tiles/.
 
 from __future__ import annotations
 
@@ -15,19 +15,22 @@ WMQ = morecantile.tms.get("WebMercatorQuad")
 ZOOM = 13      # deepest level advertised for the 64x64 fixture (checked below)
 
 
+# WebMercatorQuad tile containing (lon, lat) and the fractional pixel position inside it.
+# Used by ogc_tile and test_ogc_tile_nodata_and_outside_are_transparent.
 def tile_and_pixel(lon, lat, zoom=ZOOM):
-    """WebMercatorQuad tile containing (lon, lat) and the fractional pixel position inside it."""
     t = WMQ.tile(lon, lat, zoom)
     b = WMQ.xy_bounds(t)
     x, y = WMQ.xy(lon, lat)
     return t, (x - b.left) / (b.right - b.left), (b.top - y) / (b.top - b.bottom)
 
 
+# Alpha value of a PNG at a fractional pixel position. Used by the OGC tile rendering tests.
 def alpha_at(png: bytes, fx: float, fy: float) -> int:
     img = Image.open(io.BytesIO(png)).convert("RGBA")
     return img.getpixel((min(int(fx * img.width), img.width - 1), min(int(fy * img.height), img.height - 1)))[3]
 
 
+# Fetches the deepest-level OGC PNG tile containing (lon, lat). Used by the OGC tile rendering tests.
 def ogc_tile(http, dataset, lon, lat):
     t, fx, fy = tile_and_pixel(lon, lat, ogc_max_zoom(http, dataset))
     # OGC API - Tiles path order: {tileMatrix}/{tileRow}/{tileCol}
@@ -35,12 +38,14 @@ def ogc_tile(http, dataset, lon, lat):
     return resp, fx, fy
 
 
+# Conformance declares Tiles core and tileset.
 def test_tiles_conformance_declared(http):
     conf = http.get(f"{OGC}/conformance", params={"f": "json"}).json()["conformsTo"]
     assert TILES_CORE in conf
     assert any("ogcapi-tiles-1/1.0/conf/tileset" in c for c in conf)
 
 
+# Each raster advertises a WebMercatorQuad tileset whose limits stop at ZOOM and cover the raster.
 @pytest.mark.parametrize("dataset", [RASTER_2001, RASTER_2011])
 def test_tileset_discovery_and_metadata(http, dataset):
     tilesets = http.get(f"{OGC}/collections/{dataset}/tiles", params={"f": "json"})
@@ -64,11 +69,13 @@ def test_tileset_discovery_and_metadata(http, dataset):
     assert deepest["minTileRow"] <= t.y <= deepest["maxTileRow"] and deepest["minTileCol"] <= t.x <= deepest["maxTileCol"]
 
 
+# The vector collection has no raster tileset.
 def test_vector_collection_has_no_raster_tileset(http):
     # pygeoapi 0.24 answers 400 (InvalidParameterValue) rather than 404 for a collection without tiles.
     assert http.get(f"{OGC}/collections/{TOWNS}/tiles", params={"f": "json"}).status_code in (400, 404)
 
 
+# WebMercatorQuad and WorldCRS84Quad definitions are published and correct.
 def test_tile_matrix_set_definitions(http):
     lst = http.get(f"{OGC}/TileMatrixSets", params={"f": "json"}).json()
     ids = {t["id"] for t in lst["tileMatrixSets"]}
@@ -81,6 +88,7 @@ def test_tile_matrix_set_definitions(http):
     assert tm14["matrixWidth"] == tm14["matrixHeight"] == 2 ** ZOOM
 
 
+# A tile pixel over valid data (Town A centre) is opaque.
 @pytest.mark.parametrize("dataset", [RASTER_2001, RASTER_2011])
 def test_ogc_tile_renders_valid_pixels_opaque(http, dataset):
     resp, fx, fy = ogc_tile(http, dataset, 78.015, 17.985)        # Town A centre: valid data
@@ -89,6 +97,7 @@ def test_ogc_tile_renders_valid_pixels_opaque(http, dataset):
     assert alpha_at(resp.content, fx, fy) == 255
 
 
+# NoData pixels and pixels outside the raster are transparent (or the tile is absent).
 def test_ogc_tile_nodata_and_outside_are_transparent(http):
     resp, fx, fy = ogc_tile(http, RASTER_2001, 78.0015, 17.9985)  # first rows/cols: NoData strip
     assert resp.status_code == 200
@@ -101,6 +110,7 @@ def test_ogc_tile_nodata_and_outside_are_transparent(http):
         assert resp.status_code in (204, 404)
 
 
+# Tiles beyond the limits, bad zoom, unknown TMS and unknown collections are errors.
 def test_ogc_tile_errors(http):
     base = f"{OGC}/collections/{RASTER_2001}/tiles"
     t = WMQ.tile(78.015, 17.985, ZOOM + 1)                        # below the advertised limits
@@ -112,6 +122,7 @@ def test_ogc_tile_errors(http):
 
 # --- vendor-specific TiTiler routes (/tiles/), NOT an OGC API ---------------------------------------
 
+# The vendor listing shows both rasters and TileJSON has gateway tile URLs and exact bounds.
 def test_vendor_dataset_listing_and_tilejson(http):
     listing = http.get(f"{TILES}/datasets")
     assert listing.status_code == 200
@@ -121,12 +132,14 @@ def test_vendor_dataset_listing_and_tilejson(http):
     assert tj["bounds"] == pytest.approx([78.0, 17.936, 78.064, 18.0], abs=1e-6)
 
 
+# The vendor /point route returns the known pixel value per year.
 @pytest.mark.parametrize("year,value", [(2001, 1.0), (2011, 2.0)])
 def test_vendor_point_values(http, year, value):
     resp = http.get(f"{TILES}/datasets/{RASTERS[year]}/point/78.015,17.985")
     assert resp.status_code == 200 and resp.json()["values"] == [value]
 
 
+# A /point inside the NoData strip does not return a real value.
 def test_vendor_point_in_nodata_strip_is_not_a_value(http):
     resp = http.get(f"{TILES}/datasets/{RASTER_2001}/point/78.0015,17.9985")
     if resp.status_code == 200:
@@ -135,6 +148,7 @@ def test_vendor_point_in_nodata_strip_is_not_a_value(http):
         assert resp.status_code in (400, 404, 422)
 
 
+# Vendor routes refuse unknown datasets, arbitrary URLs and path traversal.
 def test_vendor_routes_reject_unknown_and_unsafe_assets(http):
     r = http.get(f"{TILES}/datasets/no-such-dataset/info")
     assert r.status_code == 404 and error_code(r)
@@ -148,5 +162,6 @@ def test_vendor_routes_reject_unknown_and_unsafe_assets(http):
         assert "root:" not in resp.text
 
 
+# The vector dataset is not served by the vendor raster routes.
 def test_vector_dataset_is_not_tileable_by_vendor_routes(http):
     assert http.get(f"{TILES}/datasets/{TOWNS}/info").status_code in (404, 422)

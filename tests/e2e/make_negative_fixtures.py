@@ -1,11 +1,6 @@
-"""Write deliberately bad import inputs for the negative ingestion tests (SYNTHETIC, test-only).
-
-    python make_negative_fixtures.py /data/fixtures/e2e/neg
-
-Each case is a manifest plus its file(s). run_e2e.sh imports every manifest with the real
-ingestion CLI and records the exit code and output. test_50_negative.py then asserts that each
-import failed clearly and that the ready datasets were not touched.
-"""
+# Writes deliberately bad import inputs (SYNTHETIC, test-only): `python make_negative_fixtures.py <out dir>`.
+# tests/run.sh e2e imports each manifest with the real ingestion CLI into neg/*; test_50_negative.py
+# then checks that every import failed clearly and left the ready datasets untouched.
 
 from __future__ import annotations
 
@@ -21,6 +16,7 @@ from rasterio.transform import from_origin
 NOTICE = "SYNTHETIC negative test input (tests/e2e); not real data"
 
 
+# Writes a constant 8x8 float32 GeoTIFF (crs=None leaves it without a CRS). Used by main.
 def write_raster(path: Path, value: float, crs) -> None:
     data = np.full((8, 8), value, dtype="float32")
     profile = {"driver": "GTiff", "width": 8, "height": 8, "count": 1, "dtype": "float32",
@@ -31,6 +27,7 @@ def write_raster(path: Path, value: float, crs) -> None:
         dst.write(data, 1)
 
 
+# Builds one ingestion manifest entry labelled SYNTHETIC. Used by main.
 def manifest(dataset_id: str, kind: str, file: str, **extra) -> dict:
     entry = {"dataset_id": dataset_id, "version": 1, "title": f"SYNTHETIC e2e negative case {dataset_id}",
              "kind": kind, "product_level": "other", "source": "deterministic-fixture",
@@ -41,6 +38,7 @@ def manifest(dataset_id: str, kind: str, file: str, **extra) -> dict:
     return entry
 
 
+# Writes every negative case (files + <case>.json manifest) and cases.json. Called from the command line.
 def main(out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
     cases: dict[str, dict] = {}

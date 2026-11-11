@@ -1,4 +1,5 @@
-"""Catalog, boundaries and seeding (TEST_PLAN 2-3; ACCEPTANCE P0 2-5)."""
+# Catalog rows, admin boundaries, service roles and idempotent seeding, checked in PostgreSQL
+# and in the fixture files the seed writes.
 
 from __future__ import annotations
 
@@ -13,16 +14,19 @@ from conftest import RASTER_2001, RASTER_2011, RASTERS, STATE, TOWNS
 FIXTURE_IDS = (RASTER_2001, RASTER_2011, TOWNS)
 
 
+# Runs a query and returns rows as dicts. Used by the catalog/boundary tests in this file.
 def rows(db, sql, params=()):
     cur = db.execute(sql, params)
     cols = [c.name for c in cur.description]
     return [dict(zip(cols, r)) for r in cur.fetchall()]
 
 
+# Parses the JSON lines of a seed log, skipping non-JSON lines. Used by test_seed_twice_is_idempotent.
 def read_jsonl(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip().startswith("{")]
 
 
+# Each fixture dataset has exactly one catalog row (version 1) with status ready.
 def test_each_fixture_registered_once_and_ready(db):
     got = rows(db, "SELECT dataset_id, version, status FROM catalog.datasets WHERE dataset_id = ANY(%s) "
                    "ORDER BY dataset_id, version", (list(FIXTURE_IDS),))
@@ -30,6 +34,7 @@ def test_each_fixture_registered_once_and_ready(db):
         (TOWNS, 1, "ready"), (RASTER_2001, 1, "ready"), (RASTER_2011, 1, "ready")]
 
 
+# catalog.current_datasets has the same columns as catalog.datasets, including the contract columns.
 def test_current_view_exposes_same_columns_as_table(db):
     table = [r["column_name"] for r in rows(db, "SELECT column_name FROM information_schema.columns "
                                                 "WHERE table_schema='catalog' AND table_name='datasets' ORDER BY ordinal_position")]
@@ -42,6 +47,7 @@ def test_current_view_exposes_same_columns_as_table(db):
         assert col in table
 
 
+# Raster catalog metadata (CRS, bbox, resolution, units, checksum, asset path, provenance) is exact.
 @pytest.mark.parametrize("year", [2001, 2011])
 def test_raster_catalog_metadata(db, year):
     (r,) = rows(db, "SELECT *, ST_XMin(bbox) w, ST_YMin(bbox) s, ST_XMax(bbox) e, ST_YMax(bbox) n, ST_SRID(bbox) srid "
@@ -61,6 +67,7 @@ def test_raster_catalog_metadata(db, year):
     assert r["created_at"].tzinfo is not None and r["updated_at"].tzinfo is not None
 
 
+# The boundary dataset is a vector in EPSG:4326 with the exact extent of both towns.
 def test_vector_catalog_metadata(db):
     (r,) = rows(db, "SELECT *, ST_XMin(bbox) w, ST_YMin(bbox) s, ST_XMax(bbox) e, ST_YMax(bbox) n "
                     "FROM catalog.current_datasets WHERE dataset_id = %s", (TOWNS,))
@@ -69,6 +76,7 @@ def test_vector_catalog_metadata(db):
     assert "SYNTHETIC" in r["title"]
 
 
+# Town A and Town B are valid EPSG:4326 MULTIPOLYGONs with exact extents.
 def test_admin_units_are_multipolygons_with_exact_extents(db):
     got = rows(db, "SELECT unit_id, name, level, GeometryType(geom) gt, ST_SRID(geom) srid, ST_IsValid(geom) ok, "
                    "ST_XMin(geom) w, ST_YMin(geom) s, ST_XMax(geom) e, ST_YMax(geom) n "
@@ -80,11 +88,13 @@ def test_admin_units_are_multipolygons_with_exact_extents(db):
     assert (got[1]["w"], got[1]["s"], got[1]["e"], got[1]["n"]) == pytest.approx((78.030, 17.950, 78.035, 17.955))
 
 
+# Every admin unit points at the boundary dataset, version 1.
 def test_admin_units_linked_to_catalog_dataset(db):
     got = rows(db, "SELECT unit_id, dataset_id, dataset_version FROM geo.admin_units WHERE unit_id IN ('town-a','town-b')")
     assert {(r["dataset_id"], r["dataset_version"]) for r in got} == {(TOWNS, 1)}
 
 
+# GiST indexes exist on admin_units.geom and datasets.bbox.
 def test_gist_indexes_exist(db):
     idx = rows(db, "SELECT schemaname, tablename, indexdef FROM pg_indexes "
                    "WHERE (schemaname, tablename) IN (('geo','admin_units'),('catalog','datasets'))")
@@ -92,6 +102,7 @@ def test_gist_indexes_exist(db):
     assert any(i["tablename"] == "datasets" and "USING gist" in i["indexdef"] and "bbox" in i["indexdef"] for i in idx)
 
 
+# A bbox filter on admin_units returns the expected towns.
 def test_spatial_filter_on_admin_units(db):
     def hits(w, s, e, n):
         return [r["unit_id"] for r in rows(db, "SELECT unit_id FROM geo.admin_units "
@@ -103,6 +114,7 @@ def test_spatial_filter_on_admin_units(db):
     assert hits(79.0, 19.0, 79.1, 19.1) == []
 
 
+# Service roles have only the table privileges they need and no superuser-like attributes.
 def test_service_roles_are_least_privilege(db):
     ingest, ogc, proc = (os.environ[k] for k in ("INGEST_DB_USER", "OGC_DB_USER", "PROCESSING_DB_USER"))
 
@@ -118,10 +130,11 @@ def test_service_roles_are_least_privilege(db):
         assert su is False
 
 
+# The second seed run reports every fixture as unchanged.
 def test_seed_twice_is_idempotent():
     first, second = STATE / "seed1.jsonl", STATE / "seed2.jsonl"
     if not (first.exists() and second.exists()):
-        pytest.skip("seed outputs are written by run_e2e.sh")
+        pytest.skip("seed outputs are written by tests/run.sh e2e")
     outcomes1 = {d["dataset_id"]: d["outcome"] for d in read_jsonl(first) if "dataset_id" in d}
     outcomes2 = {d["dataset_id"]: d["outcome"] for d in read_jsonl(second) if "dataset_id" in d}
     assert set(outcomes1) == set(outcomes2) == set(FIXTURE_IDS)
@@ -129,6 +142,7 @@ def test_seed_twice_is_idempotent():
     assert set(outcomes2.values()) == {"unchanged"}
 
 
+# The generated manifest and towns GeoJSON are labelled SYNTHETIC / deterministic-fixture.
 def test_generated_fixtures_are_labelled_synthetic():
     manifest = json.loads((STATE.parent / "manifest.json").read_text())
     text = json.dumps(manifest)

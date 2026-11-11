@@ -1,4 +1,5 @@
-"""Zonal statistics, clip and GeoTIFF export through the gateway (TEST_PLAN 6-7; P0 8-9)."""
+# Processing API through the gateway: zonal statistics, clip and GeoTIFF/COG export, checked
+# against the known fixture values.
 
 from __future__ import annotations
 
@@ -16,16 +17,19 @@ from conftest import (API, EXPECTED, FIXTURES, OGC, RASTER_2001, RASTER_2011, RA
                       TOWNS, error_code, post_json)
 
 
+# POSTs a zonal-statistics request. Used by the zonal tests in this file.
 def zonal(http, dataset, aoi, aoi_crs="EPSG:4326", **extra):
     return post_json(http, "/operations/zonal-statistics",
                      {"dataset_id": dataset, "aoi": aoi, "aoi_crs": aoi_crs, **extra})
 
 
+# Spherical Web Mercator projection of a lon/lat point. Used by test_zonal_aoi_in_projected_crs_is_transformed.
 def to_3857(lon, lat):
     r = 6378137.0
     return r * math.radians(lon), r * math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))
 
 
+# Zonal sum/mean/count and metadata match the known values for each town and year.
 @pytest.mark.parametrize("town,year", sorted(EXPECTED))
 def test_zonal_known_values(http, town, year):
     count, total, mean = EXPECTED[(town, year)]
@@ -45,14 +49,15 @@ def test_zonal_known_values(http, town, year):
     assert body["status"] == "completed" and body["job_id"]
 
 
+# Zonal statistics on the Town A geometry exactly as OGC API - Features serves it.
 @pytest.mark.parametrize("year,total", [(2001, 100), (2011, 200)])
 def test_zonal_with_geometry_served_by_ogc_features(http, year, total):
-    """OGC Features -> processing: use the boundary exactly as a client receives it."""
     feature = http.get(f"{OGC}/collections/{TOWNS}/items/town-a", params={"f": "json"}).json()
     resp = zonal(http, RASTERS[year], feature["geometry"])
     assert resp.status_code == 200 and resp.json()["sum"] == total
 
 
+# An AOI given in EPSG:3857 is transformed and gives the same Town A answer.
 def test_zonal_aoi_in_projected_crs_is_transformed(http):
     (w, s), (e, n) = to_3857(78.010, 17.980), to_3857(78.020, 17.990)
     aoi = {"type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]]}
@@ -60,6 +65,7 @@ def test_zonal_aoi_in_projected_crs_is_transformed(http):
     assert body["count_valid"] == 100 and body["sum"] == 100 and body["aoi_crs"] == "EPSG:3857"
 
 
+# NoData pixels inside the AOI are counted as excluded, not summed.
 def test_zonal_excludes_nodata(http):
     aois = json.loads((FIXTURES / "synthetic_test_aois.geojson").read_text())
     feature = next(f for f in aois["features"] if f["properties"].get("aoi_id", f.get("id")) == "aoi-nodata-overlap"
@@ -72,12 +78,14 @@ def test_zonal_excludes_nodata(http):
         assert body["sum"] == 36 * factor
 
 
+# An AOI outside the raster gives AOI_OUTSIDE_RASTER.
 def test_zonal_disjoint_aoi_is_an_explicit_error(http):
     aoi = {"type": "Polygon", "coordinates": [[[79.0, 19.0], [79.01, 19.0], [79.01, 19.01], [79.0, 19.01], [79.0, 19.0]]]}
     resp = zonal(http, RASTER_2001, aoi)
     assert resp.status_code == 422 and error_code(resp) == "AOI_OUTSIDE_RASTER"
 
 
+# Clipping Town A gives a downloadable, correctly georeferenced GeoTIFF (saved for the persistence and QGIS checks).
 def test_clip_town_a_exports_georeferenced_geotiff(http, state_dir):
     resp = post_json(http, "/operations/clip",
                      {"dataset_id": RASTER_2001, "aoi": TOWN_A, "aoi_crs": "EPSG:4326",
@@ -111,6 +119,7 @@ def test_clip_town_a_exports_georeferenced_geotiff(http, state_dir):
         {"job_id": job["job_id"], "sha256": hashlib.sha256(dl.content).hexdigest()}))
 
 
+# Clipping Town B / 2011 as COG gives the right size, sum, units and metadata.
 def test_clip_town_b_2011_as_cog(http):
     job = post_json(http, "/operations/clip",
                     {"dataset_id": RASTER_2011, "aoi": TOWN_GEOMS["town-b"], "aoi_crs": "EPSG:4326",
@@ -126,6 +135,7 @@ def test_clip_town_b_2011_as_cog(http):
     assert meta.status_code == 200
 
 
+# A clip over the NoData strip writes NoData, never 0.
 def test_clip_overlapping_nodata_writes_nodata_not_zero(http):
     aoi = {"type": "Polygon", "coordinates": [[[78.000, 17.990], [78.010, 17.990], [78.010, 18.000],
                                                 [78.000, 18.000], [78.000, 17.990]]]}
@@ -136,6 +146,7 @@ def test_clip_overlapping_nodata_writes_nodata_not_zero(http):
         assert int((data == -9999).sum()) == 64 and int((data == 1).sum()) == 36 and not (data == 0).any()
 
 
+# A zonal job has a status but no download (NO_DOWNLOAD).
 def test_zonal_job_has_status_but_no_download(http):
     job = zonal(http, RASTER_2001, TOWN_A).json()
     status = http.get(f"{API}/operations/{job['job_id']}")
@@ -144,6 +155,7 @@ def test_zonal_job_has_status_but_no_download(http):
     assert dl.status_code == 409 and error_code(dl) == "NO_DOWNLOAD"
 
 
+# The processing OpenAPI document and docs page are published.
 def test_processing_openapi_is_published(http):
     doc = http.get(f"{API}/openapi.json").json()
     assert {"/operations/clip", "/operations/zonal-statistics"} <= set(doc["paths"])

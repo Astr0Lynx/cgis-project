@@ -1,1 +1,0 @@
-NOTICE:  database "cgis_ingest_test" does not exist, skipping

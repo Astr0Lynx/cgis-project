@@ -1,7 +1,0 @@
-# Root build context for the migrate image: send only what it needs.
-*
-!database/
-!infra/db/
-database/tests/
-**/__pycache__/
-**/*.pyc

@@ -1,7 +1,5 @@
-"""After `docker compose down` + `up` (volumes kept): data and earlier results are still served (TEST_PLAN 9).
-
-run_e2e.sh runs these with `-m persistence` after recreating every container.
-"""
+# After `docker compose down` + `up` (volumes kept), data and earlier results are still served.
+# tests/run.sh e2e runs these with `-m persistence` after recreating every container.
 
 from __future__ import annotations
 
@@ -16,17 +14,20 @@ from conftest import API, OGC, RASTER_2001, RASTER_2011, TILES, TOWN_A, TOWNS, S
 pytestmark = pytest.mark.persistence
 
 
+# All three fixture datasets are still current in the catalog.
 def test_catalog_still_ready(db):
     n = db.execute("SELECT count(*) FROM catalog.current_datasets WHERE dataset_id = ANY(%s)",
                    ([RASTER_2001, RASTER_2011, TOWNS],)).fetchone()[0]
     assert n == 3
 
 
+# OGC API - Features still serves both towns.
 def test_features_still_served(http):
     fc = http.get(f"{OGC}/collections/{TOWNS}/items", params={"f": "json"}).json()
     assert {f["id"] for f in fc["features"]} == {"town-a", "town-b"}
 
 
+# Vendor point values and OGC tiles are still served.
 def test_tiles_still_served(http):
     assert http.get(f"{TILES}/datasets/{RASTER_2011}/point/78.015,17.985").json()["values"] == [2.0]
     t = morecantile.tms.get("WebMercatorQuad").tile(78.015, 17.985, ogc_max_zoom(http, RASTER_2001))
@@ -34,12 +35,14 @@ def test_tiles_still_served(http):
                     params={"f": "png"}).status_code == 200
 
 
+# Zonal statistics for Town A / 2001 are still correct.
 def test_zonal_still_correct(http):
     body = post_json(http, "/operations/zonal-statistics",
                      {"dataset_id": RASTER_2001, "aoi": TOWN_A, "aoi_crs": "EPSG:4326"}).json()
     assert body["sum"] == 100 and body["count_valid"] == 100
 
 
+# The clip exported before the restart is still downloadable, byte for byte.
 def test_previous_export_still_downloadable(http):
     saved = json.loads((STATE / "clip_job.json").read_text())
     job = http.get(f"{API}/operations/{saved['job_id']}")

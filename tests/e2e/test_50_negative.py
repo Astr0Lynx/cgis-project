@@ -1,4 +1,5 @@
-"""Negative cases and mutation-path security (TEST_PLAN 8; P0 4, 9, 10)."""
+# Negative cases: malformed requests, no unauthenticated mutation paths, no database host port,
+# and failed imports (run by tests/run.sh e2e) that must leave the ready datasets intact.
 
 from __future__ import annotations
 
@@ -11,6 +12,7 @@ from conftest import API, GATEWAY, OGC, RASTER_2001, STATE, TILES, TOWN_A, TOWNS
 NEG = STATE / "neg"
 
 
+# POSTs a zonal-statistics request with valid defaults that a test can override. Used throughout this file.
 def zonal(http, **payload):
     payload.setdefault("dataset_id", RASTER_2001)
     payload.setdefault("aoi", TOWN_A)
@@ -33,6 +35,7 @@ BAD_AOIS = {
 }
 
 
+# Each malformed AOI gives 422 with one of its expected error codes.
 @pytest.mark.parametrize("name", sorted(BAD_AOIS))
 def test_malformed_aoi_rejected_with_structured_error(http, name):
     aoi, codes = BAD_AOIS[name]
@@ -41,27 +44,32 @@ def test_malformed_aoi_rejected_with_structured_error(http, name):
     assert error_code(resp) in codes, resp.text
 
 
+# Unknown or malformed AOI CRS values are rejected.
 @pytest.mark.parametrize("crs", ["EPSG:999999", "EPSG:abc", "urn:x-foo:crs", ""])
 def test_unsupported_crs(http, crs):
     resp = zonal(http, aoi_crs=crs)
     assert resp.status_code == 422 and error_code(resp) in ("UNSUPPORTED_CRS", "INVALID_REQUEST"), resp.text
 
 
+# A request without aoi_crs is rejected.
 def test_missing_aoi_crs_is_rejected(http):
     resp = post_json(http, "/operations/zonal-statistics", {"dataset_id": RASTER_2001, "aoi": TOWN_A})
     assert resp.status_code == 422 and error_code(resp)
 
 
+# An unknown dataset id gives DATASET_NOT_FOUND.
 def test_nonexistent_dataset(http):
     resp = zonal(http, dataset_id="no-such-dataset")
     assert resp.status_code == 404 and error_code(resp) == "DATASET_NOT_FOUND"
 
 
+# Using the vector dataset gives DATASET_NOT_RASTER.
 def test_vector_dataset_is_not_a_raster(http):
     resp = zonal(http, dataset_id=TOWNS)
     assert resp.status_code == 422 and error_code(resp) == "DATASET_NOT_RASTER"
 
 
+# Paths, URLs and SQL in dataset_id are rejected.
 @pytest.mark.parametrize("dataset_id", ["../../etc/passwd", "/data/assets/rasters", "http://example.com/x.tif",
                                         "synthetic-worldpop-2001'; DROP TABLE catalog.datasets;--"])
 def test_dataset_id_injection_rejected(http, dataset_id):
@@ -69,18 +77,21 @@ def test_dataset_id_injection_rejected(http, dataset_id):
     assert resp.status_code in (404, 422) and error_code(resp) in ("INVALID_DATASET_ID", "DATASET_NOT_FOUND", "INVALID_REQUEST")
 
 
+# A clip format other than GTiff/COG gives UNSUPPORTED_FORMAT.
 def test_unsupported_export_format(http):
     resp = post_json(http, "/operations/clip", {"dataset_id": RASTER_2001, "aoi": TOWN_A, "aoi_crs": "EPSG:4326",
                                                 "format": "PNG"})
     assert resp.status_code == 422 and error_code(resp) == "UNSUPPORTED_FORMAT"
 
 
+# A clip AOI outside the raster gives AOI_OUTSIDE_RASTER.
 def test_out_of_bounds_clip(http):
     aoi = {"type": "Polygon", "coordinates": [[[10, 10], [10.1, 10], [10.1, 10.1], [10, 10.1], [10, 10]]]}
     resp = post_json(http, "/operations/clip", {"dataset_id": RASTER_2001, "aoi": aoi, "aoi_crs": "EPSG:4326"})
     assert resp.status_code == 422 and error_code(resp) == "AOI_OUTSIDE_RASTER"
 
 
+# Unknown, malformed and traversal job ids are refused.
 def test_unknown_and_malformed_job_ids(http):
     unknown = http.get(f"{API}/operations/00000000-0000-4000-8000-000000000000")
     assert unknown.status_code == 404 and error_code(unknown) == "JOB_NOT_FOUND"
@@ -89,12 +100,14 @@ def test_unknown_and_malformed_job_ids(http):
     assert http.get(f"{API}/downloads/..%2F..%2Fetc%2Fpasswd").status_code in (400, 404, 422)
 
 
+# An oversized request body gives 413.
 def test_oversized_request_rejected(http):
     big = {"type": "Polygon", "coordinates": [[[78.01, 17.98]] * 70000]}
     resp = post_json(http, "/operations/zonal-statistics", {"dataset_id": RASTER_2001, "aoi": big, "aoi_crs": "EPSG:4326"})
     assert resp.status_code == 413
 
 
+# Unexpected request fields (asset_path) are rejected.
 def test_unexpected_fields_rejected(http):
     resp = zonal(http, asset_path="/etc/passwd")
     assert resp.status_code == 422 and error_code(resp)
@@ -102,6 +115,7 @@ def test_unexpected_fields_rejected(http):
 
 # --- no unauthenticated mutation path -------------------------------------------------------------
 
+# Write methods on the read-only prefixes give 403.
 @pytest.mark.parametrize("method,url", [
     ("POST", f"{OGC}/collections/{TOWNS}/items"),
     ("PUT", f"{OGC}/collections/{TOWNS}/items/town-a"),
@@ -115,6 +129,7 @@ def test_read_only_prefixes_refuse_writes(http, method, url):
     assert http.request(method, url, content=b"{}").status_code == 403
 
 
+# The processing API exposes only its documented routes and no catalog mutation.
 def test_processing_api_has_no_catalog_mutation_routes(http):
     paths = http.get(f"{API}/openapi.json").json()["paths"]
     allowed = {"/operations/clip", "/operations/zonal-statistics", "/operations/{job_id}", "/downloads/{job_id}",
@@ -129,24 +144,28 @@ def test_processing_api_has_no_catalog_mutation_routes(http):
         assert http.request(method, url, content=b"{}").status_code in (404, 405)
 
 
+# The database publishes no host port (host_checks.json from tests/run.sh e2e).
 def test_database_has_no_host_port():
     path = STATE / "host_checks.json"
     if not path.exists():
-        pytest.skip("written by run_e2e.sh")
+        pytest.skip("written by tests/run.sh e2e")
     checks = json.loads(path.read_text())
     assert checks["db_published_port"] == ""
 
 
-# --- negative ingestion (imports run by run_e2e.sh with the real CLI) ------------------------------
+# --- negative ingestion (imports run by tests/run.sh e2e with the real CLI) ------------------------
 
+# Exit code and JSON output lines of one negative import (neg/<case>.exit/.stdout); skips if absent.
+# Used by the negative_ingest tests below.
 def neg_result(case):
     exit_file, out_file = NEG / f"{case}.exit", NEG / f"{case}.stdout"
     if not exit_file.exists():
-        pytest.skip("negative imports are run by run_e2e.sh")
+        pytest.skip("negative imports are run by tests/run.sh e2e")
     lines = [json.loads(line) for line in out_file.read_text().splitlines() if line.strip().startswith("{")]
     return int(exit_file.read_text().strip()), lines
 
 
+# Each bad import exits non-zero and reports a failed outcome with an error code and message.
 @pytest.mark.negative_ingest
 @pytest.mark.parametrize("case,codes", [
     ("corrupt_tiff", None),
@@ -165,6 +184,7 @@ def test_bad_import_fails_clearly(case, codes):
     assert err.get("code") and err.get("message"), err
 
 
+# The bad imports left the ready raster, its checksum and the boundaries untouched.
 @pytest.mark.negative_ingest
 def test_bad_imports_did_not_corrupt_ready_datasets(db):
     neg_result("conflicting_reimport")
@@ -179,6 +199,7 @@ def test_bad_imports_did_not_corrupt_ready_datasets(db):
     assert db.execute("SELECT count(*) FROM geo.admin_units WHERE unit_id = 'e2e-bowtie'").fetchone()[0] == 0
 
 
+# After the conflicting re-import, zonal statistics still give the original value.
 @pytest.mark.negative_ingest
 def test_conflicting_import_left_values_intact(http):
     neg_result("conflicting_reimport")

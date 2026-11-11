@@ -1,4 +1,4 @@
-# End-to-end test runner. Build context: tests/e2e/. Runs inside the Compose network.
+# End-to-end test runner (compose.yaml service e2e, profile e2e). Build context: tests/e2e/.
 FROM python:3.12.12-slim@sha256:f3fa41d74a768c2fce8016b98c191ae8c1bacd8f1152870a3f9f87d350920b7c
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 # libexpat1: needed by the GDAL bundled in the rasterio wheel.

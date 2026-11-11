@@ -1,4 +1,5 @@
-"""OGC API - Features through the gateway (TEST_PLAN 4; ACCEPTANCE P0 6)."""
+# OGC API - Features (pygeoapi) through the gateway: landing page, conformance, collections,
+# items, bbox, paging, CRS handling and public links.
 
 from __future__ import annotations
 
@@ -14,12 +15,13 @@ CRS84 = "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
 EPSG4326 = "http://www.opengis.net/def/crs/EPSG/0/4326"
 
 
+# GET the towns items endpoint (JSON by default). Used by the items/bbox/paging/CRS tests in this file.
 def items(http, **params):
     params.setdefault("f", "json")
-    resp = http.get(f"{OGC}/collections/{TOWNS}/items", params=params)
-    return resp
+    return http.get(f"{OGC}/collections/{TOWNS}/items", params=params)
 
 
+# The landing page links to the API description, conformance and data.
 def test_landing_page_links(http):
     resp = http.get(f"{OGC}/", params={"f": "json"})
     assert resp.status_code == 200
@@ -27,6 +29,7 @@ def test_landing_page_links(http):
     assert {"service-desc", "conformance", "data"} <= rels
 
 
+# Conformance claims Features core/GeoJSON/OAS30/CRS and Tiles core, and no Coverages.
 def test_conformance_declares_features_and_tiles_but_not_coverages(http):
     conf = http.get(f"{OGC}/conformance", params={"f": "json"}).json()["conformsTo"]
     assert {CORE, GEOJSON, OAS30} <= set(conf)
@@ -35,6 +38,7 @@ def test_conformance_declares_features_and_tiles_but_not_coverages(http):
     assert not [c for c in conf if "ogcapi-coverages" in c], "Coverages is a draft and must not be claimed"
 
 
+# All three ready datasets are collections; the towns collection has items, CRS84 and a SYNTHETIC title.
 def test_collections_are_the_ready_catalog_datasets(http):
     cols = {c["id"]: c for c in http.get(f"{OGC}/collections", params={"f": "json"}).json()["collections"]}
     assert {TOWNS, RASTER_2001, RASTER_2011} <= set(cols)
@@ -44,6 +48,7 @@ def test_collections_are_the_ready_catalog_datasets(http):
     assert "SYNTHETIC" in towns["title"]
 
 
+# Items return Town A and Town B as a GeoJSON FeatureCollection.
 def test_items_return_town_a_and_b_as_geojson(http):
     resp = items(http)
     assert resp.status_code == 200
@@ -58,6 +63,7 @@ def test_items_return_town_a_and_b_as_geojson(http):
     assert fc["numberReturned"] == 2
 
 
+# A single item is served by id; unknown items and collections give 404.
 def test_item_by_id_and_missing_item(http):
     resp = http.get(f"{OGC}/collections/{TOWNS}/items/town-a", params={"f": "json"})
     assert resp.status_code == 200 and resp.json()["id"] == "town-a"
@@ -65,6 +71,7 @@ def test_item_by_id_and_missing_item(http):
     assert http.get(f"{OGC}/collections/no-such-collection/items", params={"f": "json"}).status_code == 404
 
 
+# The bbox filter returns exactly the towns inside it.
 @pytest.mark.parametrize("bbox,expected", [
     ("78.009,17.979,78.021,17.991", {"town-a"}),
     ("78.029,17.949,78.036,17.956", {"town-b"}),
@@ -77,10 +84,12 @@ def test_bbox_filter(http, bbox, expected):
     assert {f["id"] for f in resp.json()["features"]} == expected
 
 
+# A bbox with three numbers is rejected with 400.
 def test_invalid_bbox_is_rejected(http):
     assert items(http, bbox="1,2,3").status_code == 400
 
 
+# limit=1 pages through both towns via the next link.
 def test_paging_follows_next_link(http):
     page1 = items(http, limit=1).json()
     assert page1["numberReturned"] == 1
@@ -91,6 +100,7 @@ def test_paging_follows_next_link(http):
     assert ids == {"town-a", "town-b"}
 
 
+# The default response CRS is CRS84 (lon, lat order).
 def test_default_response_crs_is_crs84(http):
     resp = items(http)
     if "content-crs" in resp.headers:
@@ -100,6 +110,7 @@ def test_default_response_crs_is_crs84(http):
     assert 78 <= first[0] <= 78.1 and 17.9 <= first[1] <= 18.0   # lon, lat
 
 
+# crs=EPSG:4326 returns coordinates in lat, lon order with a matching Content-Crs header.
 def test_epsg4326_response_crs_uses_lat_lon_axis_order(http):
     resp = http.get(f"{OGC}/collections/{TOWNS}/items/town-a", params={"f": "json", "crs": EPSG4326})
     assert resp.status_code == 200
@@ -109,12 +120,14 @@ def test_epsg4326_response_crs_uses_lat_lon_axis_order(http):
     assert all(17.9 <= lat <= 18.0 and 78.0 <= lon <= 78.1 for lat, lon in ring)
 
 
+# Absolute links use the public gateway prefix.
 def test_links_use_public_gateway_prefix(http):
     doc = http.get(f"{OGC}/collections/{TOWNS}", params={"f": "json"}).json()
     hrefs = [link["href"] for link in doc["links"] if link["href"].startswith("http")]
     assert hrefs and all(h.startswith(f"{PUBLIC}/ogc") or h.startswith(f"{PUBLIC}/tiles") for h in hrefs), hrefs
 
 
+# The OpenAPI 3 document lists the towns items path.
 def test_openapi_document(http):
     resp = http.get(f"{OGC}/openapi", params={"f": "json"})
     assert resp.status_code == 200
@@ -123,6 +136,7 @@ def test_openapi_document(http):
     assert f"/collections/{TOWNS}/items" in doc["paths"]
 
 
+# The HTML landing page says SYNTHETIC.
 def test_html_landing_page_marks_synthetic(http):
     resp = http.get(f"{OGC}/", params={"f": "html"})
     assert resp.status_code == 200 and "SYNTHETIC" in resp.text
