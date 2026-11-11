@@ -1,0 +1,117 @@
+{
+  "absolute_census_error_people": 2.8118956834077835e-05,
+  "census_id": "SYN-A",
+  "census_people": 12500,
+  "classified_area_m2": 13921670.249991614,
+  "common_area_m2": 13889713.92698018,
+  "common_coverage_of_census_polygon": 0.9962818109630811,
+  "elapsed_seconds_model": 0.37879180000163615,
+  "elapsed_seconds_town": 0.695987599901855,
+  "fingerprint": "212a0de54f3718c323a8f8573bec5708ee1100d4c64b617a61c5da6b0d049d37",
+  "generated_at": "2026-11-09T09:04:04.131052+00:00",
+  "grid": {
+    "bounds": [
+      7435188.5,
+      1631675.5,
+      7438549.0,
+      1635905.5
+    ],
+    "crs": "EPSG:6933",
+    "height": 180,
+    "nodata": -99999.0,
+    "resolution": [
+      23.5,
+      23.5
+    ],
+    "transform": [
+      23.5,
+      0.0,
+      7435188.5,
+      0.0,
+      -23.5,
+      1635905.5
+    ],
+    "width": 143
+  },
+  "level1_coverage_of_census_polygon": 0.9977078359188009,
+  "level1_minus_census_people": 11732.458003523032,
+  "level1_people_on_census_polygon_observed_support": 24232.458003523032,
+  "level1_relative_difference_vs_census": 0.9385966402818426,
+  "level2_people_outside_comparison_support": 0.0,
+  "lulc_coverage_of_census_polygon": 0.99857397504428,
+  "mass_tolerance_people": 0.012499999999999999,
+  "matched_level1_comparison": {
+    "bias_people_per_native_cell": -6.690101510793737,
+    "level1_people": 24207.677672007998,
+    "level2_people": 12500.000028118957,
+    "mae_people_per_native_cell": 12.65984566718939,
+    "native_cells": 1750,
+    "relative_absolute_difference": 0.9151943535335302,
+    "relative_total_delta": -0.4836348947849281,
+    "rmse_people_per_native_cell": 22.462386836090793,
+    "total_delta_people": -11707.677643889041
+  },
+  "model_commit": "075c7e454935a2317bd9ca97bc7236327a7d6afd",
+  "morphology": "urban",
+  "name": "Fixture Alpha",
+  "owned_polygon_area_m2": 13941551.249991614,
+  "polygon_area_m2": 13941551.249995558,
+  "population_cog_bytes": 13518,
+  "primary_method": "hard",
+  "process_peak_rss_bytes_through_town": 138211328,
+  "region": "synthetic-west",
+  "relative_census_error": 2.249516546726227e-09,
+  "sensitivity": {
+    "area_class_fallback": {
+      "hard": false,
+      "soft": false
+    },
+    "classes": [
+      {
+        "area_m2": 3499055.9999973984,
+        "code": 1,
+        "hard_eligible": true,
+        "label": "Settlement",
+        "people_by_model": {
+          "hard": 12499.99999999998,
+          "soft": 9025.339017715793
+        },
+        "soft_weight": 1.0
+      },
+      {
+        "area_m2": 10210550.249994216,
+        "code": 2,
+        "hard_eligible": false,
+        "label": "Agriculture",
+        "people_by_model": {
+          "hard": 0.0,
+          "soft": 3474.660982284238
+        },
+        "soft_weight": 0.15
+      },
+      {
+        "area_m2": 212064.0,
+        "code": 3,
+        "hard_eligible": false,
+        "label": "Water",
+        "people_by_model": {
+          "hard": 0.0,
+          "soft": 0.0
+        },
+        "soft_weight": 0.0
+      }
+    ],
+    "fraction_shifted_between_soft_and_hard": 0.2779728785827364,
+    "model_status": {
+      "hard": "available",
+      "soft": "available"
+    },
+    "people_shifted_between_soft_and_hard": 3474.660982284205
+  },
+  "signed_census_error_people": 2.8118956834077835e-05,
+  "slug": "fixture-alpha",
+  "stored_level2_people": 12500.000028118957,
+  "synthetic": true,
+  "unassigned_edge_area_m2": 3.943219780921936e-06,
+  "valid_fine_cells": 25299
+}

@@ -1,0 +1,8 @@
+**
+!ingestion/
+!ingestion/**
+!science/
+!science/level2/
+!science/level2/**
+**/__pycache__/
+**/.pytest_cache/

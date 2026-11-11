@@ -1,0 +1,24 @@
+{
+  "config_sha256": "11146df81358a7d03a9774a1f5aabb24dff74d6d704f585842711ddd69a063fa",
+  "container_limit_bytes": 6442450944,
+  "elapsed_seconds": 1.4722898730000225,
+  "gdal": "3.9.3",
+  "host_ram_bytes": 7900319744,
+  "memory_limit_gib": 2,
+  "model_commit": "77c23fce59319e17f3c7dac14b693965c16bbf85",
+  "peak_rss_bytes": 182456320,
+  "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+  "synthetic": true,
+  "towns": [
+    {
+      "census_id": "SYN-A",
+      "population_cog_sha256": "5dc5ce1221fd066d6dae8f14fe59c1d61e942be19e1fa721eeae60f70d546b8c",
+      "slug": "fixture-alpha"
+    },
+    {
+      "census_id": "SYN-B",
+      "population_cog_sha256": "29c9a258f050936362485d75181510812ccf27532900482c2570e9d081eb9c62",
+      "slug": "fixture-beta"
+    }
+  ]
+}
