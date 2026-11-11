@@ -94,6 +94,31 @@ def unit_overlap(conn: psycopg.Connection, geometry: dict | str, crs: str = "EPS
         return cur.fetchall()
 
 
+def dataset_units(conn: psycopg.Connection, dataset_id: str, version: int | None = None) -> list[dict]:
+    """Units of one dataset version (default: its current ready version), ordered by unit_id."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(f"SELECT {UNIT_COLUMNS} FROM geo.dataset_units(%s, %s)", (dataset_id, version))
+        return cur.fetchall()
+
+
+def unit_versions(conn: psycopg.Connection, dataset_id: str, unit_id: str) -> list[dict]:
+    """Every stored version of a unit within a dataset, newest first, with catalog status."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            "SELECT dataset_id, dataset_version, unit_id, name, level, catalog_status, is_current,"
+            " ST_AsGeoJSON(geom)::json AS geom FROM geo.unit_versions(%s, %s)",
+            (dataset_id, unit_id),
+        )
+        return cur.fetchall()
+
+
+def render_profile_for(conn: psycopg.Connection, dataset_id: str, version: int | None = None) -> dict | None:
+    """The shared display scale for a raster dataset version, or None (per-dataset autoscale)."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute("SELECT * FROM catalog.render_profile_for(%s, %s)", (dataset_id, version))
+        return cur.fetchone()
+
+
 def register_dataset(conn: psycopg.Connection, record: dict) -> dict:
     """Idempotently register a catalog record (see catalog.register_dataset)."""
     with conn.cursor(row_factory=dict_row) as cur:

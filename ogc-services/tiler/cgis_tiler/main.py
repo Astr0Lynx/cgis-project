@@ -81,8 +81,35 @@ tms_factory = TMSFactory(supported_tms=supported_tms)
 app.include_router(tms_factory.router, tags=["Tiling schemes (vendor-specific)"])
 
 
+def _render_summary(record) -> dict:
+    """How OGC API - Tiles portrays this dataset (display only; never changes values)."""
+    if record.render:
+        lo, hi = record.render["rescale"]
+        return {
+            "mode": "shared",
+            "profile_id": record.render["profile_id"],
+            "title": record.render["title"],
+            "description": record.render["description"],
+            "units": record.render["units"],
+            "colormap": record.render["colormap"],
+            "rescale": [lo, hi],
+            "clamped": True,
+            "nodata": "transparent",
+            # vendor query parameters that reproduce the shared OGC rendering on /tiles/
+            "titiler_params": {"rescale": f"{lo:g},{hi:g}", "colormap_name": record.render["colormap"]},
+        }
+    return {
+        "mode": "per_dataset_autoscale",
+        "description": ("No shared render profile matches this dataset's product level/units: OGC tiles use "
+                        "this dataset's own range (diagnostic; not comparable across datasets). "
+                        "Per-layer statistics: ./statistics"),
+        "nodata": "transparent",
+    }
+
+
 def _dataset_summary(request: Request, record) -> dict:
     base = str(request.base_url).rstrip("/") + f"/datasets/{record.dataset_id}"
+    public = record.public or {}
     return {
         "dataset_id": record.dataset_id,
         "version": record.version,
@@ -92,12 +119,21 @@ def _dataset_summary(request: Request, record) -> dict:
         "units": record.units,
         "nodata": record.nodata,
         "bbox": list(record.bbox) if record.bbox else None,
+        "product_level": record.product_level,
+        "resolution": list(record.resolution) if record.resolution else None,
+        "group_id": public.get("group_id"),
+        "synthetic": public.get("synthetic"),
+        "license": public.get("license"),
+        "citation": public.get("citation"),
+        "render": _render_summary(record),
         "links": [
             {"rel": "tilejson", "type": "application/json",
              "href": f"{base}/WebMercatorQuad/tilejson.json"},
             {"rel": "tiles", "type": "image/png", "templated": True,
              "href": f"{base}/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}.png"},
             {"rel": "info", "type": "application/json", "href": f"{base}/info"},
+            {"rel": "statistics", "type": "application/json", "href": f"{base}/statistics",
+             "title": "Per-layer statistics (diagnostic autoscale)"},
         ],
     }
 

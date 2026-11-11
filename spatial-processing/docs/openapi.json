@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CyberGIS Spatial Processing API (custom, non-OGC)",
-    "description": "\nProject-specific processing API for CyberGIS Phase 2 (**not** an OGC API standard endpoint).\n\n* Datasets are referenced by catalog `dataset_id` only; raster files are resolved server-side from\n  the PostGIS catalog (`catalog.current_datasets`, status `ready`). Paths and URLs are never accepted.\n* AOIs are GeoJSON Polygon/MultiPolygon in x/y (lon/lat) order with an explicit `aoi_crs` (`EPSG:<code>`).\n* **Pixel selection:** a pixel is included iff its **center** lies inside the AOI (`all_touched=false`).\n  NoData pixels are excluded and reported (`nodata_excluded`), never treated as zero.\n* Operations run synchronously but are recorded as jobs (`queued \u2192 running \u2192 completed|failed`).\n* Errors are `{\"error\": {\"code\", \"message\", \"details\"?}}`.\n",
+    "description": "\nProject-specific processing API for CyberGIS Phase 2 (**not** an OGC API standard endpoint).\n\n* Datasets are referenced by catalog `dataset_id` only; raster files are resolved server-side from\n  the PostGIS catalog (`catalog.current_datasets`, status `ready`). Paths and URLs are never accepted.\n* AOIs are GeoJSON Polygon/MultiPolygon in x/y (lon/lat) order with an explicit `aoi_crs` (`EPSG:<code>`).\n* **Pixel selection:** a pixel is included iff its **center** lies inside the AOI (`all_touched=false`).\n  NoData pixels are excluded and reported (`nodata_excluded`), never treated as zero.\n* Operations run synchronously by default and are recorded as jobs (`queued \u2192 running \u2192 completed|failed`).\n* Large AOIs: send `\"mode\": \"async\"` (or `\"auto\"`) to queue a bounded-memory background job; the\n  answer is **202** with the job (poll `GET /operations/{job_id}` for `status`/`progress`, cancel with\n  `POST /operations/{job_id}/cancel`). Jobs survive a service restart (re-queued, bounded retries).\n* Errors are `{\"error\": {\"code\", \"message\", \"details\"?}}`.\n",
     "version": "0.1.0"
   },
   "paths": {
@@ -33,6 +33,16 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Clip Operations Clip Post"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
                 }
               }
             }
@@ -151,6 +161,16 @@
               }
             }
           },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -262,6 +282,122 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Get Job Operations  Job Id  Get",
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        }
+      }
+    },
+    "/operations/{job_id}/cancel": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Cancel a queued or running background (async) job",
+        "operationId": "cancel_job_operations__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Cancel Job Operations  Job Id  Cancel Post",
                   "$ref": "#/components/schemas/JobResponse"
                 }
               }
@@ -635,6 +771,17 @@
             "title": "Aoi Crs",
             "description": "CRS of `aoi` as 'EPSG:<code>' (e.g. 'EPSG:4326')."
           },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "sync",
+              "async",
+              "auto"
+            ],
+            "title": "Mode",
+            "description": "'sync' (default, Phase 2 behaviour): run inside the request; AOIs larger than the interactive pixel limit get 413 AOI_TOO_LARGE. 'async': queue a background job and return 202 with its status URL (bounded-memory blockwise processing). 'auto': sync when the AOI is small enough, otherwise async.",
+            "default": "sync"
+          },
           "output_crs": {
             "anyOf": [
               {
@@ -767,6 +914,18 @@
               }
             ],
             "title": "Metadata"
+          },
+          "cancel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel",
+            "description": "POST to this URL to cancel a queued/running async job."
           }
         },
         "type": "object",
@@ -838,6 +997,53 @@
           },
           "links": {
             "$ref": "#/components/schemas/JobLinks"
+          },
+          "execution": {
+            "type": "string",
+            "enum": [
+              "sync",
+              "async"
+            ],
+            "title": "Execution",
+            "default": "sync"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress",
+            "description": "0..1 while an async job runs; 1 when completed."
+          },
+          "progress_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Message"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts",
+            "default": 0
+          },
+          "max_attempts": {
+            "type": "integer",
+            "title": "Max Attempts",
+            "default": 1
+          },
+          "cancel_requested": {
+            "type": "boolean",
+            "title": "Cancel Requested",
+            "default": false
           }
         },
         "type": "object",
@@ -895,6 +1101,17 @@
             "maxLength": 64,
             "title": "Aoi Crs",
             "description": "CRS of `aoi` as 'EPSG:<code>' (e.g. 'EPSG:4326')."
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "sync",
+              "async",
+              "auto"
+            ],
+            "title": "Mode",
+            "description": "'sync' (default, Phase 2 behaviour): run inside the request; AOIs larger than the interactive pixel limit get 413 AOI_TOO_LARGE. 'async': queue a background job and return 202 with its status URL (bounded-memory blockwise processing). 'auto': sync when the AOI is small enough, otherwise async.",
+            "default": "sync"
           },
           "operations": {
             "anyOf": [
@@ -1109,10 +1326,5 @@
         "title": "ZonalStatisticsResponse"
       }
     }
-  },
-  "servers": [
-    {
-      "url": "/api"
-    }
-  ]
+  }
 }

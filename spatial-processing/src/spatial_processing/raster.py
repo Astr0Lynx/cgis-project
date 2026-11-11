@@ -109,15 +109,11 @@ def _check_grid(src) -> None:
         raise ApiError(422, errors.UNSUPPORTED_OPERATION, "rotated/sheared raster grids are not supported")
 
 
-def select_pixels(
-    src,
-    aoi_native: BaseGeometry,
-    *,
-    max_window_pixels: int,
-    catalog_nodata: float | None = None,
-    deadline: Deadline = _no_deadline,
-) -> Selection:
-    """Select pixels whose centers fall in ``aoi_native`` (AOI already in the raster CRS)."""
+def candidate_window(src, aoi_native: BaseGeometry) -> Window:
+    """AOI bounds in pixel space, rounded outwards (+1 pixel pad against float error), clamped.
+
+    Raises AOI_OUTSIDE_RASTER when the AOI misses the raster. Cheap: no pixel is read.
+    """
     _check_grid(src)
     raster_box = box(*src.bounds)
     if not aoi_native.intersects(raster_box):
@@ -127,8 +123,6 @@ def select_pixels(
             "the AOI does not overlap the dataset's raster extent",
             {"raster_bounds_native": list(src.bounds)},
         )
-
-    # Candidate window: AOI bounds rounded outwards (+1 pixel pad against float error), clamped.
     inv = ~src.transform
     minx, miny, maxx, maxy = aoi_native.bounds
     cols, rows = zip(*(inv @ (x, y) for x, y in ((minx, miny), (minx, maxy), (maxx, miny), (maxx, maxy))))
@@ -138,6 +132,21 @@ def select_pixels(
     row1 = min(src.height, math.ceil(max(rows)) + 1)
     if col1 <= col0 or row1 <= row0:
         raise ApiError(422, errors.AOI_OUTSIDE_RASTER, "the AOI does not overlap the dataset's raster extent")
+    return Window(col0, row0, col1 - col0, row1 - row0)
+
+
+def select_pixels(
+    src,
+    aoi_native: BaseGeometry,
+    *,
+    max_window_pixels: int,
+    catalog_nodata: float | None = None,
+    deadline: Deadline = _no_deadline,
+) -> Selection:
+    """Select pixels whose centers fall in ``aoi_native`` (AOI already in the raster CRS)."""
+    cand = candidate_window(src, aoi_native)
+    col0, row0 = int(cand.col_off), int(cand.row_off)
+    col1, row1 = col0 + int(cand.width), row0 + int(cand.height)
     if (col1 - col0) * (row1 - row0) > max_window_pixels:
         raise ApiError(
             413,
@@ -203,17 +212,21 @@ def zonal_statistics(sel: Selection, semantics: UnitSemantics, operations: list[
     valid = sel.valid
     count_valid = int(valid.sum())
     pixels_in_aoi = int(sel.inside.sum())
-    nodata_excluded = pixels_in_aoi - count_valid
     integer = np.issubdtype(sel.values.dtype, np.integer)
     values = sel.values[valid].astype(np.int64 if integer else np.float64)
+    total = values.sum() if count_valid else None
+    mean = float(values.mean()) if count_valid else None
+    return summarize_statistics(count_valid, pixels_in_aoi, total, mean, bool(integer), semantics, operations)
 
+
+def summarize_statistics(count_valid: int, pixels_in_aoi: int, total, mean: float | None, integer: bool,
+                         semantics: UnitSemantics, operations: list[str]) -> dict[str, Any]:
+    """Shared result shape for the in-memory and the blockwise (large AOI) paths."""
+    nodata_excluded = pixels_in_aoi - count_valid
     warnings: list[str] = []
-    total = None
-    mean = None
-    if count_valid:
-        total = values.sum()
-        mean = float(values.mean())
-    else:
+    if not count_valid:
+        total = None
+        mean = None
         warnings.append("All pixels selected by the AOI are NoData; sum and mean are undefined (null).")
 
     sum_semantics = semantics.sum_semantics

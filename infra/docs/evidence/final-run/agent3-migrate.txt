@@ -1,0 +1,3 @@
+provision_roles: updated login role cgis_ogc_svc (member of cgis_reader, read-only sessions)
+provision_roles: updated login role cgis_processing_svc (member of cgis_processing)
+provision_roles: ok

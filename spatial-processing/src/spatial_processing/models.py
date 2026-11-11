@@ -26,6 +26,13 @@ class _Request(BaseModel):
         ..., description="GeoJSON Polygon or MultiPolygon (or a Feature wrapping one), x/y (lon/lat) order."
     )
     aoi_crs: str = Field(..., max_length=64, description="CRS of `aoi` as 'EPSG:<code>' (e.g. 'EPSG:4326').")
+    mode: Literal["sync", "async", "auto"] = Field(
+        "sync",
+        description="'sync' (default, Phase 2 behaviour): run inside the request; AOIs larger than the "
+        "interactive pixel limit get 413 AOI_TOO_LARGE. 'async': queue a background job and return 202 with "
+        "its status URL (bounded-memory blockwise processing). 'auto': sync when the AOI is small enough, "
+        "otherwise async.",
+    )
 
 
 class ClipRequest(_Request):
@@ -110,6 +117,7 @@ class JobLinks(BaseModel):
     self: str
     download: str | None = None
     metadata: str | None = None
+    cancel: str | None = Field(None, description="POST to this URL to cancel a queued/running async job.")
 
 
 class JobResponse(BaseModel):
@@ -122,3 +130,9 @@ class JobResponse(BaseModel):
     result: dict[str, Any] | None = None
     error: ErrorBody | None = None
     links: JobLinks
+    execution: Literal["sync", "async"] = "sync"
+    progress: float | None = Field(None, description="0..1 while an async job runs; 1 when completed.")
+    progress_message: str | None = None
+    attempts: int = 0
+    max_attempts: int = 1
+    cancel_requested: bool = False

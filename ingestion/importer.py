@@ -263,5 +263,7 @@ class Importer:
 
 
 def _fsync_file(path: Path) -> None:
-    with open(path, "rb") as fh:
+    # "r+b": Windows' _commit() needs a writable handle (os.fsync on a read-only descriptor raises
+    # EBADF there; reported by Agent 2 when running the importer natively on Windows 11).
+    with open(path, "r+b") as fh:
         os.fsync(fh.fileno())

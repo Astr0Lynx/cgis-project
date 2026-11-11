@@ -180,12 +180,43 @@ older versions are kept in the table. It is written as `NOT EXISTS (higher ready
 than `DISTINCT ON`, so `WHERE bbox && …` and `WHERE dataset_id = …` push down to the GiST and btree
 indexes (see `docs/EXPLAIN_ANALYZE.md`).
 
-### `geo.admin_units`
+### `geo.admin_units` (version-aware since `0007`)
 
-The contract columns `unit_id` (PK), `name` (NOT NULL), `level` and
-`geom geometry(MultiPolygon,4326)` (NOT NULL) are all present. Extra columns hold imported
-attributes and provenance: `properties`, `dataset_id`/`dataset_version` (FK to the catalog),
-`source`, `provenance` and timestamps. `geom` is valid, 2D, non-empty and inside lon/lat bounds.
+The contract columns `unit_id`, `name` (NOT NULL), `level` and `geom geometry(MultiPolygon,4326)`
+(NOT NULL) are all present. Extra columns hold imported attributes and provenance: `properties`,
+`dataset_id`/`dataset_version` (FK to the catalog), `source`, `provenance`, timestamps and the
+surrogate primary key `unit_key`. `geom` is valid, 2D, non-empty and inside lon/lat bounds.
+
+**Identity (completion P1).** Until `0006`, `unit_id` was a global primary key, so importing version 2
+of a boundary dataset overwrote version 1's geometry, and two boundary datasets could not reuse a
+source code. Since `0007` the identity is the unique constraint `admin_units_identity`
+`UNIQUE NULLS NOT DISTINCT (dataset_id, dataset_version, unit_id)`:
+
+- every dataset **version** keeps its own rows; nothing is overwritten or deleted on reimport;
+- the same `unit_id` may exist in different datasets;
+- rows without a dataset (`dataset_id IS NULL`) keep a `unit_id` that is unique among themselves;
+- units of a **ready** dataset version are immutable (trigger `admin_units_guard`; an identical
+  rewrite, as done by an idempotent re-import, is allowed). Withdraw a version on its catalog row
+  (`ready -> failed`), never by editing units.
+
+Read surfaces:
+
+| Object | Returns |
+|---|---|
+| `geo.current_admin_units` (view, same columns as the table) | units of the current ready version of each dataset (the version in `catalog.current_datasets`) plus dataset-less units. A withdrawn version disappears and the previous ready version is served again. |
+| `geo.dataset_units(dataset_id, version DEFAULT NULL)` | one dataset's units: an explicit version (whatever its status, for inspection) or its current ready version |
+| `geo.unit_versions(dataset_id, unit_id)` | every stored version of one unit, newest first, with catalog status and `is_current` |
+
+The spatial primitives (`units_in_bbox`, `units_intersecting`, `units_covered_by`, `unit_overlap`,
+`summarize_units`) keep their signatures and now read `geo.current_admin_units`. OGC API - Features
+collections are scoped to `dataset_id` **and** `dataset_version` (see `ogc-services/`).
+
+**Migration.** `0007` is additive for readers: the upgrade adds `unit_key` (filled for every row),
+moves the primary key to it, adds the identity constraint and keeps every existing row byte-identical
+(tested from a `0006` database holding v1 rows). No backfill is needed because the importer always
+filled `dataset_id`/`dataset_version`. Rollback (`migrate down --target 6`) is **non-destructive**: it
+refuses while any `unit_id` is stored more than once (several versions or datasets) and changes
+nothing; an operator must deliberately remove superseded rows first.
 
 Write through `geo.upsert_admin_unit(...)`, which calls `geo.normalize_multipolygon(geom, repair)`.
 That function:
@@ -196,8 +227,9 @@ That function:
   types;
 - repairs a geometry with `ST_MakeValid` only when `repair => true` is passed explicitly.
 
-An existing `unit_id` that belongs to *another* dataset is never overwritten. PostGIS ≥ 3.6 also
-promotes a Polygon to MultiPolygon at the column typmod for direct INSERTs.
+It upserts by the version-aware identity, so another dataset's (or version's) unit with the same
+`unit_id` is never touched. PostGIS ≥ 3.6 also promotes a Polygon to MultiPolygon at the column
+typmod for direct INSERTs.
 
 ### `ops.jobs`
 
@@ -220,6 +252,24 @@ queued ──► running ──► completed
 
 The helpers are `ops.create_job(kind, input)`, `ops.start_job(id)`,
 `ops.complete_job(id, result_path, result)` and `ops.fail_job(id, error)`.
+
+### `ops.jobs` background-job columns (`0009`)
+
+Additive columns with defaults (existing rows and synchronous jobs are unchanged): `execution`
+(`sync` | `async`), `attempts`, `max_attempts` (1..10), `progress` (0..1), `progress_message`,
+`heartbeat_at`, `worker_id`, `cancel_requested`. The guard additionally allows `running -> queued`
+for **async** jobs only (a job whose worker stopped heart-beating is re-queued while
+`attempts < max_attempts`); `execution` is immutable; terminal jobs stay immutable. Partial indexes
+serve the queue (`status = 'queued' AND execution = 'async'`) and stale-worker detection. Workers
+claim with `SELECT ... FOR UPDATE SKIP LOCKED`. Rollback refuses while async jobs are queued or
+running.
+
+### `catalog.render_profiles` (`0008`)
+
+Fixed, documented display scales for raster tiles, matched by product level, dataset-id regex and/or
+`provenance.group_id`, and **only when the dataset's units equal the profile's units**.
+`catalog.render_profile_for(dataset_id, version DEFAULT NULL)` returns 0 or 1 profile. Display only:
+values are never changed. Seeds and rationale: `ogc-services/docs/render-profiles.md`.
 
 ### Access roles (`0006`)
 

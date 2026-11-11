@@ -12,7 +12,7 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -31,6 +31,7 @@ from .models import (
 )
 from .outputs import OutputManager
 from .service import ProcessingService
+from .worker import WorkerPool
 
 log = logging.getLogger("spatial_processing")
 
@@ -42,7 +43,10 @@ Project-specific processing API for CyberGIS Phase 2 (**not** an OGC API standar
 * AOIs are GeoJSON Polygon/MultiPolygon in x/y (lon/lat) order with an explicit `aoi_crs` (`EPSG:<code>`).
 * **Pixel selection:** a pixel is included iff its **center** lies inside the AOI (`all_touched=false`).
   NoData pixels are excluded and reported (`nodata_excluded`), never treated as zero.
-* Operations run synchronously but are recorded as jobs (`queued → running → completed|failed`).
+* Operations run synchronously by default and are recorded as jobs (`queued → running → completed|failed`).
+* Large AOIs: send `"mode": "async"` (or `"auto"`) to queue a bounded-memory background job; the
+  answer is **202** with the job (poll `GET /operations/{job_id}` for `status`/`progress`, cancel with
+  `POST /operations/{job_id}/cancel`). Jobs survive a service restart (re-queued, bounded retries).
 * Errors are `{"error": {"code", "message", "details"?}}`.
 """
 
@@ -113,6 +117,14 @@ class RootPathMiddleware:
         return await self.app(scope, receive, send)
 
 
+def _respond(response: Response, status: int, body: dict[str, Any]) -> dict[str, Any]:
+    # Return the dict so FastAPI serializes it exactly like every other route (datetimes etc.).
+    response.status_code = status
+    if status == 202:
+        response.headers["Location"] = body["links"]["self"]
+    return body
+
+
 def build_catalog(settings: Settings) -> Catalog:
     if settings.catalog_backend == "postgres":
         return PostgresCatalog(settings.database_url)
@@ -146,6 +158,8 @@ def create_app(
         outputs,
     )
 
+    workers = WorkerPool(service)
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         try:
@@ -153,7 +167,11 @@ def create_app(
             outputs.cleanup(settings.output_ttl_seconds)
         except OSError:
             log.exception("output root is not usable; /ready will report it")
-        yield
+        workers.start()
+        try:
+            yield
+        finally:
+            workers.stop()
 
     app = FastAPI(
         title="CyberGIS Spatial Processing API (custom, non-OGC)",
@@ -162,6 +180,7 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.service = service
+    app.state.workers = workers
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_request_bytes)
     if settings.root_path:
         app.add_middleware(RootPathMiddleware, root_path=settings.root_path)
@@ -198,19 +217,19 @@ def create_app(
         "/operations/clip",
         tags=["operations"],
         summary="Clip a catalogued raster to an AOI and export GeoTIFF/COG",
-        responses={200: {"model": JobResponse}, **_ERROR_RESPONSES},
+        responses={200: {"model": JobResponse}, 202: {"model": JobResponse}, **_ERROR_RESPONSES},
     )
-    def clip(req: ClipRequest) -> dict[str, Any]:
-        return service.clip(req)
+    def clip(req: ClipRequest, response: Response) -> dict[str, Any]:
+        return _respond(response, *service.clip(req))
 
     @app.post(
         "/operations/zonal-statistics",
         tags=["operations"],
         summary="Zonal statistics (sum, mean, count of valid pixels) over an AOI",
-        responses={200: {"model": ZonalStatisticsResponse}, **_ERROR_RESPONSES},
+        responses={200: {"model": ZonalStatisticsResponse}, 202: {"model": JobResponse}, **_ERROR_RESPONSES},
     )
-    def zonal_statistics(req: ZonalStatisticsRequest) -> dict[str, Any]:
-        return service.zonal_statistics(req)
+    def zonal_statistics(req: ZonalStatisticsRequest, response: Response) -> dict[str, Any]:
+        return _respond(response, *service.zonal_statistics(req))
 
     @app.get(
         "/operations/{job_id}",
@@ -220,6 +239,15 @@ def create_app(
     )
     def get_job(job_id: uuid.UUID) -> dict[str, Any]:
         return service.get_job(job_id)
+
+    @app.post(
+        "/operations/{job_id}/cancel",
+        tags=["jobs"],
+        summary="Cancel a queued or running background (async) job",
+        responses={200: {"model": JobResponse}, **_ERROR_RESPONSES},
+    )
+    def cancel_job(job_id: uuid.UUID) -> dict[str, Any]:
+        return service.cancel_job(job_id)
 
     @app.get(
         "/downloads/{job_id}",
@@ -254,6 +282,11 @@ def create_app(
     @app.get("/ready", tags=["health"], summary="Readiness: catalog, job store and storage reachable")
     def ready():
         state = service.readiness()
+        enabled = service.async_enabled
+        state["async"] = {"enabled": enabled, "workers_alive": workers.alive,
+                          "workers_configured": settings.async_workers}
+        if settings.async_workers > 0 and workers.alive < settings.async_workers:
+            state["ready"] = False  # a worker thread died: let the orchestrator restart the container
         return JSONResponse(status_code=200 if state["ready"] else 503, content=state)
 
     return app

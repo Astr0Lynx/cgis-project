@@ -101,11 +101,26 @@ upgrade forces these corrections to be re-validated.
 
 - Items paging: the last page still carries a `next` link (an empty page follows). 17-069r4 only makes
   `next` a SHOULD when more data exists; not a violation, but clients may make one extra request.
-- Item `prev`/`next` links on a dataset scoped by `static_filter` can point at IDs of other datasets
-  sharing `geo.admin_units` (pygeoapi computes them on the whole table). Only arises once several vector
-  datasets share the table; see `docs/contract-change-requests/agent4.md`.
-- Map tile portrayal: by default each raster is scaled over its own range, so 2001 (value 1) and 2011
-  (value 2) look identical. The rule is published in each tileset's `style`; set `OGC_TILE_RESCALE=0,2`
-  (or a catalog `render.rescale` hint) for a shared scale.
+- ~~Item `prev`/`next` links on a dataset scoped by `static_filter` can point at IDs of other datasets
+  sharing `geo.admin_units`~~ **Fixed (completion P1).** Item lookup and `prev`/`next` carry the
+  collection's scope (`dataset_id` AND `dataset_version`; `CatalogPostgreSQLProvider.get`), there is no
+  self-pointing `prev`/`next` at either end, and units of other datasets or versions are never returned
+  (`tests/integration/test_versions_and_paging.py`).
+- ~~Map tile portrayal: by default each raster is scaled over its own range~~ **Fixed (completion P3)**
+  for matching product families: shared render profiles (`docs/render-profiles.md`). Rasters without a
+  profile keep the per-dataset range, now labelled a diagnostic scale in the tileset `style`.
+- Paging limit: `limit` above `max_items` (1 000) is throttled (pygeoapi `on_exceed: throttle`), with
+  `numberMatched` and a `next` link, so national boundary sets are paged completely, never truncated.
+
+## 6. What is and is not an OGC standard here
+
+| Interface | Standard? |
+|---|---|
+| `/ogc/` landing, conformance, collections, items, item, CRS (Features Parts 1+2), queryables + CQL2 basic (Part 3 subset), TileMatrixSets, collection tilesets/tiles (Tiles Part 1, PNG map tiles) | **OGC API** (declared in `/conformance`; CITE-tested) |
+| Tileset `style` text (`<colormap> linear lo..hi`, render profile name) | standard *member*, project-defined *content* |
+| `rel=describedby` / `rel=alternate` links from collections to `/tiles/...` | standard link relations to **vendor** resources |
+| `/tiles/...` (TileJSON, `/info`, `/statistics`, `/point`, `/datasets`) | **vendor-specific TiTiler**, labelled as such; not OGC API |
+| `/api/operations/*`, `/api/downloads/*` (clip, zonal statistics, background jobs) | **custom project API**; not OGC API - Processes |
+| `/auth/`, `/admin/`, `/api/exports`, `/api/catalog/` | application API (Agent 5); not OGC |
 - No OGC API Tiles `datetime`/`collections-selection` or dataset-level tilesets.
 - QGIS interoperability: see `docs/usage.md` §4 for what was and was not run.

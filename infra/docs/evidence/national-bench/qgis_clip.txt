@@ -1,0 +1,8 @@
+PASS opened /repo/data/bench/clip_async_india-worldpop-unconstrained-2011.tif: 1200 x 960 px, CRS EPSG:4326
+INFO extent 76.800416,28.199583 : 77.800416,28.999583
+INFO nodata -99999.0; valid-cell stats min 0.3669 max 706.5280 sum 29393694.1149 count 1144082
+RESULT OK (0 failure(s))
+PASS opened /repo/data/bench/clip_async_synthetic-national-grid-2011.tif: 1200 x 960 px, CRS EPSG:4326
+INFO extent 76.800416,28.199583 : 77.800416,28.999583
+INFO nodata -99999.0; valid-cell stats min 1.0100 max 71.4200 sum 8003523.9407 count 1152000
+RESULT OK (0 failure(s))

@@ -130,8 +130,13 @@ def test_direct_insert_of_invalid_multipolygon_blocked(conn):
 
 
 def test_unit_owned_by_other_dataset_not_overwritten(conn):
-    with pytest.raises(psycopg.errors.UniqueViolation, match="another dataset"):
-        upsert(conn, "town-a", "SRID=4326;POLYGON((1 1,2 1,2 2,1 2,1 1))")
+    # Since 0007 identity is (dataset_id, dataset_version, unit_id): the same source id in another
+    # (here: no) dataset is a separate row and never replaces synthetic-towns' town-a.
+    upsert(conn, "town-a", "SRID=4326;POLYGON((1 1,2 1,2 2,1 2,1 1))")
+    rows = conn.execute("SELECT dataset_id, ST_XMin(geom) FROM geo.admin_units WHERE unit_id = 'town-a'"
+                        " ORDER BY dataset_id NULLS LAST").fetchall()
+    assert rows[0][0] == "synthetic-towns" and rows[0][1] == pytest.approx(78.01)
+    assert rows[1] == (None, 1.0)
 
 
 def test_dataset_reference_must_exist(conn):

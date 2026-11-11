@@ -41,7 +41,9 @@ run_suite() {  # container suite query outfile
 wait_ready cgis-cite-features
 wait_ready cgis-cite-tiles
 
-FEATURES_QUERY="iut=$(python3 -c 'import sys,urllib.parse as u; print(u.quote(sys.argv[1], safe=""))' "$IUT")&noofcollections=-1"
+# URL-encode inside the runner image: a host python3 may be missing (or a Windows Store stub).
+FEATURES_QUERY="iut=$(docker run --rm "$RUNNER_IMAGE" python -c 'import sys,urllib.parse as u; print(u.quote(sys.argv[1], safe=""))' "$IUT")&noofcollections=-1"
+case "$FEATURES_QUERY" in "iut=&"*) echo "could not URL-encode the IUT" >&2; exit 1 ;; esac
 run_suite cgis-cite-features ogcapi-features-1.0 "$FEATURES_QUERY" "$OUT/cite-ogcapi-features-1.0.xml"
 
 TILES_QUERY="$(docker run --rm --network "$NETWORK" -e IUT="$IUT" -e COLLECTION="$COLLECTION" "$RUNNER_IMAGE" python -c '

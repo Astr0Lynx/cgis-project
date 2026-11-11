@@ -1,13 +1,23 @@
-# CyberGIS Phase 2 — local Docker Compose stack (owner: Agent 1, infrastructure).
+# CyberGIS — local Docker Compose stack (owner: Agent 4, platform).
 #
-#   cp .env.example .env   # or: sh infra/scripts/init-env.sh (generates random local passwords)
-#   docker compose up -d --build --wait
-#   docker compose run --rm ingestion seed     # SYNTHETIC fixtures + import (idempotent)
+#   sh infra/scripts/init-env.sh             # .env with random local passwords (never commit .env)
+#   docker compose --profile tools build     # every image, incl. the ingestion tool
+#   docker compose up -d --wait
+#   docker compose run --rm ingestion seed   # SYNTHETIC fixtures + import (idempotent)
+#
+# Profiles (COMPOSE_PROFILES in .env, or --profile on the command line):
+#   (none)   db, migrate, tiles, ogc, processing, viewer, gateway              — the platform
+#   app      + application API (Agent 5): app-api, ingest/export workers, migrations, grants
+#   tools    ingestion CLI (docker compose run --rm ingestion ...)
+#   science  Level 1 national model run (Agent 2); run it ALONE on the 16 GB target (see infra/README.md)
 #
 # Only the gateway publishes a host port (127.0.0.1:8080 by default). The database stays private
-# to the Compose network; see infra/compose.db-port.yaml for an opt-in development port.
-# Service names are an interface contract (contracts/ARCHITECTURE.md): db, ingestion, ogc, tiles,
-# processing, gateway, viewer. Service code lives in each owner's module directory.
+# to the Compose network; see infra/compose.db-port.yaml for an opt-in development port. No service
+# mounts the Docker socket, and no service accepts client file paths.
+#
+# Memory: every long-running service has a mem_limit (overridable in .env). Default platform total
+# ~6.7 GiB of limits (typical use far lower); +4.3 GiB with the "app" profile; the science profile's
+# 14 GiB limit assumes the other services are stopped. Budget table: infra/COMPLETION_HANDOFF_REPORT.md.
 
 name: ${COMPOSE_PROJECT_NAME:-cgis}
 
@@ -21,6 +31,25 @@ x-pg-required: &pg-required
   POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
   POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+
+# --- application API (Agent 5, profile "app") -----------------------------------------------------
+x-app-build-api: &app-build-api
+  context: .
+  dockerfile: application-api/Dockerfile
+  target: api
+
+x-app-common-env: &app-common-env
+  APP_PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+  APP_DEFAULT_DATASET_ACCESS: ${APP_DEFAULT_DATASET_ACCESS:-users}
+  APP_MAX_UPLOAD_BYTES: ${APP_MAX_UPLOAD_BYTES:-8589934592}
+  APP_MAX_VECTOR_UPLOAD_BYTES: ${APP_MAX_VECTOR_UPLOAD_BYTES:-268435456}
+  APP_STAGING_MAX_TOTAL_BYTES: ${APP_STAGING_MAX_TOTAL_BYTES:-34359738368}
+  APP_EXPORT_TTL_SECONDS: ${APP_EXPORT_TTL_SECONDS:-86400}
+  APP_EXPORT_MAX_OUTPUT_BYTES: ${APP_EXPORT_MAX_OUTPUT_BYTES:-8589934592}
+  APP_EXPORT_MAX_TOTAL_BYTES: ${APP_EXPORT_MAX_TOTAL_BYTES:-34359738368}
+  APP_MIN_FREE_BYTES: ${APP_MIN_FREE_BYTES:-2147483648}
+  APP_GDAL_CACHEMAX_MB: ${APP_GDAL_CACHEMAX_MB:-256}
+  APP_LOG_LEVEL: ${APP_LOG_LEVEL:-INFO}
 
 services:
   # One-shot: give the named volumes to the non-root service user (uid 10001) before any service
@@ -48,6 +77,20 @@ services:
     image: postgis/postgis:17-3.5@sha256:01a6a70e41e6c4467c8f55f6063555ed72db2d6662cd0d571040d42eadaeb6f6
     environment:
       <<: *pg-required
+    # Sized for national boundaries/catalog on the 16 GB target (raster bytes live in COGs, not here).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${DB_SHARED_BUFFERS:-512MB}
+      - -c
+      - work_mem=${DB_WORK_MEM:-32MB}
+      - -c
+      - maintenance_work_mem=${DB_MAINTENANCE_WORK_MEM:-256MB}
+      - -c
+      - effective_cache_size=${DB_EFFECTIVE_CACHE_SIZE:-1536MB}
+      - -c
+      - max_connections=${DB_MAX_CONNECTIONS:-100}
+    shm_size: 256m
     volumes:
       - pgdata:/var/lib/postgresql/data
     # TCP check: the image's temporary init server listens on the Unix socket only, so this
@@ -58,10 +101,11 @@ services:
       timeout: 5s
       retries: 30
       start_period: 20s
+    mem_limit: ${DB_MEM_LIMIT:-2g}
     restart: unless-stopped
     logging: *logging
 
-  # One-shot: Agent 2's migrations (python -m cgis_db migrate up), then the login roles for the
+  # One-shot: database migrations (python -m cgis_db migrate up), then the login roles for the
   # services (infra/db/provision_roles.py). Safe to run repeatedly.
   migrate:
     build:
@@ -101,10 +145,11 @@ services:
       INGESTION_ASSETS_DIR: /data/assets
       INGESTION_FIXTURES_DIR: /data/fixtures
       INGESTION_DB_WAIT_SECONDS: "60"
+      GDAL_CACHEMAX: ${INGESTION_GDAL_CACHEMAX_MB:-512}
     volumes:
-      - assets:/data/assets                 # read-write ONLY here
+      - assets:/data/assets                 # read-write ONLY here and in app-ingest-worker
       - ./data/fixtures:/data/fixtures      # generated, git-ignored
-      # Phase 1 deliveries (ingestion/docs/PHASE1_HANDOFF.md): put <delivery>/manifest.json under
+      # Real deliveries (ingestion/docs/PHASE1_HANDOFF.md): put <delivery>/manifest.json under
       # ./data/incoming/ and run `docker compose run --rm ingestion import --manifest /data/incoming/<delivery>/manifest.json`
       - ./data/incoming:/data/incoming:ro
     depends_on:
@@ -112,6 +157,7 @@ services:
         condition: service_completed_successfully
       migrate:
         condition: service_completed_successfully
+    mem_limit: ${INGESTION_MEM_LIMIT:-4g}
     logging: *logging
 
   tiles:
@@ -128,6 +174,7 @@ services:
       CGIS_ASSET_ROOT: /data/assets
       CGIS_CATALOG_CACHE_TTL: ${CGIS_CATALOG_CACHE_TTL:-30}
       WEB_CONCURRENCY: ${TILES_WORKERS:-2}
+      GDAL_CACHEMAX: ${TILES_GDAL_CACHEMAX_MB:-200}
     volumes:
       - assets:/data/assets:ro
     depends_on:
@@ -135,6 +182,7 @@ services:
         condition: service_completed_successfully
       migrate:
         condition: service_completed_successfully
+    mem_limit: ${TILES_MEM_LIMIT:-1536m}
     restart: unless-stopped
     logging: *logging
 
@@ -158,6 +206,12 @@ services:
         condition: service_completed_successfully
       tiles:
         condition: service_healthy
+      # With the "app" profile: admins-only datasets are filtered from publication (Agent 5 CR R5),
+      # which needs the read grant applied by app-grants first.
+      app-grants:
+        condition: service_completed_successfully
+        required: false
+    mem_limit: ${OGC_MEM_LIMIT:-1g}
     restart: unless-stopped
     logging: *logging
 
@@ -175,6 +229,15 @@ services:
       ROOT_PATH: /api
       MAX_CONCURRENT_JOBS: ${PROCESSING_MAX_CONCURRENT_JOBS:-4}
       OUTPUT_TTL_SECONDS: ${PROCESSING_OUTPUT_TTL_SECONDS:-86400}
+      GDAL_CACHEMAX_MB: ${PROCESSING_GDAL_CACHEMAX_MB:-256}
+      # Large AOIs (blockwise, background jobs; spatial-processing/docs/API.md)
+      ASYNC_WORKERS: ${PROCESSING_ASYNC_WORKERS:-1}
+      BLOCK_SIZE: ${PROCESSING_BLOCK_SIZE:-2048}
+      ASYNC_MAX_WINDOW_PIXELS: ${PROCESSING_ASYNC_MAX_WINDOW_PIXELS:-2000000000}
+      ASYNC_MAX_OUTPUT_BYTES: ${PROCESSING_ASYNC_MAX_OUTPUT_BYTES:-2147483648}
+      ASYNC_MAX_JOB_SECONDS: ${PROCESSING_ASYNC_MAX_JOB_SECONDS:-3600}
+      ASYNC_MAX_ATTEMPTS: ${PROCESSING_ASYNC_MAX_ATTEMPTS:-2}
+      ASYNC_QUEUE_TTL_SECONDS: ${PROCESSING_ASYNC_QUEUE_TTL_SECONDS:-21600}
     volumes:
       - assets:/data/assets:ro
       - processing-outputs:/data/outputs
@@ -183,10 +246,12 @@ services:
         condition: service_completed_successfully
       migrate:
         condition: service_completed_successfully
+    mem_limit: ${PROCESSING_MEM_LIMIT:-2g}
+    stop_grace_period: 20s
     restart: unless-stopped
     logging: *logging
 
-  # Static diagnostic viewer (demo-client/, owned by Agent 6), served at /viewer/ by the gateway.
+  # The MapLibre web application (demo-client/, owned by Agent 6), served at /viewer/ by the gateway.
   viewer:
     build:
       context: ./demo-client
@@ -202,6 +267,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 6
+    mem_limit: 64m
     restart: unless-stopped
     logging: *logging
 
@@ -211,6 +277,8 @@ services:
     image: cgis-gateway:local
     ports:
       - "${GATEWAY_BIND:-127.0.0.1}:${GATEWAY_PORT:-8080}:8080"
+    environment:
+      GATEWAY_READ_ACCESS: ${GATEWAY_READ_ACCESS:-public}
     depends_on:
       ogc:
         condition: service_healthy
@@ -220,15 +288,184 @@ services:
         condition: service_healthy
       viewer:
         condition: service_healthy
+      app-api:
+        condition: service_healthy
+        required: false
     healthcheck:
       test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:8080/healthz"]
       interval: 10s
       timeout: 3s
       retries: 6
+    mem_limit: 128m
     restart: unless-stopped
     logging: *logging
 
+  # ------------------------------------------------------------------------------------------------
+  # Application API (Agent 5, application-api/). Profile "app". Privilege layout (no Docker socket):
+  #   app-api            assets RO, staging RW, exports RO; DB role cgis_app_api (no catalog writes)
+  #   app-ingest-worker  assets RW, staging RW;             DB role cgis_app_worker (catalog via cgis_ingest)
+  #   app-export-worker  assets RO, exports RW;             DB role cgis_app_worker
+  app-volume-init:
+    image: busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+    profiles: ["app"]
+    command: ["sh", "-c", "chown ${CGIS_SERVICE_UID:-10001}:${CGIS_SERVICE_UID:-10001} /data/staging /data/exports && chmod 0750 /data/staging /data/exports"]
+    volumes:
+      - app-staging:/data/staging
+      - app-exports:/data/exports
+    restart: "no"
+    logging: *logging
+
+  # One-shot: cgis_app schema + login roles (owner credentials), then the APP_BOOTSTRAP_* accounts.
+  # The service refuses placeholder or short passwords (sh infra/scripts/init-env.sh fills them).
+  app-migrate:
+    build: *app-build-api
+    image: cgis-app-api:local
+    profiles: ["app"]
+    command: ["sh", "-c", "cgis-app migrate && cgis-app bootstrap"]
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      APP_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      APP_DB_USER: ${APP_DB_USER:-}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
+      APP_WORKER_DB_USER: ${APP_WORKER_DB_USER:-}
+      APP_WORKER_DB_PASSWORD: ${APP_WORKER_DB_PASSWORD:-}
+      APP_BOOTSTRAP_ADMIN_USERNAME: ${APP_BOOTSTRAP_ADMIN_USERNAME:-}
+      APP_BOOTSTRAP_ADMIN_PASSWORD: ${APP_BOOTSTRAP_ADMIN_PASSWORD:-}
+      APP_BOOTSTRAP_USER_USERNAME: ${APP_BOOTSTRAP_USER_USERNAME:-}
+      APP_BOOTSTRAP_USER_PASSWORD: ${APP_BOOTSTRAP_USER_PASSWORD:-}
+      APP_BOOTSTRAP_RESET_PASSWORDS: ${APP_BOOTSTRAP_RESET_PASSWORDS:-false}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+    logging: *logging
+
+  # One-shot (Agent 4): column-level read access for the OGC role to cgis_app.dataset_access, so the
+  # OGC/Tiles publisher can withhold admins-only datasets (Agent 5 CR R5). Owner credentials.
+  app-grants:
+    image: cgis-migrate:local
+    profiles: ["app"]
+    command: ["python", "/opt/cgis/infra-db/provision_roles.py", "--app-grants"]
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      app-migrate:
+        condition: service_completed_successfully
+    restart: "no"
+    logging: *logging
+
+  app-api:
+    build: *app-build-api
+    image: cgis-app-api:local
+    profiles: ["app"]
+    environment:
+      <<: *app-common-env
+      APP_DATABASE_URL: postgresql://${APP_DB_USER:-}:${APP_DB_PASSWORD:-}@db:5432/${POSTGRES_DB}
+      APP_TRUST_PROXY_HEADERS: "true"          # only the gateway can reach this service
+      APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:-false}
+      APP_SESSION_TTL_SECONDS: ${APP_SESSION_TTL_SECONDS:-28800}
+      APP_SESSION_IDLE_SECONDS: ${APP_SESSION_IDLE_SECONDS:-3600}
+      APP_HTTP_WORKERS: ${APP_HTTP_WORKERS:-2}
+      FORWARDED_ALLOW_IPS: "*"
+    volumes:
+      - app-staging:/data/staging
+      - assets:/data/assets:ro
+      - app-exports:/data/exports:ro
+    depends_on:
+      app-volume-init:
+        condition: service_completed_successfully
+      app-migrate:
+        condition: service_completed_successfully
+    mem_limit: ${APP_API_MEM_LIMIT:-768m}
+    restart: unless-stopped
+    logging: *logging
+
+  app-ingest-worker:
+    build:
+      context: .
+      dockerfile: application-api/Dockerfile
+      target: ingest-worker
+    image: cgis-app-ingest-worker:local
+    profiles: ["app"]
+    environment:
+      <<: *app-common-env
+      APP_DATABASE_URL: postgresql://${APP_WORKER_DB_USER:-}:${APP_WORKER_DB_PASSWORD:-}@db:5432/${POSTGRES_DB}
+    volumes:
+      - app-staging:/data/staging
+      - assets:/data/assets                    # the only app service that writes assets
+    depends_on:
+      volume-init:
+        condition: service_completed_successfully
+      app-volume-init:
+        condition: service_completed_successfully
+      app-migrate:
+        condition: service_completed_successfully
+    healthcheck:   # workers serve no HTTP: alive = poll loop or job heartbeat touched its file recently
+      test: ["CMD", "python", "-m", "cgis_app", "worker-health", "--max-age", "120"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    mem_limit: ${APP_INGEST_MEM_LIMIT:-2g}
+    stop_grace_period: 30s
+    restart: unless-stopped
+    logging: *logging
+
+  app-export-worker:
+    build: *app-build-api
+    image: cgis-app-api:local
+    profiles: ["app"]
+    command: ["cgis-app", "worker", "--queue", "export"]
+    environment:
+      <<: *app-common-env
+      APP_DATABASE_URL: postgresql://${APP_WORKER_DB_USER:-}:${APP_WORKER_DB_PASSWORD:-}@db:5432/${POSTGRES_DB}
+      APP_EXPORT_MAX_SECONDS: ${APP_EXPORT_MAX_SECONDS:-3600}
+    volumes:
+      - assets:/data/assets:ro
+      - app-exports:/data/exports
+    depends_on:
+      app-volume-init:
+        condition: service_completed_successfully
+      app-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-m", "cgis_app", "worker-health", "--max-age", "120"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    mem_limit: ${APP_EXPORT_MEM_LIMIT:-1536m}
+    stop_grace_period: 30s
+    restart: unless-stopped
+    logging: *logging
+
+  # ------------------------------------------------------------------------------------------------
+  # Level 1 national model (Agent 2, science/level1/). Profile "science"; run ALONE:
+  #   docker compose stop && docker compose --profile science run --rm level1 run --config science/level1/config/india_full.toml
+  # The pipeline also self-limits (run.max_rss_gb=12). data/ is a bind mount, never build context.
+  level1:
+    build:
+      context: .
+      dockerfile: science/level1/Dockerfile
+    image: cgis-level1:local
+    profiles: ["science"]
+    volumes:
+      - ./data:/repo/data
+    mem_limit: ${LEVEL1_MEM_LIMIT:-14g}
+    command: ["run", "--config", "science/level1/config/india_full.toml"]
+    logging: *logging
+
 volumes:
-  pgdata: {}               # PostgreSQL cluster (catalog, geo, ops)
+  pgdata: {}               # PostgreSQL cluster (catalog, geo, ops, cgis_app)
   assets: {}               # COG/vector assets written by ingestion, read-only elsewhere
-  processing-outputs: {}   # clip/export results
+  processing-outputs: {}   # clip/export results of the processing API
+  app-staging: {}          # admin uploads awaiting validation/publication (profile app)
+  app-exports: {}          # export job outputs, expire after APP_EXPORT_TTL_SECONDS (profile app)

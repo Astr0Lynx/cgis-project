@@ -107,6 +107,9 @@ class TiTilerTileProvider(BaseTileProvider):
         self.bbox = tuple(float(v) for v in self.options["bbox"])
         self.colormap_name = self.options.get("colormap_name", "viridis")
         self.rescale = self.options.get("rescale") or parse_rescale(os.environ.get("OGC_TILE_RESCALE"))
+        # Shared display scale chosen by the publisher from catalog.render_profiles (P3), if any.
+        profile = self.options.get("render_profile")
+        self.render_profile = profile if isinstance(profile, dict) and profile.get("profile_id") else None
         self.internal_url = os.environ.get("CGIS_TILER_INTERNAL_URL", "http://tiles:8000").rstrip("/")
         self._service_url = None
 
@@ -254,13 +257,22 @@ class TiTilerTileProvider(BaseTileProvider):
     def style(self) -> dict:
         """The single portrayal rule applied to every tile (/req/png/content D)."""
         lo, hi = self._rescale().split(",")
-        source = ("configured shared range" if self.rescale
-                  else "dataset range (min(0, minimum) to maximum); not comparable across datasets")
+        if self.render_profile:
+            p = self.render_profile
+            source = (f"configured shared range from render profile '{p['profile_id']}' ({p.get('title', '')}; "
+                      f"units {p.get('units', '')}), identical for every dataset of that profile. "
+                      f"{p.get('description', '')}".rstrip())
+        elif self.rescale:
+            source = "configured shared range"
+        else:
+            source = ("dataset range (min(0, minimum) to maximum), a per-layer automatic scale for "
+                      "diagnostics; not comparable across datasets")
         return {
             "id": "default",
             "title": f"{self.colormap_name} linear {lo}..{hi}",
             "description": (f"Cell values {lo}..{hi} map linearly onto the {self.colormap_name} colour ramp "
-                            f"(values outside are clamped); NoData cells are transparent. Range: {source}."),
+                            f"(values outside are clamped); NoData cells are transparent. Range: {source}. "
+                            "Display only: tiles never alter data values."),
         }
 
     def tilejson(self, server_url, dataset, tileset, title=None, description=None) -> dict:

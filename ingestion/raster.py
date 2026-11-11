@@ -189,6 +189,28 @@ def _inspect_open(src, spec: DatasetSpec) -> RasterInfo:
     )
 
 
+MAX_WINDOW_PIXELS = 16 * 1024 * 1024  # one read: 64 MiB of float32 (bounded memory on national rasters)
+
+
+def iter_windows(src, band: int, max_pixels: int = MAX_WINDOW_PIXELS):
+    """The band's native blocks, with any block larger than ``max_pixels`` split into row bands.
+
+    Tiled and normally striped GeoTIFFs keep their natural block order (efficient I/O). A source
+    written as one huge strip (e.g. an uncompressed national raster) would otherwise be read as a
+    single multi-gigabyte block; splitting keeps peak memory bounded whatever the source layout.
+    """
+    from rasterio.windows import Window
+
+    for _, win in src.block_windows(band):
+        w, h = int(win.width), int(win.height)
+        if w * h <= max_pixels:
+            yield win
+            continue
+        rows = max(1, max_pixels // max(1, w))
+        for r in range(0, h, rows):
+            yield Window(win.col_off, win.row_off + r, w, min(rows, h - r))
+
+
 def _band_stats(src, band: int, nodata, name: str) -> dict[str, Any]:
     valid = 0
     total = 0
@@ -198,7 +220,7 @@ def _band_stats(src, band: int, nodata, name: str) -> dict[str, Any]:
     is_float = np.dtype(src.dtypes[band - 1]).kind == "f"
     nodata_is_nan = nodata is not None and isinstance(nodata, float) and math.isnan(nodata)
     try:
-        for _, win in src.block_windows(band):
+        for win in iter_windows(src, band):
             data = src.read(band, window=win, masked=True)
             total += data.size
             vals = data.compressed()

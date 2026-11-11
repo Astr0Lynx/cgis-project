@@ -1,0 +1,175 @@
+{
+  "job_id": "75f60891-cea1-4e33-aa03-b44761397bfe",
+  "kind": "zonal-statistics",
+  "status": "completed",
+  "created_at": "2026-11-11T07:16:35.846705Z",
+  "updated_at": "2026-11-11T07:18:09.972354Z",
+  "input": {
+    "aoi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            68.2,
+            6.8
+          ],
+          [
+            97.4,
+            6.8
+          ],
+          [
+            97.4,
+            35.5
+          ],
+          [
+            68.2,
+            35.5
+          ],
+          [
+            68.2,
+            6.8
+          ]
+        ]
+      ]
+    },
+    "aoi_crs": "EPSG:4326",
+    "dataset_id": "synthetic-national-grid-2011",
+    "operations": [
+      "sum",
+      "mean",
+      "count"
+    ],
+    "dataset_version": 1,
+    "candidate_window_pixels": 1206986049
+  },
+  "result": {
+    "aoi_crs": "EPSG:4326",
+    "computed_at": "2026-11-11T07:18:09.963125+00:00",
+    "count_valid": 452195940,
+    "dataset": {
+      "catalog_crs": "EPSG:4326",
+      "catalog_nodata": -99999.0,
+      "checksum_sha256": "6581602c43a6170151252ee5cc4bce689024994f23a4c7a3f1f08def371f8f70",
+      "dataset_id": "synthetic-national-grid-2011",
+      "product_level": "level1",
+      "provenance": {
+        "ingestion": {
+          "asset": {
+            "blocksize": [
+              512,
+              512
+            ],
+            "cog_warnings": [],
+            "compression": "DEFLATE",
+            "format": "COG",
+            "overview_factors": [
+              2,
+              4,
+              8,
+              16,
+              32,
+              64,
+              128
+            ],
+            "overview_resampling": "nearest",
+            "predictor": "YES"
+          },
+          "asset_path": "rasters/synthetic-national-grid-2011/v1/synthetic-national-grid-2011_v1.tif",
+          "asset_sha256": "e39f45b8bacf66b24e17898f6cd1966c274e3bcc86a3f6e1c5e8c04161dfdadb",
+          "completed_at": "2026-11-11T07:05:58+00:00",
+          "gdal_version": "3.9.3",
+          "importer": "cgis-ingestion",
+          "importer_version": "1.0.0",
+          "source_file": "synthetic_national_grid.tif",
+          "source_sha256": "6581602c43a6170151252ee5cc4bce689024994f23a4c7a3f1f08def371f8f70",
+          "started_at": "2026-11-11T06:41:38+00:00"
+        },
+        "raster": {
+          "band": 1,
+          "band_count": 1,
+          "bbox_wgs84": [
+            68.185416408,
+            6.753750174,
+            97.414582958,
+            35.501250059
+          ],
+          "crs": "EPSG:4326",
+          "dtype": "float32",
+          "height": 34497,
+          "mask": "nodata",
+          "native_bounds": [
+            68.185416408,
+            6.753750174,
+            97.414582958,
+            35.501250059
+          ],
+          "nodata": -99999.0,
+          "resolution_x": 0.0008333333300071276,
+          "resolution_y": 0.0008333333299997101,
+          "source_driver": "GTiff",
+          "source_is_cog": true,
+          "source_units": "people_per_cell",
+          "stats": {
+            "max": 71.41999816894531,
+            "min": 1.0,
+            "nodata_count": 757786335,
+            "sum": 708439998.0254318,
+            "valid_count": 452195940
+          },
+          "transform": [
+            0.0008333333300071276,
+            0.0,
+            68.185416408,
+            0.0,
+            -0.0008333333299997101,
+            35.501250059
+          ],
+          "width": 35075
+        },
+        "synthetic": true
+      },
+      "source": "infra/bench/make_national_raster.py",
+      "title": "SYNTHETIC national-grid benchmark raster (Level 1 grid; not population data)",
+      "units": "people_per_cell",
+      "version": 1,
+      "year": 2011
+    },
+    "dataset_id": "synthetic-national-grid-2011",
+    "dataset_version": 1,
+    "mean": 1.566665985602241,
+    "nodata_excluded": 754581660,
+    "nodata_value": -99999.0,
+    "operations": [
+      "sum",
+      "mean",
+      "count"
+    ],
+    "pixel_selection": {
+      "all_touched": false,
+      "description": "A pixel is included only if its center point falls inside the AOI polygon (GDAL/rasterio all_touched=false). Statistics use native-resolution values in the raster's native CRS without resampling.",
+      "rule": "pixel_center"
+    },
+    "pixels_in_aoi": 1206777600,
+    "processing": {
+      "block_size": 2048,
+      "blocks_read": 306,
+      "candidate_window_pixels": 1206986049,
+      "path": "blockwise"
+    },
+    "raster_crs": "EPSG:4326",
+    "sum": 708439998.0254318,
+    "sum_semantics": "total_count",
+    "units": "people_per_cell",
+    "warnings": []
+  },
+  "error": null,
+  "links": {
+    "self": "/api/operations/75f60891-cea1-4e33-aa03-b44761397bfe"
+  },
+  "execution": "async",
+  "progress": 1.0,
+  "progress_message": "block 249/306",
+  "attempts": 2,
+  "max_attempts": 2,
+  "cancel_requested": false
+}

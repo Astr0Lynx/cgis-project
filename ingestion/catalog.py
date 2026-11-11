@@ -92,6 +92,17 @@ class Catalog:
                 raise CatalogError(f"{schema}.{table} is missing columns {sorted(missing)}; "
                                    "run the database migrations first", code="schema_incompatible")
         self._unit_columns = self._columns("geo", "admin_units")
+        # Database migration core/0007 keys units by (dataset_id, dataset_version, unit_id). Older or
+        # contract stand-in schemas keep the global unit_id primary key.
+        row = self.conn.execute(
+            "SELECT 1 AS ok FROM pg_constraint WHERE conrelid = 'geo.admin_units'::regclass "
+            "AND conname = 'admin_units_identity'").fetchone()
+        self._versioned_units = row is not None and {"dataset_id", "dataset_version"} <= self._unit_columns
+
+    @property
+    def versioned_units(self) -> bool:
+        """True when every dataset version keeps its own copy of its units (no cross-version overwrite)."""
+        return bool(getattr(self, "_versioned_units", False))
 
     # -- locking -----------------------------------------------------------------------------------
     @contextmanager
@@ -213,6 +224,9 @@ class Catalog:
     def _upsert_units(self, spec: DatasetSpec, units: list[Any]) -> None:
         cols = self._unit_columns or set()
         extra = [c for c in OPTIONAL_UNIT_COLUMNS if c in cols]
+        if self.versioned_units:
+            self._insert_versioned_units(spec, units, extra)
+            return
         if "dataset_id" in extra:
             ids = [u.unit_id for u in units]
             clash = self.conn.execute(
@@ -228,6 +242,27 @@ class Catalog:
         updates = ", ".join(f"{c}=EXCLUDED.{c}" for c in names if c != "unit_id")
         sql = (f"INSERT INTO geo.admin_units ({', '.join(names)}) VALUES ({', '.join(placeholders)}) "
                f"ON CONFLICT (unit_id) DO UPDATE SET {updates}")
+        rows = []
+        for u in units:
+            vals: list[Any] = [u.unit_id, u.name, u.level, shapely.to_wkb(u.geom, output_dimension=2)]
+            for c in extra:
+                vals.append({"dataset_id": spec.dataset_id, "dataset_version": spec.version,
+                             "properties": Jsonb(u.properties), "source": spec.source}[c])
+            rows.append(vals)
+        with self.conn.cursor() as cur:
+            cur.executemany(sql, rows)
+
+    def _insert_versioned_units(self, spec: DatasetSpec, units: list[Any], extra: list[str]) -> None:
+        """Version-aware write: the units of THIS (dataset_id, version) only; other versions and other
+        datasets that reuse the same source ids are never touched. Re-running an interrupted import of
+        a non-ready version refreshes its own rows (ready versions are immutable in the database)."""
+        names = ["unit_id", "name", "level", "geom", *extra]
+        placeholders = ["%s", "%s", "%s", "ST_Multi(ST_GeomFromWKB(%s, 4326))"] + [
+            "%s::jsonb" if c == "properties" else "%s" for c in extra]
+        updates = ", ".join(f"{c}=EXCLUDED.{c}" for c in names
+                            if c not in ("unit_id", "dataset_id", "dataset_version"))
+        sql = (f"INSERT INTO geo.admin_units ({', '.join(names)}) VALUES ({', '.join(placeholders)}) "
+               f"ON CONFLICT ON CONSTRAINT admin_units_identity DO UPDATE SET {updates}")
         rows = []
         for u in units:
             vals: list[Any] = [u.unit_id, u.name, u.level, shapely.to_wkb(u.geom, output_dimension=2)]
