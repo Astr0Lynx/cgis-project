@@ -1,3 +1,5 @@
+# Manifest parsing (ingestion/manifest.py) and asset path layout/safety (ingestion/importer.py).
+
 from __future__ import annotations
 
 import json
@@ -5,12 +7,13 @@ import json
 import pytest
 
 from ingestion.errors import AssetError, ManifestError
+from ingestion.importer import asset_relpath, resolve_under
 from ingestion.manifest import load_manifest, parse_entry
-from ingestion.paths import asset_relpath, resolve_under
 
 from .conftest import entry
 
 
+# The contract's example entry parses with defaults.
 def test_contract_example_shape_is_accepted(fixture_dir):
     raw = {"dataset_id": "synthetic-worldpop-2001", "version": 1, "title": "SYNTHETIC population raster (2001)",
            "kind": "raster", "product_level": "source", "year": 2001, "units": "people_per_cell",
@@ -19,6 +22,7 @@ def test_contract_example_shape_is_accepted(fixture_dir):
     assert s.dataset_id == "synthetic-worldpop-2001" and s.band == 1 and s.is_synthetic
 
 
+# Single-object, list and {datasets} manifests are all accepted.
 @pytest.mark.parametrize("shape_", ["single", "list", "datasets"])
 def test_manifest_shapes(tmp_path, fixture_dir, shape_):
     e = entry(fixture_dir, "synthetic-worldpop-2001", file=str(fixture_dir / "synthetic_2001.tif"))
@@ -29,12 +33,14 @@ def test_manifest_shapes(tmp_path, fixture_dir, shape_):
     assert base == tmp_path and len(entries) == 1
 
 
+# Relative `file` paths resolve against the manifest directory.
 def test_relative_file_resolves_against_manifest_dir(fixture_dir):
     base, entries = load_manifest(fixture_dir / "manifest.json")
     s = parse_entry(entries[0], base)
     assert s.file == fixture_dir / "synthetic_2001.tif"
 
 
+# Each malformed entry fails with its specific error code.
 @pytest.mark.parametrize("override,code", [
     ({"kind": "pointcloud"}, "unsupported_kind"),
     ({"product_level": "level9"}, "invalid_product_level"),
@@ -59,6 +65,7 @@ def test_bad_entries_have_clear_codes(fixture_dir, override, code):
     assert ei.value.code == code
 
 
+# Missing, non-JSON and duplicate-entry manifests fail with clear codes.
 def test_manifest_file_errors(tmp_path):
     with pytest.raises(ManifestError) as ei:
         load_manifest(tmp_path / "missing.json")
@@ -75,11 +82,13 @@ def test_manifest_file_errors(tmp_path):
     assert ei.value.code == "manifest_duplicate"
 
 
+# Unknown keys are kept in spec.extra instead of failing.
 def test_unknown_keys_are_kept_not_fatal(fixture_dir):
     s = parse_entry(entry(fixture_dir, "synthetic-worldpop-2001", crs="EPSG:4326"), fixture_dir)
     assert s.extra == {"crs": "EPSG:4326"}
 
 
+# Asset paths follow the layout and reject absolute, `..` and symlink escapes.
 def test_asset_layout_and_path_safety(tmp_path):
     rel = asset_relpath("raster", "synthetic-worldpop-2001", 3)
     assert str(rel) == "rasters/synthetic-worldpop-2001/v3/synthetic-worldpop-2001_v3.tif"
@@ -92,8 +101,8 @@ def test_asset_layout_and_path_safety(tmp_path):
         resolve_under(tmp_path, "link/passwd")
 
 
+# Asset files are fsynced through a writable handle (Windows' fsync rejects read-only descriptors).
 def test_fsync_file_opens_a_writable_handle(tmp_path, monkeypatch):
-    """os.fsync needs a writable descriptor on Windows (Agent 2 CR, section 4)."""
     from ingestion import importer as imp
 
     p = tmp_path / "asset.bin"
@@ -106,5 +115,5 @@ def test_fsync_file_opens_a_writable_handle(tmp_path, monkeypatch):
         return real_open(path, mode, *a, **k)
 
     monkeypatch.setattr(imp, "open", spy, raising=False)
-    imp._fsync_file(p)
+    imp._fsync(p)
     assert modes == ["r+b"] and p.read_bytes() == b"abc"

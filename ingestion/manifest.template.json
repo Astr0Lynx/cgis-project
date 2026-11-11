@@ -1,6 +1,6 @@
 {
   "manifest_version": 1,
-  "_comment": "TEMPLATE for the future Phase 1 handoff. Placeholder values in <angle brackets> must be replaced; see ingestion/docs/PHASE1_HANDOFF.md.",
+  "_comment": "TEMPLATE for a real data delivery. Replace every <angle bracket> placeholder; run `validate` before `import`.",
   "datasets": [
     {
       "dataset_id": "worldpop-<region>-<year>",

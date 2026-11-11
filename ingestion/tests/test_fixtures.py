@@ -1,4 +1,4 @@
-"""Fixture generator conforms to contracts/SYNTHETIC_DATA.md and is deterministic."""
+# The fixture generator follows the fixture spec in README.md and is deterministic.
 
 from __future__ import annotations
 
@@ -16,10 +16,12 @@ from ingestion import fixtures
 NODATA = -9999.0
 
 
+# sha256 of a file's bytes. Used by test_generator_is_deterministic.
 def _sha(p):
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
+# Two runs (and an in-place rerun) produce identical files.
 def test_generator_is_deterministic(tmp_path):
     a, b = tmp_path / "a", tmp_path / "b"
     fixtures.generate(a)
@@ -36,6 +38,7 @@ def test_generator_is_deterministic(tmp_path):
         assert _sha(a / name) == _sha(b / name)
 
 
+# Raster grid, CRS, NoData strip, units and values match the spec.
 @pytest.mark.parametrize("name,value", [("synthetic_2001.tif", 1.0), ("synthetic_2011.tif", 2.0)])
 def test_raster_grid_and_nodata_layout(fixture_dir, name, value):
     with rasterio.open(fixture_dir / name) as src:
@@ -54,6 +57,7 @@ def test_raster_grid_and_nodata_layout(fixture_dir, name, value):
     assert value != NODATA
 
 
+# (cells inside, valid cells, sum) for a geometry using pixel-center inclusion. Used by the tests below.
 def _zonal(fixture_dir, raster, geom):
     with rasterio.open(fixture_dir / raster) as src:
         inside = geometry_mask([geom], out_shape=(src.height, src.width), transform=src.transform,
@@ -63,6 +67,7 @@ def _zonal(fixture_dir, raster, geom):
     return int(inside.sum()), int(valid.sum()), float(arr[valid].sum())
 
 
+# Town zonal counts/sums match the spec and expected_values.json.
 @pytest.mark.parametrize("unit_id,count,s2001,s2011", [("town-a", 100, 100, 200), ("town-b", 25, 25, 50)])
 def test_towns_produce_known_sums(fixture_dir, unit_id, count, s2001, s2011):
     fc = json.loads((fixture_dir / "synthetic_towns.geojson").read_text())
@@ -74,6 +79,7 @@ def test_towns_produce_known_sums(fixture_dir, unit_id, count, s2001, s2011):
     assert exp["valid_pixels"] == count and exp["sum"] == {"2001": s2001, "2011": s2011}
 
 
+# NoData-overlap and disjoint AOIs match their expected answers.
 def test_test_aois_match_expected(fixture_dir):
     fc = json.loads((fixture_dir / "synthetic_test_aois.geojson").read_text())
     by_id = {f["properties"]["aoi_id"]: f for f in fc["features"]}
@@ -84,6 +90,7 @@ def test_test_aois_match_expected(fixture_dir):
     assert total == 0 and by_id["aoi-disjoint"]["properties"]["expected"]["expect"] == "no_overlap_error"
 
 
+# Town properties and rectangle bounds match the spec.
 def test_towns_geojson_properties(fixture_dir):
     fc = json.loads((fixture_dir / "synthetic_towns.geojson").read_text())
     props = {f["properties"]["unit_id"]: f["properties"] for f in fc["features"]}
@@ -94,6 +101,7 @@ def test_towns_geojson_properties(fixture_dir):
     assert shape(fc["features"][1]["geometry"]).bounds == pytest.approx((78.030, 17.950, 78.035, 17.955))
 
 
+# Every manifest entry is marked SYNTHETIC with relative files.
 def test_manifest_is_conspicuously_synthetic(fixture_dir):
     m = json.loads((fixture_dir / "manifest.json").read_text())
     assert m["synthetic"] is True

@@ -1,4 +1,5 @@
-"""Importer <-> PostGIS catalog contract tests. Require INGESTION_TEST_DSN (see conftest)."""
+# Importer + PostGIS catalog behaviour: idempotence, conflicts, rollback, locking, CLI exit codes.
+# Requires INGESTION_TEST_DSN (see conftest.py); skipped otherwise.
 
 from __future__ import annotations
 
@@ -12,16 +13,17 @@ from rasterio.transform import from_origin
 
 from ingestion import cli, fixtures
 from ingestion.errors import AssetError, ConflictError, IngestionError, ValidationError
+from ingestion.importer import asset_relpath, sha256_file
 from ingestion.manifest import load_manifest, parse_entry
-from ingestion.paths import asset_relpath, sha256_file
 
-from .conftest import entry, raster_entry, spec, write_raster
+from .conftest import entry, raster_spec, spec, write_raster
 
 pytestmark = pytest.mark.db
 
 ALL_IDS = ("synthetic-worldpop-2001", "synthetic-worldpop-2011", "synthetic-towns")
 
 
+# Catalog rows (all, or one dataset) with bbox corners split out. Used by the tests below.
 def _rows(db, dataset_id=None):
     sql = ("SELECT dataset_id, version, title, kind, product_level, year, crs, ST_AsText(bbox) AS bbox, "
            "ST_XMin(bbox) AS w, ST_YMin(bbox) AS s, ST_XMax(bbox) AS e, ST_YMax(bbox) AS n, resolution_x, "
@@ -32,11 +34,13 @@ def _rows(db, dataset_id=None):
     return db.execute(sql + " ORDER BY dataset_id, version").fetchall()
 
 
+# Import every dataset of a fixture manifest. Used by the tests below.
 def _import_all(importer, fixture_dir):
     base, entries = load_manifest(fixture_dir / "manifest.json")
     return [importer.import_dataset(parse_entry(e, base)) for e in entries]
 
 
+# Importing the fixtures creates ready rows, COG/GeoJSON assets and current_datasets entries.
 def test_import_fixtures_creates_ready_catalog_rows(importer, db, fresh_fixtures, assets_dir):
     results = _import_all(importer, fresh_fixtures)
     assert [r.outcome for r in results] == ["imported"] * 3
@@ -73,6 +77,7 @@ def test_import_fixtures_creates_ready_catalog_rows(importer, db, fresh_fixtures
     assert [(c["dataset_id"], c["version"]) for c in current] == sorted((i, 1) for i in ALL_IDS)
 
 
+# Imported units are valid 4326 MultiPolygons usable in bbox queries.
 def test_admin_units_support_spatial_filtering(importer, db, fresh_fixtures):
     _import_all(importer, fresh_fixtures)
     units = db.execute("SELECT unit_id, name, level, GeometryType(geom) AS t, ST_SRID(geom) AS srid, "
@@ -89,6 +94,7 @@ def test_admin_units_support_spatial_filtering(importer, db, fresh_fixtures):
     assert [c["dataset_id"] for c in cat] == sorted(ALL_IDS)
 
 
+# Re-importing identical files is `unchanged` and rewrites no row or asset.
 def test_reimport_is_idempotent(importer, db, fresh_fixtures, assets_dir):
     _import_all(importer, fresh_fixtures)
     before = _rows(db)
@@ -102,6 +108,7 @@ def test_reimport_is_idempotent(importer, db, fresh_fixtures, assets_dir):
     assert db.execute("SELECT count(*) AS n FROM geo.admin_units").fetchone()["n"] == 2
 
 
+# Changed content for a ready version fails with checksum_conflict and touches nothing.
 def test_conflicting_checksum_rejected_without_overwrite(importer, db, fresh_fixtures, assets_dir):
     _import_all(importer, fresh_fixtures)
     rel = str(asset_relpath("raster", "synthetic-worldpop-2001", 1))
@@ -118,6 +125,7 @@ def test_conflicting_checksum_rejected_without_overwrite(importer, db, fresh_fix
     assert sha256_file(assets_dir / rel) == asset_sha
 
 
+# A v2 becomes current while v1 and its asset are kept.
 def test_higher_version_becomes_current_and_old_is_kept(importer, db, fresh_fixtures, assets_dir):
     _import_all(importer, fresh_fixtures)
     v2 = write_raster(fresh_fixtures / "v2.tif", np.full((64, 64), 3, np.float32),
@@ -132,8 +140,8 @@ def test_higher_version_becomes_current_and_old_is_kept(importer, db, fresh_fixt
     assert (assets_dir / str(asset_relpath("raster", "synthetic-worldpop-2001", 1))).is_file()
 
 
+# A boundary v2 gets its own unit rows and becomes current without overwriting v1 (version-aware schema).
 def test_vector_new_version_keeps_old_version_units(importer, db, fresh_fixtures, assets_dir):
-    """Completion P1: importing boundary v2 must not overwrite v1's geometry (database core/0007)."""
     if not importer.catalog.versioned_units:
         pytest.skip("schema without version-aware geo.admin_units identity (pre core/0007 stand-in)")
     _import_all(importer, fresh_fixtures)
@@ -157,6 +165,7 @@ def test_vector_new_version_keeps_old_version_units(importer, db, fresh_fixtures
     assert db.execute("SELECT count(*) AS n FROM geo.admin_units").fetchone()["n"] == 4
 
 
+# A failure after staging leaves a failed row, no asset; a retry then succeeds.
 def test_failure_after_staging_leaves_no_ready_row_or_asset(importer, db, fresh_fixtures, assets_dir, monkeypatch):
     from ingestion import importer as imp_mod
 
@@ -179,6 +188,7 @@ def test_failure_after_staging_leaves_no_ready_row_or_asset(importer, db, fresh_
     assert [r["status"] for r in _rows(db, s.dataset_id)] == ["ready"]
 
 
+# A crash inside the publish transaction rolls back units and removes the asset.
 def test_db_failure_at_publish_rolls_back_asset_and_units(importer, db, fresh_fixtures, assets_dir, monkeypatch):
     s = spec(fresh_fixtures, "synthetic-towns")
     original = importer.catalog._upsert_units
@@ -196,6 +206,7 @@ def test_db_failure_at_publish_rolls_back_asset_and_units(importer, db, fresh_fi
     assert not (assets_dir / str(asset_relpath("vector", s.dataset_id, 1))).exists()
 
 
+# A different file at the final path is never overwritten (asset_exists).
 def test_existing_different_asset_is_never_overwritten(importer, db, fresh_fixtures, assets_dir):
     s = spec(fresh_fixtures, "synthetic-worldpop-2001")
     final = assets_dir / str(asset_relpath("raster", s.dataset_id, 1))
@@ -208,26 +219,28 @@ def test_existing_different_asset_is_never_overwritten(importer, db, fresh_fixtu
     assert _rows(db, s.dataset_id)[0]["status"] == "failed"
 
 
+# An identical asset left by an interrupted import is adopted on retry.
 def test_identical_leftover_asset_is_adopted(importer, db, fresh_fixtures, assets_dir):
-    """Crash after the asset link but before commit: retry adopts the equivalent file."""
     s = spec(fresh_fixtures, "synthetic-worldpop-2001")
     importer.import_dataset(s)
     rel = str(asset_relpath("raster", s.dataset_id, 1))
     keep = (assets_dir / rel).read_bytes()
-    db.execute("TRUNCATE catalog.datasets, geo.admin_units")   # integration: admin_units has an FK to datasets
+    db.execute("TRUNCATE catalog.datasets, geo.admin_units")   # admin_units may have an FK to datasets
     (assets_dir / rel).write_bytes(keep)
     assert importer.import_dataset(s).outcome == "imported"
 
 
+# Validation failures never produce a ready row.
 def test_validation_failures_do_not_publish(importer, db, fresh_fixtures):
     p = write_raster(fresh_fixtures / "nocrs.tif", np.ones((8, 8), np.float32), crs=None)
-    s = parse_entry(raster_entry(p), fresh_fixtures)
+    s = raster_spec(p)
     with pytest.raises(ValidationError) as ei:
         importer.import_dataset(s)
     assert ei.value.code == "missing_crs"
     assert db.execute("SELECT count(*) AS n FROM catalog.datasets WHERE status='ready'").fetchone()["n"] == 0
 
 
+# A wrong manifest checksum fails with checksum_mismatch and writes no row.
 def test_manifest_checksum_mismatch_rejected(importer, db, fresh_fixtures):
     with pytest.raises(AssetError) as ei:
         importer.import_dataset(spec(fresh_fixtures, "synthetic-worldpop-2001", checksum_sha256="0" * 64))
@@ -235,6 +248,7 @@ def test_manifest_checksum_mismatch_rejected(importer, db, fresh_fixtures):
     assert _rows(db) == []
 
 
+# A ready dataset whose asset vanished is reported as asset_missing.
 def test_missing_asset_on_reimport_is_reported(importer, db, fresh_fixtures, assets_dir):
     s = spec(fresh_fixtures, "synthetic-worldpop-2011")
     importer.import_dataset(s)
@@ -244,23 +258,24 @@ def test_missing_asset_on_reimport_is_reported(importer, db, fresh_fixtures, ass
     assert ei.value.code == "asset_missing"
 
 
+# A projected int32 raster imports with its own CRS, resolution and NoData.
 def test_projected_raster_imports_without_synthetic_assumptions(importer, db, tmp_path):
     arr = np.full((40, 30), 12, np.int32)
     arr[0] = -1
     p = write_raster(tmp_path / "utm.tif", arr, crs="EPSG:32644", transform=from_origin(600000, 1990000, 100, 100),
                      nodata=-1)
-    s = parse_entry(raster_entry(p, dataset_id="phase1-like-raster", year=2015, product_level="level1",
-                                 units="people_per_cell", source="phase1-test"), tmp_path)
+    s = raster_spec(p, dataset_id="real-like-raster", year=2015, product_level="level1", source="external-test")
     assert importer.import_dataset(s).outcome == "imported"
-    (row,) = _rows(db, "phase1-like-raster")
+    (row,) = _rows(db, "real-like-raster")
     assert row["crs"] == "EPSG:32644" and float(row["resolution_x"]) == 100 and float(row["nodata"]) == -1
     assert 81 < row["w"] < 82 and row["s"] < row["n"] and row["product_level"] == "level1"
     assert row["provenance"]["raster"]["stats"]["sum"] == 39 * 30 * 12
 
 
+# Optional admin_units columns are filled; another dataset reusing the unit ids is refused (legacy key)
+# or gets its own rows (version-aware key).
 def test_optional_admin_unit_columns_are_populated(db_conn, importer, db, fresh_fixtures):
-    # Integration (Agent 6): Agent 2's schema already has these columns; add/drop them only on the
-    # contract stand-in schema, never drop the real ones.
+    # The migrated schema already has these columns; add/drop them only on the stand-in schema.
     existing = {r["column_name"] for r in db.execute(
         "SELECT column_name FROM information_schema.columns WHERE table_schema='geo' AND table_name='admin_units'")}
     added = not {"dataset_id", "dataset_version", "properties"} <= existing
@@ -277,13 +292,10 @@ def test_optional_admin_unit_columns_are_populated(db_conn, importer, db, fresh_
         assert row["properties"]["source"] == "deterministic-fixture"
         other = entry(fresh_fixtures, "synthetic-towns", dataset_id="synthetic-towns-copy")
         if importer.catalog.versioned_units:
-            # database core/0007: identity is (dataset_id, dataset_version, unit_id), so another dataset
-            # reusing the same source ids gets its own rows and never touches the first dataset's
             assert importer.import_dataset(parse_entry(other, fresh_fixtures)).outcome == "imported"
             assert db.execute("SELECT count(*) AS n FROM geo.admin_units WHERE dataset_id='synthetic-towns-copy'"
                               ).fetchone()["n"] == 2
         else:
-            # legacy global unit_id key: a different dataset may not hijack the same unit ids
             with pytest.raises(ConflictError) as ei:
                 importer.import_dataset(parse_entry(other, fresh_fixtures))
             assert ei.value.code == "unit_id_conflict"
@@ -295,6 +307,7 @@ def test_optional_admin_unit_columns_are_populated(db_conn, importer, db, fresh_
                        "DROP COLUMN properties")
 
 
+# A held advisory lock makes a concurrent import fail with import_in_progress.
 def test_concurrent_import_is_locked(importer, db, fresh_fixtures):
     from ingestion.catalog import Catalog, connect
 
@@ -310,6 +323,7 @@ def test_concurrent_import_is_locked(importer, db, fresh_fixtures):
     assert importer.import_dataset(s).outcome == "imported"
 
 
+# CLI seed imports everything; a second import reports unchanged.
 def test_cli_seed_then_import_twice(db, tmp_path, capsys):
     dsn = os.environ["INGESTION_TEST_DSN"]
     fx, assets = tmp_path / "fx", tmp_path / "assets"
@@ -321,6 +335,7 @@ def test_cli_seed_then_import_twice(db, tmp_path, capsys):
     assert rc == 0 and [x["outcome"] for x in lines] == ["unchanged"] * 3
 
 
+# CLI prints per-dataset error codes and returns exit codes 1, 2 and 3.
 def test_cli_reports_errors_and_exit_codes(db, tmp_path, capsys, fresh_fixtures):
     dsn = os.environ["INGESTION_TEST_DSN"]
     bad = json.loads((fresh_fixtures / "manifest.json").read_text())
@@ -337,6 +352,7 @@ def test_cli_reports_errors_and_exit_codes(db, tmp_path, capsys, fresh_fixtures)
     assert cli.main(["import", "--manifest", str(m), "--dsn", "host=/nonexistent dbname=x"]) == cli.EXIT_DB
 
 
+# A schema missing contract columns fails with schema_incompatible.
 def test_schema_check_rejects_unmigrated_db(db):
     from ingestion.catalog import Catalog
 
@@ -349,6 +365,7 @@ def test_schema_check_rejects_unmigrated_db(db):
         db.execute("ALTER TABLE catalog.datasets RENAME COLUMN prov TO provenance")
 
 
+# Without hard-link support the importer falls back to rename.
 def test_filesystem_without_hardlinks_falls_back_to_rename(importer, db, fresh_fixtures, assets_dir, monkeypatch):
     import errno
 

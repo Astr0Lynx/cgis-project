@@ -1,15 +1,12 @@
-"""GeoJSON polygon validation, reprojection to EPSG:4326 and MultiPolygon normalization.
-
-Input CRS: RFC 7946 GeoJSON is WGS84 lon/lat. A legacy (2008) ``crs`` member such as
-``urn:ogc:def:crs:EPSG::32644`` is honoured and the geometries are transformed to EPSG:4326
-with lon/lat axis order. Invalid geometries are rejected, never silently repaired.
-"""
+# GeoJSON polygon validation, reprojection to EPSG:4326 and MultiPolygon normalization.
+# RFC 7946 input is WGS84 lon/lat; a legacy named `crs` member (e.g. urn:ogc:def:crs:EPSG::32644) is
+# honoured and reprojected. Invalid geometries are rejected, never silently repaired.
 
 from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +25,7 @@ WGS84 = CRS.from_epsg(4326)
 _CRS84_NAMES = {"urn:ogc:def:crs:ogc:1.3:crs84", "urn:ogc:def:crs:ogc::crs84", "crs84", "ogc:crs84"}
 
 
+# One validated admin unit (MultiPolygon in EPSG:4326). Built by _parse_feature.
 @dataclass
 class UnitFeature:
     unit_id: str
@@ -37,13 +35,14 @@ class UnitFeature:
     properties: dict[str, Any]
 
 
+# Validated vector dataset: its units, source CRS and WGS84 bbox. Built by read_vector.
 @dataclass
 class VectorInfo:
     features: list[UnitFeature]
     source_crs: str
     bbox_wgs84: list[float]
-    stats: dict[str, Any] = field(default_factory=dict)
 
+    # Summary stored as provenance["vector"]. Used by importer.build_metadata.
     def to_provenance(self, spec: DatasetSpec) -> dict[str, Any]:
         return {
             "feature_count": len(self.features),
@@ -57,8 +56,9 @@ class VectorInfo:
             "unit_id_prefix": spec.unit_id_prefix,
         }
 
+    # Deterministic normalized FeatureCollection (EPSG:4326, RFC 7946 winding) for the managed asset.
+    # Used by importer.Importer._build_asset and tests.
     def to_geojson_bytes(self, spec: DatasetSpec) -> bytes:
-        """Deterministic normalized FeatureCollection (EPSG:4326, RFC 7946 winding)."""
         fc = {
             "type": "FeatureCollection",
             "name": spec.dataset_id,
@@ -78,6 +78,8 @@ class VectorInfo:
         return (json.dumps(fc, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8")
 
 
+# CRS declared by the legacy `crs` member (default WGS84); must resolve to an EPSG code.
+# Used by read_vector.
 def _source_crs(doc: dict[str, Any], name: str) -> CRS:
     member = doc.get("crs")
     if member is None:
@@ -98,6 +100,8 @@ def _source_crs(doc: dict[str, Any], name: str) -> CRS:
     return crs
 
 
+# Read and fully validate a GeoJSON FeatureCollection of (Multi)Polygons into UnitFeatures.
+# Used by importer.validate_source and tests.
 def read_vector(spec: DatasetSpec) -> VectorInfo:
     name = spec.file.name
     if spec.file.suffix.lower() not in (".geojson", ".json"):
@@ -115,10 +119,8 @@ def read_vector(spec: DatasetSpec) -> VectorInfo:
     crs = _source_crs(doc, name)
     transformer = None if crs.equals(WGS84, ignore_axis_order=True) else Transformer.from_crs(crs, WGS84,
                                                                                               always_xy=True)
-    features: list[UnitFeature] = []
     seen: set[str] = set()
-    for i, feat in enumerate(doc["features"]):
-        features.append(_parse_feature(feat, i, spec, transformer, seen, name))
+    features = [_parse_feature(feat, i, spec, transformer, seen, name) for i, feat in enumerate(doc["features"])]
 
     union_bounds = shapely.total_bounds([f.geom for f in features]).tolist()
     exp_count = spec.expect.get("feature_count")
@@ -127,9 +129,11 @@ def read_vector(spec: DatasetSpec) -> VectorInfo:
                               code="expectation_mismatch")
     epsg = crs.to_epsg()
     return VectorInfo(features=features, source_crs=f"EPSG:{epsg}" if epsg else crs.to_string(),
-                      bbox_wgs84=union_bounds, stats={"feature_count": len(features)})
+                      bbox_wgs84=union_bounds)
 
 
+# Validate one feature (id, name, level, geometry), reproject it and normalize to MultiPolygon.
+# Used by read_vector.
 def _parse_feature(feat: Any, i: int, spec: DatasetSpec, transformer, seen: set[str], name: str) -> UnitFeature:
     where = f"{name} feature #{i}"
     if not isinstance(feat, dict) or feat.get("type") != "Feature":
@@ -178,6 +182,7 @@ def _parse_feature(feat: Any, i: int, spec: DatasetSpec, transformer, seen: set[
     return UnitFeature(unit_id=unit_id, name=unit_name.strip(), level=level, geom=multi, properties=clean_props)
 
 
+# Reject empty, non-finite, invalid or zero-area geometry. Used by _parse_feature.
 def _check_geom(geom, where: str, unit_id: str) -> None:
     if geom.is_empty:
         raise ValidationError(f"{where} ({unit_id}) geometry is empty", code="invalid_geometry")
@@ -191,6 +196,7 @@ def _check_geom(geom, where: str, unit_id: str) -> None:
         raise ValidationError(f"{where} ({unit_id}) polygon has zero area", code="invalid_geometry")
 
 
+# True if the property value can be stored as strict JSON. Used by _parse_feature.
 def _json_safe(v: Any) -> bool:
     try:
         json.dumps(v, allow_nan=False)
@@ -198,7 +204,3 @@ def _json_safe(v: Any) -> bool:
         return False
     return not (isinstance(v, float) and not math.isfinite(v))
 
-
-def parse_geojson_bytes(data: bytes) -> list[dict[str, Any]]:
-    """Read back a normalized asset (used for post-write verification)."""
-    return json.loads(data.decode("utf-8"))["features"]

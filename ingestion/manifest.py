@@ -1,14 +1,6 @@
-"""Import manifest parsing (contract: ``contracts/SHARED_CONTRACTS.md`` § Ingestion contract).
-
-A manifest file is one of:
-
-* a single dataset object (the shape shown in the contract),
-* a JSON list of dataset objects, or
-* an object ``{"datasets": [...], ...}``.
-
-Relative ``file`` paths resolve against the manifest's directory. Spatial properties (CRS, bounds,
-NoData, resolution) are always read from the file; the optional ``expect`` block only *asserts* them.
-"""
+# Import manifest parsing (contract: README.md, "Ingestion contract").
+# A manifest is one dataset object, a list of them, or {"datasets": [...]}. Relative `file` paths
+# resolve against the manifest's directory; `expect` only asserts properties read from the file.
 
 from __future__ import annotations
 
@@ -30,7 +22,6 @@ KINDS = ("raster", "vector")
 PRODUCT_LEVELS = ("source", "level1", "level2", "other")
 EXPECT_KEYS = {"crs", "width", "height", "band_count", "dtype", "nodata", "resolution", "bounds", "tolerance",
                "feature_count"}
-
 KNOWN_KEYS = {
     "dataset_id", "version", "title", "description", "kind", "product_level", "year", "units", "source", "file",
     "provenance", "band", "expect", "checksum_sha256", "allow_missing_nodata",
@@ -38,6 +29,7 @@ KNOWN_KEYS = {
 }
 
 
+# One validated manifest entry. Built by parse_entry; consumed by raster, vector, catalog, importer.
 @dataclass(frozen=True)
 class DatasetSpec:
     dataset_id: str
@@ -59,20 +51,23 @@ class DatasetSpec:
     name_property: str = "name"
     level_property: str = "level"
     unit_id_prefix: str = ""
-    extra: dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)  # unknown manifest keys, kept in provenance
 
+    # "<id>@v<version>" label for messages and log lines. Used across catalog, importer, raster.
     @property
     def key(self) -> str:
         return f"{self.dataset_id}@v{self.version}"
 
+    # True when provenance or source marks the dataset synthetic. Used by parse_entry and importer.
     @property
     def is_synthetic(self) -> bool:
-        prov = self.provenance or {}
-        return bool(prov.get("synthetic")) or "fixture" in self.source.lower() or "synthetic" in self.source.lower()
+        source = self.source.lower()
+        return bool(self.provenance.get("synthetic")) or "fixture" in source or "synthetic" in source
 
 
+# Read a manifest file and return (base_dir, raw entries); entries are not validated yet.
+# Used by cli._run_manifest and tests.
 def load_manifest(path: str | Path) -> tuple[Path, list[dict[str, Any]]]:
-    """Read a manifest file and return ``(base_dir, raw_entries)`` without validating entries."""
     p = Path(path)
     if not p.is_file():
         raise ManifestError(f"manifest not found: {p}", code="manifest_not_found")
@@ -83,10 +78,8 @@ def load_manifest(path: str | Path) -> tuple[Path, list[dict[str, Any]]]:
 
     if isinstance(doc, list):
         entries = doc
-    elif isinstance(doc, dict) and "datasets" in doc:
-        entries = doc["datasets"]
     elif isinstance(doc, dict):
-        entries = [doc]
+        entries = doc["datasets"] if "datasets" in doc else [doc]
     else:
         raise ManifestError("manifest must be an object or a list of objects", code="manifest_shape")
     if not isinstance(entries, list) or not entries:
@@ -103,6 +96,12 @@ def load_manifest(path: str | Path) -> tuple[Path, list[dict[str, Any]]]:
     return p.parent.absolute(), entries
 
 
+# Shorthand for an `invalid_field` ManifestError. Used by the field readers below and parse_entry.
+def _invalid(message: str, key: str) -> ManifestError:
+    return ManifestError(message, code="invalid_field", details={"field": key})
+
+
+# Required non-empty string field. Used by parse_entry.
 def _req_str(raw: dict, key: str) -> str:
     val = raw.get(key)
     if not isinstance(val, str) or not val.strip():
@@ -111,33 +110,45 @@ def _req_str(raw: dict, key: str) -> str:
     return val.strip()
 
 
+# Optional string field; blank becomes None. Used by parse_entry.
 def _opt_str(raw: dict, key: str) -> str | None:
     val = raw.get(key)
     if val is None:
         return None
     if not isinstance(val, str):
-        raise ManifestError(f"'{key}' must be a string", code="invalid_field", details={"field": key})
+        raise _invalid(f"'{key}' must be a string", key)
     return val.strip() or None
 
 
-def _int(raw: dict, key: str, *, minimum: int | None = None, maximum: int | None = None) -> int | None:
+# Optional integer field with inclusive bounds (booleans rejected). Used by parse_entry.
+def _int(raw: dict, key: str, minimum: int | None = None, maximum: int | None = None) -> int | None:
     val = raw.get(key)
     if val is None:
         return None
     if isinstance(val, bool) or not isinstance(val, int):
-        raise ManifestError(f"'{key}' must be an integer", code="invalid_field", details={"field": key})
+        raise _invalid(f"'{key}' must be an integer", key)
     if (minimum is not None and val < minimum) or (maximum is not None and val > maximum):
-        raise ManifestError(f"'{key}'={val} is out of range", code="invalid_field", details={"field": key})
+        raise _invalid(f"'{key}'={val} is out of range", key)
     return val
 
 
+# Optional JSON-object field, defaulting to {}. Used by parse_entry for provenance and expect.
+def _obj(raw: dict, key: str) -> dict[str, Any]:
+    val = raw.get(key)
+    if val is None:
+        return {}
+    if not isinstance(val, dict):
+        raise _invalid(f"'{key}' must be a JSON object", key)
+    return val
+
+
+# Validate one manifest entry into a DatasetSpec; raises ManifestError with a specific code.
+# Used by cli._run_manifest and tests.
 def parse_entry(raw: dict[str, Any], base_dir: Path) -> DatasetSpec:
-    """Validate one manifest entry. Raises :class:`ManifestError` with a specific code."""
     dataset_id = _req_str(raw, "dataset_id")
     if not SLUG_RE.match(dataset_id):
-        raise ManifestError(
-            f"dataset_id {dataset_id!r} must be a lowercase slug matching {SLUG_RE.pattern}",
-            code="invalid_dataset_id")
+        raise ManifestError(f"dataset_id {dataset_id!r} must be a lowercase slug matching {SLUG_RE.pattern}",
+                            code="invalid_dataset_id")
     version = _int(raw, "version", minimum=1)
     if version is None:
         raise ManifestError("'version' is required and must be a positive integer", code="missing_field",
@@ -157,7 +168,6 @@ def parse_entry(raw: dict[str, Any], base_dir: Path) -> DatasetSpec:
     if kind == "raster" and not units:
         raise ManifestError("'units' is required for raster datasets (e.g. people_per_cell)", code="missing_field",
                             details={"field": "units"})
-
     year = _int(raw, "year", minimum=1000, maximum=9999)
     band = _int(raw, "band", minimum=1)
 
@@ -169,27 +179,22 @@ def parse_entry(raw: dict[str, Any], base_dir: Path) -> DatasetSpec:
         raise ManifestError(f"source file not found for {dataset_id}@v{version}: {file_raw}", code="file_not_found",
                             details={"file": file_raw})
 
-    provenance = raw.get("provenance")
-    provenance = {} if provenance is None else provenance
-    if not isinstance(provenance, dict):
-        raise ManifestError("'provenance' must be a JSON object", code="invalid_field", details={"field": "provenance"})
-
-    expect = raw.get("expect")
-    expect = {} if expect is None else expect
-    if not isinstance(expect, dict):
-        raise ManifestError("'expect' must be a JSON object", code="invalid_field", details={"field": "expect"})
+    provenance = _obj(raw, "provenance")
+    expect = _obj(raw, "expect")
     unknown_expect = set(expect) - EXPECT_KEYS
     if unknown_expect:
-        raise ManifestError(f"unknown 'expect' keys: {sorted(unknown_expect)}", code="invalid_field",
-                            details={"field": "expect"})
-    _check_expect_numbers(expect)
+        raise _invalid(f"unknown 'expect' keys: {sorted(unknown_expect)}", "expect")
+    for key, n in (("resolution", 2), ("bounds", 4)):
+        val = expect.get(key)
+        if key in expect and (not isinstance(val, list) or len(val) != n or not all(
+                isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) for v in val)):
+            raise ManifestError(f"expect.{key} must be a list of {n} finite numbers", code="invalid_field")
 
     checksum = _opt_str(raw, "checksum_sha256")
     if checksum is not None:
         checksum = checksum.lower()
         if not SHA256_RE.match(checksum):
-            raise ManifestError("'checksum_sha256' must be 64 hex characters", code="invalid_field",
-                                details={"field": "checksum_sha256"})
+            raise _invalid("'checksum_sha256' must be 64 hex characters", "checksum_sha256")
 
     allow_missing_nodata = raw.get("allow_missing_nodata", False)
     if not isinstance(allow_missing_nodata, bool):
@@ -214,14 +219,3 @@ def parse_entry(raw: dict[str, Any], base_dir: Path) -> DatasetSpec:
     if spec.is_synthetic and "SYNTHETIC" not in spec.title.upper():
         raise ManifestError("synthetic datasets must say SYNTHETIC in their title", code="synthetic_not_marked")
     return spec
-
-
-def _check_expect_numbers(expect: dict[str, Any]) -> None:
-    for key in ("resolution", "bounds"):
-        if key in expect:
-            val = expect[key]
-            n = 2 if key == "resolution" else 4
-            if (not isinstance(val, list) or len(val) != n
-                    or not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
-                               for v in val)):
-                raise ManifestError(f"expect.{key} must be a list of {n} finite numbers", code="invalid_field")

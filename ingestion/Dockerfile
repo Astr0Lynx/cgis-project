@@ -1,6 +1,6 @@
 # Ingestion service image. Build context: the ingestion/ directory.
 #   docker build -t cgis-ingestion ingestion/
-# Compose wiring is requested in ingestion/docs/compose-request.md (owned by Agent 1).
+# Used by the `ingestion` service in compose.yaml (entrypoint: python -m ingestion.cli).
 FROM python:3.12.7-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

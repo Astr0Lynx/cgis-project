@@ -1,3 +1,5 @@
+# GeoJSON validation, reprojection and normalization (ingestion/vector.py).
+
 from __future__ import annotations
 
 import json
@@ -7,12 +9,12 @@ from pyproj import Transformer
 from shapely.geometry import MultiPolygon
 
 from ingestion.errors import ValidationError
-from ingestion.manifest import parse_entry
 from ingestion.vector import read_vector
 
-from .conftest import spec
+from .conftest import spec, vector_spec
 
 
+# Write a FeatureCollection, optionally with a legacy named `crs` member. Used by the tests below.
 def _write_fc(path, features, crs=None):
     fc = {"type": "FeatureCollection", "features": features}
     if crs:
@@ -21,21 +23,17 @@ def _write_fc(path, features, crs=None):
     return path
 
 
+# Feature with unit_id/name properties. Used by the tests below.
 def _feat(uid, geom, **props):
     return {"type": "Feature", "properties": {"unit_id": uid, "name": f"Unit {uid}", **props}, "geometry": geom}
 
 
+# Rectangle Polygon geometry. Used by the tests below.
 def _rect(w, s, e, n):
     return {"type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]]}
 
 
-def _vspec(path, **kw):
-    raw = {"dataset_id": "test-units", "version": 1, "title": "Test units", "kind": "vector",
-           "product_level": "source", "source": "unit-test", "file": str(path)}
-    raw.update(kw)
-    return parse_entry(raw, path.parent)
-
-
+# Fixture towns load as MultiPolygons with ids, names, levels and bbox.
 def test_fixture_towns_normalized_to_multipolygon(fixture_dir):
     info = read_vector(spec(fixture_dir, "synthetic-towns"))
     assert [f.unit_id for f in info.features] == ["town-a", "town-b"]
@@ -47,31 +45,35 @@ def test_fixture_towns_normalized_to_multipolygon(fixture_dir):
     assert info.source_crs == "EPSG:4326"
 
 
+# Normalized GeoJSON output is byte-stable.
 def test_normalized_geojson_is_deterministic(fixture_dir):
     s = spec(fixture_dir, "synthetic-towns")
     assert read_vector(s).to_geojson_bytes(s) == read_vector(s).to_geojson_bytes(s)
 
 
+# A legacy UTM `crs` member is reprojected to lon/lat.
 def test_legacy_crs_member_is_reprojected(tmp_path):
     t = Transformer.from_crs(4326, 32644, always_xy=True)
     (w, s), (e, n) = t.transform(78.01, 17.98), t.transform(78.02, 17.99)
     p = _write_fc(tmp_path / "utm.geojson", [_feat("u1", _rect(w, s, e, n))], crs="urn:ogc:def:crs:EPSG::32644")
-    info = read_vector(_vspec(p))
+    info = read_vector(vector_spec(p))
     assert info.source_crs == "EPSG:32644"
     minx, miny, maxx, maxy = info.features[0].geom.bounds
     assert minx == pytest.approx(78.01, abs=1e-3) and maxy == pytest.approx(17.99, abs=1e-3)
 
 
+# CRS84 names, custom property names and unit_id_prefix are honoured.
 def test_crs84_and_prefix_and_custom_properties(tmp_path):
     feats = [{"type": "Feature", "properties": {"code": 7, "label": "Seven", "tier": 3},
               "geometry": _rect(1, 1, 2, 2)}]
     p = _write_fc(tmp_path / "x.geojson", feats, crs="urn:ogc:def:crs:OGC:1.3:CRS84")
-    info = read_vector(_vspec(p, id_property="code", name_property="label", level_property="tier",
+    info = read_vector(vector_spec(p, id_property="code", name_property="label", level_property="tier",
                               unit_id_prefix="in-dist-"))
     f = info.features[0]
     assert (f.unit_id, f.name, f.level) == ("in-dist-7", "Seven", "3")
 
 
+# Each kind of invalid feature collection fails with its specific code.
 @pytest.mark.parametrize("features,code", [
     ([_feat("bow", {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [1, 0], [0, 1], [0, 0]]]})],
      "invalid_geometry"),
@@ -88,31 +90,34 @@ def test_crs84_and_prefix_and_custom_properties(tmp_path):
 def test_invalid_vectors_rejected(tmp_path, features, code):
     p = _write_fc(tmp_path / "bad.geojson", features)
     with pytest.raises(ValidationError) as ei:
-        read_vector(_vspec(p))
+        read_vector(vector_spec(p))
     assert ei.value.code == code
 
 
+# Unknown CRS and broken JSON are rejected.
 def test_unknown_crs_and_corrupt_json(tmp_path):
     p = _write_fc(tmp_path / "c.geojson", [_feat("a", _rect(0, 0, 1, 1))], crs="EPSG:99999999")
     with pytest.raises(ValidationError) as ei:
-        read_vector(_vspec(p))
+        read_vector(vector_spec(p))
     assert ei.value.code == "unsupported_crs"
     bad = tmp_path / "broken.geojson"
     bad.write_text('{"type": "FeatureCollection", "features": [')
     with pytest.raises(ValidationError) as ei:
-        read_vector(_vspec(bad))
+        read_vector(vector_spec(bad))
     assert ei.value.code == "corrupt_vector"
 
 
+# Non-GeoJSON vector files fail with unsupported_format.
 def test_unsupported_vector_format(tmp_path):
     p = tmp_path / "units.gpkg"
     p.write_bytes(b"SQLite format 3\x00")
     with pytest.raises(ValidationError) as ei:
-        read_vector(_vspec(p))
+        read_vector(vector_spec(p))
     assert ei.value.code == "unsupported_format"
 
 
+# Z coordinates are dropped.
 def test_3d_coordinates_are_flattened(tmp_path):
     geom = {"type": "Polygon", "coordinates": [[[0, 0, 5], [1, 0, 5], [1, 1, 5], [0, 1, 5], [0, 0, 5]]]}
-    info = read_vector(_vspec(_write_fc(tmp_path / "z.geojson", [_feat("z", geom)])))
+    info = read_vector(vector_spec(_write_fc(tmp_path / "z.geojson", [_feat("z", geom)])))
     assert not info.features[0].geom.has_z

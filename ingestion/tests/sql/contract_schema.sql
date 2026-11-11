@@ -1,5 +1,5 @@
--- TEST-ONLY stand-in for Agent 2's migrations, written from the frozen v1 contract
--- (contracts/SHARED_CONTRACTS.md § Dataset catalog). It is NOT a migration and is never applied
+-- TEST-ONLY stand-in for the database migrations, written from the frozen v1 contract
+-- (README.md § Dataset catalog). It is NOT a migration and is never applied
 -- outside the disposable test database. Constraints are deliberately strict (NOT NULL crs/bbox,
 -- CHECKed enums, relative asset_path) so the importer is exercised against a worst-case schema.
 

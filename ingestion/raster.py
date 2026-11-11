@@ -1,8 +1,6 @@
-"""Raster validation, lossless COG conversion and post-conversion verification.
-
-Nothing here assumes the synthetic grid: CRS, transform, resolution, dtype and NoData are read from the
-file, and any projected or geographic EPSG CRS with a north-up affine transform is accepted.
-"""
+# Raster validation, lossless COG conversion and post-conversion verification.
+# Nothing assumes the synthetic grid: CRS, transform, resolution, dtype and NoData are read from the
+# file; any EPSG CRS (projected or geographic) with a north-up affine transform is accepted.
 
 from __future__ import annotations
 
@@ -18,12 +16,14 @@ import rasterio.shutil
 from rasterio.enums import MaskFlags
 from rasterio.errors import NotGeoreferencedWarning, RasterioError
 from rasterio.warp import transform_bounds
+from rasterio.windows import Window
+from rio_cogeo.cogeo import cog_validate
 
 from .errors import AssetError, ValidationError
 from .manifest import DatasetSpec
 
-# Lossless COG creation options (GDAL COG driver). PREDICTOR=YES picks 2 (int) or 3 (float).
-# Overviews are for display only; NEAREST never invents values that are not in the data.
+# Lossless GDAL COG options. PREDICTOR=YES picks 2 (int) or 3 (float). Overviews are display-only;
+# NEAREST never invents values that are not in the data.
 COG_OPTIONS = {
     "COMPRESS": "DEFLATE",
     "PREDICTOR": "YES",
@@ -32,10 +32,9 @@ COG_OPTIONS = {
     "RESAMPLING": "NEAREST",
     "BIGTIFF": "IF_SAFER",
 }
-_INTERMEDIATE_OPTIONS = {"tiled": True, "blockxsize": 256, "blockysize": 256, "compress": "deflate",
-                         "bigtiff": "IF_SAFER"}
 
 
+# Metadata and statistics read from a validated source raster. Built by inspect_raster.
 @dataclass
 class RasterInfo:
     width: int
@@ -50,26 +49,27 @@ class RasterInfo:
     resolution_x: float
     resolution_y: float
     nodata: float | None
-    mask: str
+    mask: str  # nodata | per_dataset_mask | none
     source_units: str | None
     source_driver: str
     source_is_cog: bool
     stats: dict[str, Any] = field(default_factory=dict)
 
+    # All fields as JSON-safe dict for provenance["raster"]. Used by importer.build_metadata.
     def to_provenance(self) -> dict[str, Any]:
         d = asdict(self)
         d["nodata"] = _json_number(self.nodata)
         return d
 
 
+# NaN/Inf become strings so the value survives JSON. Used by RasterInfo.to_provenance and _check_expect.
 def _json_number(v: float | None) -> float | str | None:
-    if v is None:
-        return None
     if isinstance(v, float) and not math.isfinite(v):
         return str(v)
     return v
 
 
+# Open a raster, mapping read errors to ValidationError(corrupt_raster). Used throughout this module.
 def _open(path: Path):
     try:
         return rasterio.open(path)
@@ -77,6 +77,7 @@ def _open(path: Path):
         raise ValidationError(f"cannot read raster {path.name}: {exc}", code="corrupt_raster") from exc
 
 
+# NoData equality treating None==None and NaN==NaN. Used by _check_expect and verify_cog.
 def _nodata_equal(a: float | None, b: float | None) -> bool:
     if a is None or b is None:
         return a is None and b is None
@@ -85,33 +86,30 @@ def _nodata_equal(a: float | None, b: float | None) -> bool:
     return a == b
 
 
-def _is_cog(path: Path) -> bool:
-    try:
-        from rio_cogeo.cogeo import cog_validate
-    except ImportError:  # pragma: no cover - rio-cogeo is a pinned dependency
-        return False
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            valid, _errors, _warnings = cog_validate(str(path), quiet=True)
-    except RasterioError:
-        return False
-    return bool(valid)
+# rio-cogeo validation with its warnings silenced; returns (valid, errors, warnings).
+# Used by inspect_raster (is the source a COG?) and verify_cog.
+def _cog_validate(path: Path) -> tuple[bool, list, list]:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return cog_validate(str(path), quiet=True)
 
 
+# Fully validate the source raster and return its metadata and value statistics.
+# Used by importer.validate_source and tests.
 def inspect_raster(spec: DatasetSpec) -> RasterInfo:
-    """Fully validate the source raster and return its metadata and value statistics."""
-    path = spec.file
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", NotGeoreferencedWarning)
-        src = _open(path)
-        with src:
+        with _open(spec.file) as src:
             info = _inspect_open(src, spec)
-    info.source_is_cog = _is_cog(path)
+    try:
+        info.source_is_cog = bool(_cog_validate(spec.file)[0])
+    except RasterioError:
+        pass
     _check_expect(info, spec.expect)
     return info
 
 
+# Checks on an open dataset: band, CRS, transform, dtype, NoData, WGS84 bounds. Used by inspect_raster.
 def _inspect_open(src, spec: DatasetSpec) -> RasterInfo:
     name = spec.file.name
     if src.count < 1:
@@ -125,8 +123,8 @@ def _inspect_open(src, spec: DatasetSpec) -> RasterInfo:
     # Read every pixel first: a truncated file can lose its trailing GeoKeys and would otherwise be
     # misreported as "missing CRS" instead of corrupt.
     idx = spec.band - 1
-    raw_nodata = src.nodatavals[idx]
-    stats = _band_stats(src, spec.band, raw_nodata, name)
+    nodata = src.nodatavals[idx]
+    stats = _band_stats(src, spec.band, nodata, name)
 
     if src.crs is None:
         raise ValidationError(f"{name} has no CRS; a georeferenced raster is required", code="missing_crs")
@@ -150,7 +148,6 @@ def _inspect_open(src, spec: DatasetSpec) -> RasterInfo:
     if np_dtype.kind not in "uif":
         raise ValidationError(f"{name} band {spec.band} dtype {dtype} is not supported", code="unsupported_dtype")
 
-    nodata = src.nodatavals[idx]
     flags = src.mask_flag_enums[idx]
     if nodata is not None:
         mask_kind = "nodata"
@@ -174,33 +171,27 @@ def _inspect_open(src, spec: DatasetSpec) -> RasterInfo:
     except Exception as exc:  # pyproj/GDAL raise various types
         raise ValidationError(f"{name} bounds cannot be transformed to EPSG:4326: {exc}",
                               code="invalid_bounds") from exc
-    if not all(math.isfinite(v) for v in (w, s, e, n)) or w < -180.0000001 or e > 180.0000001 \
-            or s < -90.0000001 or n > 90.0000001 or w >= e or s >= n:
+    eps = 1e-7
+    if not all(math.isfinite(v) for v in (w, s, e, n)) or w < -180 - eps or e > 180 + eps \
+            or s < -90 - eps or n > 90 + eps or w >= e or s >= n:
         raise ValidationError(f"{name} WGS84 bounds {[w, s, e, n]} are not valid lon/lat", code="invalid_bounds")
-
-    units = src.units[idx] if src.units else None
 
     return RasterInfo(
         width=src.width, height=src.height, band_count=src.count, band=spec.band, dtype=dtype,
         crs=f"EPSG:{epsg}", transform=[t.a, t.b, t.c, t.d, t.e, t.f],
         native_bounds=list(src.bounds), bbox_wgs84=[max(w, -180.0), max(s, -90.0), min(e, 180.0), min(n, 90.0)],
         resolution_x=abs(t.a), resolution_y=abs(t.e), nodata=nodata, mask=mask_kind,
-        source_units=units or None, source_driver=src.driver, source_is_cog=False, stats=stats,
+        source_units=(src.units[idx] if src.units else None) or None, source_driver=src.driver,
+        source_is_cog=False, stats=stats,
     )
 
 
 MAX_WINDOW_PIXELS = 16 * 1024 * 1024  # one read: 64 MiB of float32 (bounded memory on national rasters)
 
 
+# The band's native blocks, with any block larger than `max_pixels` split into row bands, so a source
+# written as one huge strip is never read whole. Used by _band_stats.
 def iter_windows(src, band: int, max_pixels: int = MAX_WINDOW_PIXELS):
-    """The band's native blocks, with any block larger than ``max_pixels`` split into row bands.
-
-    Tiled and normally striped GeoTIFFs keep their natural block order (efficient I/O). A source
-    written as one huge strip (e.g. an uncompressed national raster) would otherwise be read as a
-    single multi-gigabyte block; splitting keeps peak memory bounded whatever the source layout.
-    """
-    from rasterio.windows import Window
-
     for _, win in src.block_windows(band):
         w, h = int(win.width), int(win.height)
         if w * h <= max_pixels:
@@ -211,14 +202,13 @@ def iter_windows(src, band: int, max_pixels: int = MAX_WINDOW_PIXELS):
             yield Window(win.col_off, win.row_off + r, w, min(rows, h - r))
 
 
+# Block-wise valid/nodata counts, min, max and sum; rejects undeclared NaN/Inf, unreadable blocks and
+# all-NoData bands. Used by _inspect_open.
 def _band_stats(src, band: int, nodata, name: str) -> dict[str, Any]:
-    valid = 0
-    total = 0
-    vmin = math.inf
-    vmax = -math.inf
-    vsum = 0.0
+    valid = total = 0
+    vmin, vmax, vsum = math.inf, -math.inf, 0.0
     is_float = np.dtype(src.dtypes[band - 1]).kind == "f"
-    nodata_is_nan = nodata is not None and isinstance(nodata, float) and math.isnan(nodata)
+    nodata_is_nan = isinstance(nodata, float) and math.isnan(nodata)
     try:
         for win in iter_windows(src, band):
             data = src.read(band, window=win, masked=True)
@@ -242,53 +232,68 @@ def _band_stats(src, band: int, nodata, name: str) -> dict[str, Any]:
     return {"valid_count": valid, "nodata_count": total - valid, "min": vmin, "max": vmax, "sum": vsum}
 
 
+# Relative closeness test for floats. Used by _check_expect.
 def _close(a: float, b: float, tol: float) -> bool:
     return abs(a - b) <= tol * max(1.0, abs(a), abs(b))
 
 
+# Compare the manifest's optional `expect` block with values read from the file; raises
+# expectation_mismatch listing every differing field. Used by inspect_raster.
 def _check_expect(info: RasterInfo, expect: dict[str, Any]) -> None:
-    """Assert optional manifest expectations against the values read from the file."""
-    if not expect:
-        return
     tol = float(expect.get("tolerance", 1e-9))
-    mismatches = []
-
-    def chk(key, ok, actual):
-        if not ok:
-            mismatches.append({"field": key, "expected": expect[key], "actual": actual})
-
+    checks: dict[str, tuple[bool, Any]] = {}
     if "crs" in expect:
-        chk("crs", str(expect["crs"]).upper() == info.crs, info.crs)
-    for key, actual in (("width", info.width), ("height", info.height), ("band_count", info.band_count)):
+        checks["crs"] = (str(expect["crs"]).upper() == info.crs, info.crs)
+    for key in ("width", "height", "band_count", "dtype"):
         if key in expect:
-            chk(key, expect[key] == actual, actual)
-    if "dtype" in expect:
-        chk("dtype", expect["dtype"] == info.dtype, info.dtype)
+            actual = getattr(info, key)
+            checks[key] = (expect[key] == actual, actual)
     if "nodata" in expect:
         exp = expect["nodata"]
-        exp_f = float(exp) if exp is not None else None
-        chk("nodata", _nodata_equal(exp_f, None if info.nodata is None else float(info.nodata)),
-            _json_number(info.nodata))
+        checks["nodata"] = (_nodata_equal(None if exp is None else float(exp),
+                                          None if info.nodata is None else float(info.nodata)),
+                            _json_number(info.nodata))
     if "resolution" in expect:
         rx, ry = expect["resolution"]
-        chk("resolution", _close(rx, info.resolution_x, tol) and _close(ry, info.resolution_y, tol),
-            [info.resolution_x, info.resolution_y])
+        checks["resolution"] = (_close(rx, info.resolution_x, tol) and _close(ry, info.resolution_y, tol),
+                                [info.resolution_x, info.resolution_y])
     if "bounds" in expect:
-        chk("bounds", all(_close(a, b, tol) for a, b in zip(expect["bounds"], info.native_bounds)),
-            info.native_bounds)
+        checks["bounds"] = (all(_close(a, b, tol) for a, b in zip(expect["bounds"], info.native_bounds)),
+                            info.native_bounds)
+    mismatches = [{"field": k, "expected": expect[k], "actual": actual} for k, (ok, actual) in checks.items()
+                  if not ok]
     if mismatches:
         raise ValidationError(f"raster does not match manifest expectations: {[m['field'] for m in mismatches]}",
                               code="expectation_mismatch", details={"mismatches": mismatches})
 
 
+# Write the selected source band as a lossless single-band COG at `dst` (a temp path), via a tiled
+# intermediate GeoTIFF carrying tags, units, description, scale/offset and mask.
+# Used by importer.Importer._build_asset and tests.
 def write_cog(spec: DatasetSpec, info: RasterInfo, dst: Path, extra_tags: dict[str, str]) -> None:
-    """Write the selected band of the source as a lossless COG at ``dst`` (a temp path)."""
     intermediate = dst.with_name(dst.stem + ".intermediate.tif")
+    band = spec.band
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", NotGeoreferencedWarning)
             with _open(spec.file) as src:
-                _write_intermediate(src, spec, info, intermediate, extra_tags)
+                profile = {"driver": "GTiff", "width": src.width, "height": src.height, "count": 1,
+                           "dtype": info.dtype, "crs": src.crs, "transform": src.transform, "nodata": info.nodata,
+                           "tiled": True, "blockxsize": 256, "blockysize": 256, "compress": "deflate",
+                           "bigtiff": "IF_SAFER"}
+                with rasterio.open(intermediate, "w", **profile) as out:
+                    out.update_tags(**src.tags())
+                    out.update_tags(1, **src.tags(band))
+                    out.update_tags(**extra_tags)
+                    out.set_band_unit(1, spec.units or "")
+                    if src.descriptions[band - 1]:
+                        out.set_band_description(1, src.descriptions[band - 1])
+                    out.scales = (src.scales[band - 1],)
+                    out.offsets = (src.offsets[band - 1],)
+                    for _, win in out.block_windows(1):
+                        out.write(src.read(band, window=win), 1, window=win)
+                        if info.mask == "per_dataset_mask":
+                            out.write_mask(src.read_masks(band, window=win), window=win)
             rasterio.shutil.copy(str(intermediate), str(dst), driver="COG", **COG_OPTIONS)
     except RasterioError as exc:
         raise AssetError(f"COG conversion failed for {spec.key}: {exc}", code="cog_conversion_failed") from exc
@@ -296,60 +301,27 @@ def write_cog(spec: DatasetSpec, info: RasterInfo, dst: Path, extra_tags: dict[s
         intermediate.unlink(missing_ok=True)
 
 
-def _write_intermediate(src, spec: DatasetSpec, info: RasterInfo, path: Path, extra_tags: dict[str, str]) -> None:
-    band = spec.band
-    profile = {
-        "driver": "GTiff", "width": src.width, "height": src.height, "count": 1, "dtype": info.dtype,
-        "crs": src.crs, "transform": src.transform, "nodata": info.nodata, **_INTERMEDIATE_OPTIONS,
-    }
-    with rasterio.open(path, "w", **profile) as out:
-        out.update_tags(**src.tags())
-        out.update_tags(1, **src.tags(band))
-        out.update_tags(**extra_tags)
-        out.set_band_unit(1, spec.units or "")
-        desc = src.descriptions[band - 1]
-        if desc:
-            out.set_band_description(1, desc)
-        out.scales = (src.scales[band - 1],)
-        out.offsets = (src.offsets[band - 1],)
-        copy_mask = info.mask == "per_dataset_mask"
-        for _, win in out.block_windows(1):
-            out.write(src.read(band, window=win), 1, window=win)
-            if copy_mask:
-                out.write_mask(src.read_masks(band, window=win), window=win)
-
-
+# Prove the COG is valid and keeps grid, CRS, NoData, dtype, units, mask and every pixel value;
+# returns COG details for provenance. Used by importer (_build_asset, _adopt_existing) and tests.
 def verify_cog(spec: DatasetSpec, info: RasterInfo, cog_path: Path) -> dict[str, Any]:
-    """Prove the COG is valid and retains grid, CRS, NoData, mask, units and every pixel value."""
     try:
-        from rio_cogeo.cogeo import cog_validate
-    except ImportError as exc:  # pragma: no cover
-        raise AssetError("rio-cogeo is required to validate COGs", code="cog_validation_unavailable") from exc
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            valid, errors, warns = cog_validate(str(cog_path), quiet=True)
+        valid, errors, warns = _cog_validate(cog_path)
     except RasterioError as exc:
         raise AssetError(f"output for {spec.key} is not a readable raster: {exc}", code="cog_invalid") from exc
     if not valid:
         raise AssetError(f"output for {spec.key} is not a valid COG: {errors}", code="cog_invalid")
 
     with _open(spec.file) as src, _open(cog_path) as cog:
-        problems = []
-        if cog.count != 1:
-            problems.append("band_count")
-        if cog.crs != src.crs:
-            problems.append("crs")
-        if (cog.width, cog.height) != (src.width, src.height):
-            problems.append("dimensions")
-        if not cog.transform.almost_equals(src.transform, precision=1e-12):
-            problems.append("transform")
-        if cog.dtypes[0] != info.dtype:
-            problems.append("dtype")
-        if not _nodata_equal(cog.nodata, None if info.nodata is None else float(info.nodata)):
-            problems.append("nodata")
-        if (cog.units[0] or None) != spec.units:
-            problems.append("units")
+        checks = {
+            "band_count": cog.count == 1,
+            "crs": cog.crs == src.crs,
+            "dimensions": (cog.width, cog.height) == (src.width, src.height),
+            "transform": cog.transform.almost_equals(src.transform, precision=1e-12),
+            "dtype": cog.dtypes[0] == info.dtype,
+            "nodata": _nodata_equal(cog.nodata, None if info.nodata is None else float(info.nodata)),
+            "units": (cog.units[0] or None) == spec.units,
+        }
+        problems = [k for k, ok in checks.items() if not ok]
         if problems:
             raise AssetError(f"COG for {spec.key} lost metadata: {problems}", code="cog_verification_failed")
         for _, win in cog.block_windows(1):

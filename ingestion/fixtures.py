@@ -1,17 +1,6 @@
-"""Deterministic SYNTHETIC fixture generator — implements ``contracts/SYNTHETIC_DATA.md``.
-
-THESE FILES ARE NOT REAL POPULATION DATA. They are not WorldPop products and not scientific estimates;
-the years are metadata labels only. Every output says SYNTHETIC / deterministic-fixture.
-
-Outputs (in ``out_dir``):
-
-* ``synthetic_2001.tif``, ``synthetic_2011.tif`` — 64×64 float32, EPSG:4326, UL (78.000, 18.000),
-  pixel (+0.001, -0.001); NoData -9999 on the first 4 rows and first 4 columns; valid cells 1 / 2.
-* ``synthetic_towns.geojson`` — Town A and Town B polygons.
-* ``synthetic_test_aois.geojson`` — NoData-overlap and disjoint AOIs for negative tests (not imported).
-* ``expected_values.json`` — analytical pixel-center (``all_touched=false``) answers.
-* ``manifest.json`` — import manifest for the three fixture datasets (relative file paths).
-"""
+# Deterministic SYNTHETIC fixture generator (fixture spec in README.md).
+# NOT real population data, not WorldPop, not estimates; years are labels only. Writes two 64x64 rasters,
+# town polygons, test AOIs, expected_values.json and manifest.json (relative file paths).
 
 from __future__ import annotations
 
@@ -60,10 +49,13 @@ TEST_AOIS = (
 )
 
 
+# Affine geotransform of the fixture grid. Used by expected_values and _write_raster.
 def transform():
     return from_origin(ORIGIN_X, ORIGIN_Y, PIXEL_SIZE, PIXEL_SIZE)
 
 
+# Fixture pixel array: `value` everywhere except NoData in the first rows/cols.
+# Used by expected_values and _write_raster.
 def build_array(value: float) -> np.ndarray:
     arr = np.full((HEIGHT, WIDTH), value, dtype=np.float32)
     arr[:NODATA_ROWS, :] = NODATA
@@ -71,13 +63,15 @@ def build_array(value: float) -> np.ndarray:
     return arr
 
 
+# GeoJSON Polygon for (west, south, east, north). Used by towns_geojson and aoi_geojson.
 def rectangle(bounds: tuple[float, float, float, float]) -> dict[str, Any]:
     w, s, e, n = bounds
     return {"type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]]}
 
 
+# Row/col slices whose pixel centers fall inside a rectangle (analytical, no rasterization).
+# Used by expected_values.
 def _cells(bounds: tuple[float, float, float, float]) -> tuple[slice, slice]:
-    """Pixel-center selection of the grid for an axis-aligned rectangle (analytical, no rasterization)."""
     w, s, e, n = bounds
     cols = [c for c in range(WIDTH) if w < ORIGIN_X + (c + 0.5) * PIXEL_SIZE < e]
     rows = [r for r in range(HEIGHT) if s < ORIGIN_Y - (r + 0.5) * PIXEL_SIZE < n]
@@ -86,6 +80,7 @@ def _cells(bounds: tuple[float, float, float, float]) -> tuple[slice, slice]:
     return slice(rows[0], rows[-1] + 1), slice(cols[0], cols[-1] + 1)
 
 
+# Analytical expected answers per AOI and whole raster (expected_values.json). Used by generate.
 def expected_values() -> dict[str, Any]:
     arrays = {r["year"]: build_array(r["value"]) for r in RASTERS}
     aois: dict[str, Any] = {}
@@ -120,6 +115,7 @@ def expected_values() -> dict[str, Any]:
     }
 
 
+# Write bytes via a temp file + rename so readers never see a partial file. Used by generate.
 def _atomic_write_bytes(path: Path, data: bytes) -> None:
     fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     try:
@@ -131,10 +127,12 @@ def _atomic_write_bytes(path: Path, data: bytes) -> None:
         raise
 
 
+# Pretty JSON + newline as UTF-8 bytes. Used by generate.
 def _json_bytes(obj: Any) -> bytes:
     return (json.dumps(obj, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
+# Write one fixture GeoTIFF (tags, units, description) atomically. Used by generate.
 def _write_raster(path: Path, spec: dict[str, Any]) -> None:
     tmp = path.with_name(f".{path.name}.tmp")
     profile = {"driver": "GTiff", "width": WIDTH, "height": HEIGHT, "count": 1, "dtype": "float32", "crs": CRS,
@@ -153,6 +151,7 @@ def _write_raster(path: Path, spec: dict[str, Any]) -> None:
         raise
 
 
+# synthetic_towns.geojson content (Town A, Town B). Used by generate.
 def towns_geojson() -> dict[str, Any]:
     return {
         "type": "FeatureCollection",
@@ -169,6 +168,7 @@ def towns_geojson() -> dict[str, Any]:
     }
 
 
+# synthetic_test_aois.geojson content with each AOI's expected answer. Used by generate.
 def aoi_geojson(expected: dict[str, Any]) -> dict[str, Any]:
     return {
         "type": "FeatureCollection",
@@ -185,6 +185,7 @@ def aoi_geojson(expected: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# Provenance block shared by every fixture manifest entry. Used by manifest.
 def _provenance(extra: dict[str, Any] | None = None) -> dict[str, Any]:
     p = {"synthetic": True, "notice": NOTICE, "generator": "ingestion.fixtures",
          "generator_version": GENERATOR_VERSION, "spec": SPEC}
@@ -192,6 +193,7 @@ def _provenance(extra: dict[str, Any] | None = None) -> dict[str, Any]:
     return p
 
 
+# manifest.json content for the three importable fixture datasets. Used by generate.
 def manifest() -> dict[str, Any]:
     datasets: list[dict[str, Any]] = []
     for r in RASTERS:
@@ -217,8 +219,9 @@ def manifest() -> dict[str, Any]:
     return {"manifest_version": 1, "synthetic": True, "notice": NOTICE, "datasets": datasets}
 
 
+# Write all fixtures into `out_dir` (deterministic; re-running is idempotent); returns written paths.
+# Used by cli (generate-fixtures, seed) and tests.
 def generate(out_dir: str | Path) -> dict[str, Path]:
-    """Write all fixtures into ``out_dir``. Re-running yields semantically identical output."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     written: dict[str, Path] = {}
