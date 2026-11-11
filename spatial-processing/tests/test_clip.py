@@ -1,4 +1,4 @@
-"""Clip + export: georeferencing, NoData and values verified by reopening with rasterio."""
+# Clip + export: georeferencing, NoData and values verified by reopening the download with rasterio.
 
 from __future__ import annotations
 
@@ -11,31 +11,31 @@ import rasterio
 from rasterio.io import MemoryFile
 
 import synthetic
-from synthetic import NODATA_CORNER, TOWN_A, TOWN_B
-
-CLIP = "/operations/clip"
+from synthetic import CLIP, NODATA_CORNER, TOWN_A, TOWN_B, ZONAL, payload
 
 
+# POST a clip and return the (successful) job. Used by every test here.
 def clip(client, dataset_id, aoi, **extra):
-    payload = {"dataset_id": dataset_id, "aoi": aoi, "aoi_crs": "EPSG:4326", **extra}
-    r = client.post(CLIP, json=payload)
+    r = client.post(CLIP, json=payload(dataset_id, aoi, **extra))
     assert r.status_code == 200, r.text
     return r.json()
 
 
+# GET the job's download link (gateway prefix stripped). Used by every test here.
 def download(client, job):
     r = client.get(job["links"]["download"].removeprefix("/api"))
     assert r.status_code == 200, r.text
     return r
 
 
+# Open a downloaded GeoTIFF in memory.
 def open_download(response):
     return MemoryFile(io.BytesIO(response.content)).open()
 
 
+# Non-masked values of band 1.
 def valid_values(ds):
-    arr = ds.read(1, masked=True)
-    return np.ma.compressed(arr)
+    return np.ma.compressed(ds.read(1, masked=True))
 
 
 @pytest.mark.parametrize(
@@ -48,6 +48,7 @@ def valid_values(ds):
     ],
     ids=["townA-2001", "townA-2011", "townB-2001", "townB-2011"],
 )
+# Native-grid clips have the exact size, origin, CRS, NoData, dtype, tags and totals.
 def test_clip_geotiff_roundtrip(client, dataset_id, aoi, size, origin, total):
     job = clip(client, dataset_id, aoi, output_crs="EPSG:4326", format="GTiff")
     assert job["status"] == "completed"
@@ -80,6 +81,7 @@ def test_clip_geotiff_roundtrip(client, dataset_id, aoi, size, origin, total):
         assert ds.units[0] == "people_per_cell"
 
 
+# NoData pixels stay NoData and are counted as excluded.
 def test_clip_preserves_nodata_and_excluded_counts(client):
     job = clip(client, "synthetic-worldpop-2001", NODATA_CORNER)
     assert job["result"]["count_valid"] == 36
@@ -92,13 +94,11 @@ def test_clip_preserves_nodata_and_excluded_counts(client):
         assert (ds.transform.c, ds.transform.f) == pytest.approx((78.0, 18.0))
 
 
+# Pixels outside a triangle become NoData and the clip agrees with zonal statistics.
 def test_polygon_clip_masks_outside_pixels_and_agrees_with_zonal(client):
     triangle = {"type": "Polygon", "coordinates": [[[78.010, 17.980], [78.030, 17.980], [78.010, 18.000 - 0.004], [78.010, 17.980]]]}
     job = clip(client, "synthetic-worldpop-2011", triangle)
-    zonal = client.post(
-        "/operations/zonal-statistics",
-        json={"dataset_id": "synthetic-worldpop-2011", "aoi": triangle, "aoi_crs": "EPSG:4326"},
-    ).json()
+    zonal = client.post(ZONAL, json=payload("synthetic-worldpop-2011", triangle)).json()
     with open_download(download(client, job)) as ds:
         values = valid_values(ds)
         arr = ds.read(1)
@@ -108,6 +108,7 @@ def test_polygon_clip_masks_outside_pixels_and_agrees_with_zonal(client):
     assert set(np.unique(values)) == {2.0}  # native values untouched
 
 
+# format=cog writes a DEFLATE COG with the COG media type.
 def test_cog_export(client):
     job = clip(client, "synthetic-worldpop-2001", TOWN_A, format="cog")
     assert job["input"]["format"] == "COG"
@@ -122,6 +123,7 @@ def test_cog_export(client):
         assert valid_values(ds).sum() == pytest.approx(100)
 
 
+# A different output_crs reprojects (nearest) and warns that totals are not preserved.
 def test_reprojected_output_is_flagged(client):
     job = clip(client, "synthetic-worldpop-2001", TOWN_A, output_crs="EPSG:3857")
     out = job["result"]["output"]
@@ -134,6 +136,7 @@ def test_reprojected_output_is_flagged(client):
         assert set(np.unique(valid_values(ds))) == {1.0}
 
 
+# A projected raster keeps its native CRS, pixel size and dtype; values match the brute-force reference.
 def test_projected_raster_clip_keeps_native_crs(client, asset_root):
     expected_count, expected_sum = synthetic.brute_force_sum(asset_root / "utm_index.tif", TOWN_A, nodata=-1)
     job = clip(client, "utm-index", TOWN_A)
@@ -146,6 +149,7 @@ def test_projected_raster_clip_keeps_native_crs(client, asset_root):
     assert int(values.sum()) == expected_sum
 
 
+# A raster without NoData is exported with an internal mask band.
 def test_raster_without_nodata_exports_mask_band(client):
     triangle = {"type": "Polygon", "coordinates": [[[78.01, 17.98], [78.02, 17.98], [78.01, 17.99], [78.01, 17.98]]]}
     job = clip(client, "unmasked-int", triangle)
@@ -158,6 +162,7 @@ def test_raster_without_nodata_exports_mask_band(client):
         assert values.sum() == 3 * values.size
 
 
+# The metadata sidecar has job, provenance, grid and software info and no server paths.
 def test_metadata_sidecar(client):
     job = clip(client, "synthetic-worldpop-2001", TOWN_A)
     r = client.get(job["links"]["metadata"].removeprefix("/api"))

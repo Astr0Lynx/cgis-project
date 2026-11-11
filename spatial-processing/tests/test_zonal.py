@@ -1,4 +1,4 @@
-"""Zonal statistics correctness on real synthetic GeoTIFFs (TEST_PLAN.md values)."""
+# Zonal statistics correctness on real synthetic GeoTIFFs with known expected values.
 
 from __future__ import annotations
 
@@ -6,14 +6,12 @@ import pytest
 from pyproj import Transformer
 
 import synthetic
-from synthetic import DISJOINT, NODATA_CORNER, TOWN_A, TOWN_B, rect
+from synthetic import DISJOINT, NODATA_CORNER, TOWN_A, TOWN_B, ZONAL, payload, rect
 
 
+# POST a zonal-statistics request.
 def zonal(client, dataset_id, aoi, aoi_crs="EPSG:4326", **extra):
-    return client.post(
-        "/operations/zonal-statistics",
-        json={"dataset_id": dataset_id, "aoi": aoi, "aoi_crs": aoi_crs, **extra},
-    )
+    return client.post(ZONAL, json=payload(dataset_id, aoi, aoi_crs, **extra))
 
 
 @pytest.mark.parametrize(
@@ -26,6 +24,7 @@ def zonal(client, dataset_id, aoi, aoi_crs="EPSG:4326", **extra):
     ],
     ids=["townA-2001", "townA-2011", "townB-2001", "townB-2011"],
 )
+# Town A/B totals for 2001/2011 match the fixture values, with full metadata.
 def test_fixture_expected_values(client, dataset_id, aoi, count, total, mean):
     r = zonal(client, dataset_id, aoi)
     assert r.status_code == 200, r.text
@@ -46,6 +45,7 @@ def test_fixture_expected_values(client, dataset_id, aoi, count, total, mean):
     assert body["status"] == "completed"
 
 
+# NoData pixels are excluded and counted.
 def test_aoi_overlapping_nodata_counts_only_valid_pixels(client):
     body = zonal(client, "synthetic-worldpop-2001", NODATA_CORNER).json()
     # 10x10 block, first 4 rows + first 4 cols NoData -> 6x6 valid
@@ -56,6 +56,7 @@ def test_aoi_overlapping_nodata_counts_only_valid_pixels(client):
     assert body["mean"] == pytest.approx(1)
 
 
+# An all-NoData AOI gives null sum/mean (not zero) with a warning.
 def test_all_nodata_aoi_reports_null_not_zero(client):
     body = zonal(client, "synthetic-worldpop-2011", rect(78.000, 17.996, 78.004, 18.000)).json()
     assert body["pixels_in_aoi"] == 16
@@ -65,6 +66,7 @@ def test_all_nodata_aoi_reports_null_not_zero(client):
     assert any("NoData" in w for w in body["warnings"])
 
 
+# An AOI past the raster edge counts only the overlapping pixels.
 def test_partial_overlap_with_raster_edge(client):
     # Raster ends at lon 78.064 / lat 17.936: AOI extends past the SE corner -> 4x4 pixels.
     body = zonal(client, "synthetic-worldpop-2001", rect(78.060, 17.930, 78.070, 17.940)).json()
@@ -72,6 +74,7 @@ def test_partial_overlap_with_raster_edge(client):
     assert body["sum"] == pytest.approx(16)
 
 
+# A Web Mercator AOI is transformed to the raster CRS.
 def test_projected_aoi_crs_is_transformed_to_raster_crs(client):
     to_merc = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
     ring = [list(to_merc.transform(x, y)) for x, y in TOWN_A["coordinates"][0]]
@@ -81,12 +84,14 @@ def test_projected_aoi_crs_is_transformed_to_raster_crs(client):
     assert body["sum"] == pytest.approx(100)
 
 
+# OGC:CRS84 and a GeoJSON Feature wrapper are accepted.
 def test_crs84_alias_and_feature_wrapper(client):
     feature = {"type": "Feature", "properties": {"name": "Town A"}, "geometry": TOWN_A}
     body = zonal(client, "synthetic-worldpop-2011", feature, "OGC:CRS84").json()
     assert body["sum"] == pytest.approx(200)
 
 
+# MultiPolygon AOIs sum all parts.
 def test_multipolygon_sums_both_parts(client):
     multi = {"type": "MultiPolygon", "coordinates": [TOWN_A["coordinates"], TOWN_B["coordinates"]]}
     body = zonal(client, "synthetic-worldpop-2001", multi).json()
@@ -94,6 +99,7 @@ def test_multipolygon_sums_both_parts(client):
     assert body["sum"] == pytest.approx(125)
 
 
+# Only requested operations are filled; NoData accounting is always reported.
 def test_operation_subset(client):
     body = zonal(client, "synthetic-worldpop-2001", TOWN_A, operations=["sum"]).json()
     assert body["operations"] == ["sum"]
@@ -103,6 +109,7 @@ def test_operation_subset(client):
     assert body["nodata_excluded"] == 0
 
 
+# A finer raster gives the same Town A total.
 def test_different_resolution_raster(client):
     # 0.0005 deg pixels with 0.25 people/cell: Town A = 20x20 = 400 pixels, same total.
     body = zonal(client, "fine-2001", TOWN_A).json()
@@ -111,8 +118,8 @@ def test_different_resolution_raster(client):
 
 
 @pytest.mark.parametrize("aoi", [TOWN_A, TOWN_B, NODATA_CORNER], ids=["townA", "townB", "corner"])
+# EPSG:32644 raster with an EPSG:4326 AOI matches the brute-force pixel-center reference (integer sum).
 def test_projected_raster_matches_independent_brute_force(client, asset_root, aoi):
-    """Raster in EPSG:32644 (100 m), AOI in EPSG:4326: compare with per-pixel-center reference."""
     expected_count, expected_sum = synthetic.brute_force_sum(asset_root / "utm_index.tif", aoi, nodata=-1)
     body = zonal(client, "utm-index", aoi).json()
     assert body["raster_crs"] == "EPSG:32644"
@@ -121,6 +128,7 @@ def test_projected_raster_matches_independent_brute_force(client, asset_root, ao
     assert isinstance(body["sum"], int)  # integer raster -> integer sum
 
 
+# An integer raster without NoData gives an integer sum and null nodata_value.
 def test_integer_raster_without_nodata(client):
     body = zonal(client, "unmasked-int", TOWN_A).json()
     assert body["count_valid"] == 100
@@ -128,16 +136,19 @@ def test_integer_raster_without_nodata(client):
     assert body["nodata_value"] is None
 
 
+# The highest ready dataset version is used.
 def test_current_version_is_highest_ready(client):
     body = zonal(client, "versioned", TOWN_A).json()
     assert body["dataset_version"] == 2
     assert body["sum"] == pytest.approx(100)  # v2 = value 1 (v1 would be 200)
 
 
+# An absolute catalog asset path inside the asset root is accepted.
 def test_absolute_asset_path_inside_root_is_tolerated(client):
     assert zonal(client, "absolute-inside", TOWN_A).json()["sum"] == pytest.approx(100)
 
 
+# An AOI outside the raster gives AOI_OUTSIDE_RASTER.
 def test_disjoint_aoi_rejected(client):
     r = zonal(client, "synthetic-worldpop-2001", DISJOINT)
     assert r.status_code == 422

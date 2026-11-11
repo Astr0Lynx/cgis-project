@@ -1,8 +1,5 @@
-"""Test-only raster stubs that follow contracts/SYNTHETIC_DATA.md exactly.
-
-Agent 3 owns the real fixture generator; this module only recreates the contract's
-grid so the processing service can be tested in isolation. Values are SYNTHETIC.
-"""
+# Test helpers: synthetic GeoTIFFs on the same grid as the ingestion fixtures,
+# standard AOIs, request payloads and an independent brute-force zonal reference. Values are SYNTHETIC.
 
 from __future__ import annotations
 
@@ -20,7 +17,11 @@ GRID_TRANSFORM = Affine(0.001, 0.0, 78.000, 0.0, -0.001, 18.000)
 GRID_SIZE = 64
 NODATA_STRIP = 4  # first 4 rows and first 4 columns are NoData
 
+ZONAL = "/operations/zonal-statistics"
+CLIP = "/operations/clip"
 
+
+# GeoJSON rectangle polygon. Used to build the AOIs below and in tests.
 def rect(minx: float, miny: float, maxx: float, maxy: float) -> dict:
     return {
         "type": "Polygon",
@@ -35,6 +36,12 @@ NODATA_CORNER = rect(78.000, 17.990, 78.010, 18.000)
 DISJOINT = rect(79.000, 17.000, 79.010, 17.010)
 
 
+# Request body for clip/zonal-statistics with sensible defaults. Used by most tests.
+def payload(dataset_id="synthetic-worldpop-2001", aoi=TOWN_A, aoi_crs="EPSG:4326", **extra) -> dict:
+    return {"dataset_id": dataset_id, "aoi": aoi, "aoi_crs": aoi_crs, **extra}
+
+
+# Write a single-band DEFLATE GeoTIFF tagged SYNTHETIC. Used by the raster builders below.
 def _write(path: Path, data: np.ndarray, transform: Affine, crs: str, nodata, **extra) -> Path:
     profile = {
         "driver": "GTiff",
@@ -54,24 +61,24 @@ def _write(path: Path, data: np.ndarray, transform: Affine, crs: str, nodata, **
     return path
 
 
+# Contract grid filled with `value` (1 for 2001, 2 for 2011) and the NoData strips. Used by conftest.
 def contract_raster(path: Path, value: float) -> Path:
-    """synthetic_2001.tif (value 1) / synthetic_2011.tif (value 2) per the contract."""
     data = np.full((GRID_SIZE, GRID_SIZE), value, dtype=np.float32)
     data[:NODATA_STRIP, :] = NODATA
     data[:, :NODATA_STRIP] = NODATA
     return _write(path, data, GRID_TRANSFORM, "EPSG:4326", NODATA)
 
 
+# Same extent at half the pixel size (128x128, 0.0005 deg). Used by conftest.
 def fine_raster(path: Path, value: float) -> Path:
-    """Same extent at half the pixel size (128x128, 0.0005 deg) — different resolution."""
     data = np.full((128, 128), value, dtype=np.float32)
     data[:8, :] = NODATA
     data[:, :8] = NODATA
     return _write(path, data, Affine(0.0005, 0.0, 78.0, 0.0, -0.0005, 18.0), "EPSG:4326", NODATA)
 
 
+# Projected (EPSG:32644, 100 m) int32 raster, value = row * 1000 + col, NoData -1 on row 0. Used by conftest.
 def utm_raster(path: Path) -> Path:
-    """Projected (EPSG:32644, 100 m) int32 raster with value = row * 1000 + col; NoData = -1 on row 0."""
     to_utm = Transformer.from_crs("EPSG:4326", "EPSG:32644", always_xy=True)
     x0, y0 = to_utm.transform(77.995, 18.005)
     x0, y0 = float(np.floor(x0 / 100) * 100), float(np.ceil(y0 / 100) * 100)
@@ -81,12 +88,13 @@ def utm_raster(path: Path) -> Path:
     return _write(path, data, Affine(100.0, 0.0, x0, 0.0, -100.0, y0), "EPSG:32644", -1)
 
 
+# int16 count raster with no NoData value (exercises the mask-band export path). Used by conftest.
 def unmasked_int_raster(path: Path) -> Path:
-    """int16 count raster with NO NoData value at all (exercises the mask-band export path)."""
     data = np.full((GRID_SIZE, GRID_SIZE), 3, dtype=np.int16)
     return _write(path, data, GRID_TRANSFORM, "EPSG:4326", None)
 
 
+# Two-band raster (must be rejected). Used by conftest.
 def multiband_raster(path: Path) -> Path:
     data = np.ones((2, 8, 8), dtype=np.float32)
     with rasterio.open(
@@ -97,8 +105,9 @@ def multiband_raster(path: Path) -> Path:
     return path
 
 
+# Independent reference: test every pixel center (in lon/lat) against the AOI; returns (count, sum).
+# Used by test_zonal and test_clip.
 def brute_force_sum(path: Path, aoi_lonlat, nodata) -> tuple[int, float]:
-    """Independent reference: test every pixel center (transformed to lon/lat) against the AOI."""
     from shapely import contains_xy
     from shapely.geometry import shape
 

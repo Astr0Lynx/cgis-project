@@ -1,7 +1,4 @@
-"""CyberGIS Phase 2 spatial processing service (Agent 5).
-
-Custom (non-OGC) API for clipping catalogued rasters to an AOI, computing zonal
-statistics and exporting GeoTIFF/COG results with recorded jobs.
-"""
+# Spatial processing service: a custom (non-OGC) API that clips catalogued rasters to an AOI,
+# computes zonal statistics and exports GeoTIFF/COG, recording every operation as a job.
 
 __version__ = "0.1.0"

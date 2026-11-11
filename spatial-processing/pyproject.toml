@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cgis-spatial-processing"
 version = "0.1.0"
-description = "CyberGIS Phase 2 custom spatial processing API (clip, zonal statistics, GeoTIFF export, job status). Not an OGC API."
+description = "Custom spatial processing API (clip, zonal statistics, GeoTIFF export, job status). Not an OGC API."
 requires-python = ">=3.11"
-# Exact pins for reproducible builds (ARCHITECTURE.md "Operational requirements").
+# Exact pins for reproducible builds.
 # rasterio wheels bundle GDAL 3.12.2 / PROJ 9.8.1, so no system GDAL is required.
 dependencies = [
     "fastapi==0.162.0",
@@ -39,4 +39,6 @@ markers = [
 filterwarnings = [
     # starlette's TestClient (test-only) warns about httpx; not relevant to the service
     "ignore:Using .httpx. with .starlette.testclient. is deprecated",
+    # spurious under thread concurrency; also silenced in raster.py for the service itself
+    "ignore::rasterio.errors.NotGeoreferencedWarning",
 ]

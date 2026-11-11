@@ -1,4 +1,4 @@
-"""Path safety, hostile catalog rows, output cleanup and filename safety."""
+# Path safety, hostile catalog rows, output cleanup and filename safety.
 
 from __future__ import annotations
 
@@ -9,10 +9,9 @@ from pathlib import Path
 
 import pytest
 
-from spatial_processing.errors import ApiError
-from spatial_processing.outputs import OutputManager
-from spatial_processing.paths import resolve_asset_path, safe_filename_component
-from synthetic import TOWN_A
+from spatial_processing.config import ApiError
+from spatial_processing.files import OutputManager, resolve_asset_path, safe_filename_component
+from synthetic import ZONAL, payload
 
 
 @pytest.mark.parametrize(
@@ -20,8 +19,9 @@ from synthetic import TOWN_A
     ["evil-traversal", "evil-absolute", "evil-url", "evil-vsicurl", "evil-symlink", "evil-vrt", "evil-null"],
 )
 @pytest.mark.parametrize("route", ["/operations/zonal-statistics", "/operations/clip"])
+# Hostile catalog asset paths give 500 ASSET_PATH_REJECTED without leaking paths or contents.
 def test_hostile_catalog_paths_are_never_read(client, outside_file, dataset_id, route):
-    r = client.post(route, json={"dataset_id": dataset_id, "aoi": TOWN_A, "aoi_crs": "EPSG:4326"})
+    r = client.post(route, json=payload(dataset_id))
     assert r.status_code == 500
     err = r.json()["error"]
     assert err["code"] == "ASSET_PATH_REJECTED"
@@ -30,11 +30,12 @@ def test_hostile_catalog_paths_are_never_read(client, outside_file, dataset_id, 
         assert leaked not in r.text
 
 
+# Missing and corrupted rasters give ASSET_MISSING / ASSET_UNREADABLE without file names.
 def test_missing_and_corrupted_assets(client):
-    r = client.post("/operations/zonal-statistics", json={"dataset_id": "missing-file", "aoi": TOWN_A, "aoi_crs": "EPSG:4326"})
+    r = client.post(ZONAL, json=payload("missing-file"))
     assert r.status_code == 500 and r.json()["error"]["code"] == "ASSET_MISSING"
     assert "does_not_exist" not in r.text
-    r = client.post("/operations/zonal-statistics", json={"dataset_id": "corrupted", "aoi": TOWN_A, "aoi_crs": "EPSG:4326"})
+    r = client.post(ZONAL, json=payload("corrupted"))
     assert r.status_code == 500 and r.json()["error"]["code"] == "ASSET_UNREADABLE"
 
 
@@ -43,6 +44,7 @@ def test_missing_and_corrupted_assets(client):
     ["../x.tif", "a/../../x.tif", "/etc/passwd", "http://h/x.tif", "s3://b/x.tif", "/vsizip/x.zip/a.tif",
      "x.vrt", "x.tif\x00.png", "a\\..\\x.tif", "", "./", "/data/assets/../etc/x.tif"],
 )
+# Traversal, absolute, URL, VSI, non-GeoTIFF, NUL and backslash paths are rejected.
 def test_resolve_asset_path_rejects(tmp_path, asset_path):
     with pytest.raises(ApiError) as info:
         resolve_asset_path(tmp_path, asset_path)
@@ -50,12 +52,14 @@ def test_resolve_asset_path_rejects(tmp_path, asset_path):
     assert info.value.code == "ASSET_PATH_REJECTED" or asset_path.endswith(".tif")
 
 
+# A symlink that stays inside the asset root is allowed.
 def test_resolve_asset_path_symlink_inside_root_is_allowed(tmp_path):
     (tmp_path / "real.tif").write_bytes(b"x")
     (tmp_path / "alias.tif").symlink_to(tmp_path / "real.tif")
     assert resolve_asset_path(tmp_path, "alias.tif") == (tmp_path / "real.tif").resolve()
 
 
+# A directory named like a GeoTIFF is rejected.
 def test_resolve_asset_path_directory_rejected(tmp_path):
     (tmp_path / "dir.tif").mkdir()
     with pytest.raises(ApiError) as info:
@@ -68,15 +72,18 @@ def test_resolve_asset_path_directory_rejected(tmp_path):
     [("synthetic-worldpop-2001", "synthetic-worldpop-2001"), ("../../etc/passwd", "etc-passwd"),
      ("a b;c|d", "a-b-c-d"), ("...", "dataset"), ("x" * 200, "x" * 64)],
 )
+# Dataset IDs are reduced to safe filename components.
 def test_safe_filename_component(text, expected):
     assert safe_filename_component(text) == expected
 
 
+# Backdate a path's mtime by `seconds`. Used by the cleanup test.
 def _age(path: Path, seconds: float) -> None:
     old = time.time() - seconds
     os.utime(path, (old, old), follow_symlinks=False)
 
 
+# Cleanup removes only expired, inactive, flat UUID directories and never follows symlinks.
 def test_cleanup_only_removes_expired_uuid_dirs(tmp_path):
     root = tmp_path / "outputs"
     outside = tmp_path / "outside"
@@ -119,6 +126,7 @@ def test_cleanup_only_removes_expired_uuid_dirs(tmp_path):
     assert (outside / "keep.txt").read_text() == "precious"
 
 
+# Unsafe or missing stored result paths give 410.
 def test_resolve_result_rejects_unsafe_stored_paths(tmp_path):
     mgr = OutputManager(tmp_path)
     (tmp_path.parent / "elsewhere.tif").write_bytes(b"x")

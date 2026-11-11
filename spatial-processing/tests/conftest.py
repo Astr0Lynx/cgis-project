@@ -1,4 +1,5 @@
-"""Shared fixtures: real synthetic GeoTIFFs on disk + a mocked (in-memory) catalog."""
+# Shared fixtures: real synthetic GeoTIFFs on disk, an in-memory catalog (including hostile and
+# broken rows) and a TestClient factory with in-memory backends.
 
 from __future__ import annotations
 
@@ -13,13 +14,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import synthetic  # noqa: E402
 from spatial_processing.app import create_app  # noqa: E402
-from spatial_processing.catalog import DatasetRecord, InMemoryCatalog  # noqa: E402
+from spatial_processing.backends import DatasetRecord, InMemoryCatalog, InMemoryJobStore  # noqa: E402
 from spatial_processing.config import Settings  # noqa: E402
-from spatial_processing.jobs import InMemoryJobStore  # noqa: E402
 
 PROVENANCE = {"synthetic": True, "note": "SYNTHETIC deterministic-fixture; not real population"}
 
 
+# A ready raster catalog record with test defaults. Used by the catalog fixture.
 def raster_record(dataset_id: str, asset_path: str | None, **overrides) -> DatasetRecord:
     base = DatasetRecord(
         dataset_id=dataset_id,
@@ -37,6 +38,7 @@ def raster_record(dataset_id: str, asset_path: str | None, **overrides) -> Datas
     return replace(base, **overrides)
 
 
+# Asset root with every test raster (plus corrupted and VRT files).
 @pytest.fixture(scope="session")
 def asset_root(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("assets")
@@ -54,19 +56,19 @@ def asset_root(tmp_path_factory) -> Path:
     return root
 
 
+# A private file OUTSIDE the asset root that must never be readable through the API.
 @pytest.fixture(scope="session")
 def outside_file(tmp_path_factory) -> Path:
-    """A private file OUTSIDE the asset root that must never be readable through the API."""
     private = tmp_path_factory.mktemp("private")
     return synthetic.contract_raster(private / "secret.tif", 42.0)
 
 
+# In-memory catalog with normal, versioned, not-ready, vector, hostile and broken rows.
 @pytest.fixture()
 def catalog(asset_root, outside_file) -> InMemoryCatalog:
     link = asset_root / "escape.tif"
     if not link.exists():
         link.symlink_to(outside_file)
-    nodata = synthetic.NODATA
     return InMemoryCatalog(
         [
             raster_record("synthetic-worldpop-2001", "synthetic_2001.tif", year=2001),
@@ -94,17 +96,17 @@ def catalog(asset_root, outside_file) -> InMemoryCatalog:
             raster_record("evil-null", None),
             raster_record("missing-file", "does_not_exist.tif"),
             raster_record("corrupted", "corrupted.tif"),
-            raster_record("absolute-inside", str(asset_root / "synthetic_2001.tif"), nodata=nodata),
+            raster_record("absolute-inside", str(asset_root / "synthetic_2001.tif")),
         ]
     )
 
 
+# Factory: build an app with optional Settings overrides; returns (client, job_store, settings).
 @pytest.fixture()
 def make_client(asset_root, catalog, tmp_path):
-    """Factory: build an app with optional Settings overrides; returns (client, job_store, settings)."""
-
     opened: list[TestClient] = []
 
+    # Create one client (lifespan started) with in-memory backends and ROOT_PATH=/api.
     def factory(**overrides):
         settings = Settings(
             asset_root=asset_root,
@@ -115,8 +117,7 @@ def make_client(asset_root, catalog, tmp_path):
             **overrides,
         )
         store = InMemoryJobStore()
-        app = create_app(settings, catalog=catalog, job_store=store)
-        client = TestClient(app, raise_server_exceptions=False)
+        client = TestClient(create_app(settings, catalog=catalog, job_store=store), raise_server_exceptions=False)
         client.__enter__()  # run lifespan
         opened.append(client)
         return client, store, settings
@@ -126,11 +127,13 @@ def make_client(asset_root, catalog, tmp_path):
         c.__exit__(None, None, None)
 
 
+# A default client.
 @pytest.fixture()
 def client(make_client):
     return make_client()[0]
 
 
+# A default (client, job_store, settings) triple.
 @pytest.fixture()
 def client_and_store(make_client):
     return make_client()

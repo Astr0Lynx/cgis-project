@@ -1,15 +1,7 @@
-"""In-process background workers for ``execution = 'async'`` jobs (local PostGIS queue, no Redis).
-
-Each worker thread loops: maintenance (re-queue or fail jobs whose worker stopped heart-beating;
-fail jobs queued longer than the queue TTL) -> claim the oldest queued job with
-``FOR UPDATE SKIP LOCKED`` -> run it to a terminal state -> repeat. Idle workers sleep
-``worker_poll_seconds`` or until a new job is queued in this process.
-
-Capacity is explicit: ``async_workers`` threads (default 1) each hold at most one block of
-``block_size^2`` pixels plus the GDAL cache (GDAL_CACHEMAX_MB); several processing replicas may
-share one queue safely. After a restart, jobs left ``running`` by the old process stop
-heart-beating and are re-queued (attempts < max_attempts) or failed with WORKER_LOST.
-"""
+# In-process background workers for async jobs (PostGIS ops.jobs queue, no Redis). Each thread loops:
+# maintenance (re-queue/fail jobs whose worker stopped heart-beating, expire jobs queued past the TTL)
+# -> claim the oldest queued job (FOR UPDATE SKIP LOCKED) -> run it -> repeat; idle threads sleep
+# worker_poll_seconds or until a job is queued in this process. Several replicas may share one queue.
 
 from __future__ import annotations
 
@@ -22,7 +14,10 @@ log = logging.getLogger(__name__)
 KINDS = ("zonal-statistics", "clip")
 
 
+# ASYNC_WORKERS daemon threads running async jobs through a ProcessingService.
+# Created, started and stopped by app.create_app (lifespan).
 class WorkerPool:
+    # Keep the service and per-pool state.
     def __init__(self, service):
         self.service = service
         self.settings = service.settings
@@ -33,10 +28,9 @@ class WorkerPool:
         self.processed = 0
         self.last_loop = 0.0
 
+    # Start the threads. Async support of the job store (migration core/0009) is re-checked in the
+    # loop, so a database that is not yet reachable at start-up does not disable the queue.
     def start(self) -> None:
-        # Threads start whenever workers are configured; whether the job store supports async jobs
-        # (database migration core/0009) is re-checked in the loop, so a database that is not yet
-        # reachable at start-up does not disable the queue for the life of the process.
         if self.settings.async_workers < 1:
             log.info("async workers disabled (ASYNC_WORKERS=0)")
             return
@@ -46,16 +40,20 @@ class WorkerPool:
             self._threads.append(t)
         log.info("started %d async worker(s) as %s", len(self._threads), self.service.worker_id)
 
+    # Signal the threads to stop and wait for them. Used by the app lifespan and tests.
     def stop(self, timeout: float = 10.0) -> None:
         self._stop.set()
         self.service.wake.set()
         for t in self._threads:
             t.join(timeout=timeout)
 
+    # Number of live worker threads. Used by app.ready.
     @property
     def alive(self) -> int:
         return sum(t.is_alive() for t in self._threads)
 
+    # Recover stale running jobs and expire old queued ones (at most every max(heartbeat, 5) s unless
+    # forced); returns the counts. Used by run_once and tests.
     def maintenance(self, force: bool = False) -> dict[str, int]:
         now = time.monotonic()
         with self._maint_lock:
@@ -68,8 +66,8 @@ class WorkerPool:
             log.warning("job maintenance: %s", out)
         return out
 
+    # Maintenance plus at most one job; True if a job was processed. Used by _run and tests.
     def run_once(self) -> bool:
-        """Maintenance + at most one job. Returns True if a job was processed (used by tests)."""
         self.maintenance()
         job = self.service.jobs.claim(self.service.worker_id, KINDS)
         if job is None:
@@ -79,12 +77,13 @@ class WorkerPool:
         self.processed += 1
         return True
 
+    # Thread body: loop until stopped; errors (e.g. job store down) back off and never kill the thread.
     def _run(self) -> None:
         while not self._stop.is_set():
             self.last_loop = time.monotonic()
             try:
                 worked = self.service.async_enabled and self.run_once()
-            except Exception:  # job store down: back off, never die
+            except Exception:
                 log.exception("async worker loop error; retrying")
                 worked = False
             if not worked:

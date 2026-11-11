@@ -1,13 +1,6 @@
-"""PostGIS integration: catalog.current_datasets + ops.jobs backends.
-
-Skipped unless TEST_DATABASE_URL points at a PostGIS database the test may write to, e.g.
-
-    TEST_DATABASE_URL=postgresql://user:pass@localhost:5432/cgis pytest -m postgis
-
-If Agent 2's migrations are already applied they are used as-is; otherwise a minimal
-schema matching contracts/SHARED_CONTRACTS.md is created (test-only, IF NOT EXISTS).
-Rows created here use unique IDs and are deleted afterwards.
-"""
+# PostGIS integration of the catalog.current_datasets and ops.jobs backends. Skipped unless
+# TEST_DATABASE_URL points at a writable PostGIS database (`pytest -m postgis`); uses the real
+# migrations if applied, else creates a minimal schema. Test rows use unique IDs and are deleted.
 
 from __future__ import annotations
 
@@ -27,11 +20,9 @@ psycopg = pytest.importorskip("psycopg")
 from fastapi.testclient import TestClient  # noqa: E402
 
 from spatial_processing.app import create_app  # noqa: E402
-from spatial_processing.catalog import PostgresCatalog  # noqa: E402
-from spatial_processing.config import Settings  # noqa: E402
-from spatial_processing.errors import ApiError  # noqa: E402
-from spatial_processing.jobs import COMPLETED, RUNNING, PostgresJobStore  # noqa: E402
-from synthetic import TOWN_A, TOWN_B  # noqa: E402
+from spatial_processing.backends import COMPLETED, FAILED, QUEUED, RUNNING, PostgresCatalog, PostgresJobStore  # noqa: E402
+from spatial_processing.config import ApiError, Settings  # noqa: E402
+from synthetic import CLIP, DISJOINT, TOWN_A, TOWN_B, ZONAL, payload  # noqa: E402
 
 FALLBACK_DDL = """
 CREATE EXTENSION IF NOT EXISTS postgis;
@@ -78,6 +69,7 @@ CREATE TABLE IF NOT EXISTS ops.jobs (
 PREFIX = f"pgtest-{uuid.uuid4().hex[:8]}"
 
 
+# Ensure the schema exists, insert the test catalog rows and delete them (and their jobs) afterwards.
 @pytest.fixture(scope="module")
 def db():
     with psycopg.connect(DSN, autocommit=True) as conn:
@@ -94,8 +86,7 @@ def db():
         ]
         for dataset_id, version, status, path in rows:
             conn.execute(
-                # Integration (Agent 6): Agent 2's schema requires a 64-hex checksum and, for ready
-                # rasters, resolution_x/resolution_y (constraints datasets_checksum_format/_ready_complete).
+                # The real schema requires a 64-hex checksum and, for ready rasters, resolution_x/y.
                 "INSERT INTO catalog.datasets (dataset_id, version, title, kind, product_level, year, crs, bbox, "
                 "resolution_x, resolution_y, units, nodata, asset_path, checksum_sha256, source, provenance, status) "
                 "VALUES (%s, %s, %s, 'raster', 'source', 2001, 'EPSG:4326', "
@@ -108,6 +99,7 @@ def db():
         conn.execute("DELETE FROM ops.jobs WHERE input->>'dataset_id' LIKE %s", (f"{PREFIX}%",))
 
 
+# The catalog returns the highest ready version with its provenance.
 def test_catalog_resolves_highest_ready_version(db):
     catalog = PostgresCatalog(DSN)
     catalog.ping()
@@ -116,6 +108,7 @@ def test_catalog_resolves_highest_ready_version(db):
     assert record.provenance == {"synthetic": True}
 
 
+# Unknown, staged-only and injection-style dataset IDs give the right errors.
 def test_catalog_errors(db):
     catalog = PostgresCatalog(DSN)
     with pytest.raises(ApiError) as info:
@@ -129,12 +122,14 @@ def test_catalog_errors(db):
     assert info.value.code == "INVALID_DATASET_ID"
 
 
+# An unreachable database gives 503.
 def test_catalog_unavailable():
     with pytest.raises(ApiError) as info:
         PostgresCatalog("postgresql://nobody@127.0.0.1:1/none").get_ready("anything")
     assert info.value.status == 503
 
 
+# ops.jobs create/transition/get round-trip.
 def test_job_store_roundtrip(db):
     store = PostgresJobStore(DSN)
     store.ping()
@@ -146,6 +141,7 @@ def test_job_store_roundtrip(db):
     assert done.updated_at >= done.created_at
 
 
+# The full API (ready, zonal, clip, download, failed job) works on the PostGIS backends.
 def test_api_with_postgis_backends(db, asset_root, tmp_path):
     settings = Settings(
         asset_root=asset_root,
@@ -157,25 +153,18 @@ def test_api_with_postgis_backends(db, asset_root, tmp_path):
     with TestClient(create_app(settings)) as client:
         assert client.get("/ready").status_code == 200
         for suffix, aoi, expected in (("2001", TOWN_A, 100), ("2011", TOWN_A, 200), ("2001", TOWN_B, 25), ("2011", TOWN_B, 50)):
-            body = client.post(
-                "/operations/zonal-statistics",
-                json={"dataset_id": f"{PREFIX}-{suffix}", "aoi": aoi, "aoi_crs": "EPSG:4326"},
-            ).json()
+            body = client.post(ZONAL, json=payload(f"{PREFIX}-{suffix}", aoi)).json()
             assert body["sum"] == pytest.approx(expected)
-        job = client.post(
-            "/operations/clip", json={"dataset_id": f"{PREFIX}-2011", "aoi": TOWN_B, "aoi_crs": "EPSG:4326"}
-        ).json()
+        job = client.post(CLIP, json=payload(f"{PREFIX}-2011", TOWN_B)).json()
         assert client.get(f"/operations/{job['job_id']}").json()["status"] == "completed"
         assert client.get(f"/downloads/{job['job_id']}").status_code == 200
-        bad = client.post(
-            "/operations/zonal-statistics",
-            json={"dataset_id": f"{PREFIX}-2001", "aoi": {"type": "Polygon", "coordinates": [[[79, 17], [79.01, 17], [79.01, 17.01], [79, 17]]]}, "aoi_crs": "EPSG:4326"},
-        )
+        bad = client.post(ZONAL, json=payload(f"{PREFIX}-2001", DISJOINT))
         failed = client.get(f"/operations/{bad.json()['error']['details']['job_id']}").json()
         assert failed["status"] == "failed" and failed["error"]["code"] == "AOI_OUTSIDE_RASTER"
 
 
 # ---------------------------------------------------------------------------- async queue (core/0009)
+# A PostgresJobStore with the async columns (skips otherwise); deletes the jobs it created.
 @pytest.fixture()
 def async_store():
     store = PostgresJobStore(DSN)
@@ -188,9 +177,8 @@ def async_store():
             conn.execute("DELETE FROM ops.jobs WHERE job_id = %s", (job_id,))
 
 
+# Claim (no double claims), heartbeat/progress, cancel flag and stale-job recovery on ops.jobs.
 def test_postgres_async_claim_heartbeat_cancel_and_recovery(async_store):
-    from spatial_processing.jobs import FAILED, QUEUED
-
     store, created = async_store
     kind = "zonal-statistics"
     a = store.create(kind, {"dataset_id": "x", "t": "a"}, execution="async", max_attempts=2)
@@ -209,7 +197,7 @@ def test_postgres_async_claim_heartbeat_cancel_and_recovery(async_store):
     store.request_cancel(a.job_id)
     assert store.heartbeat(a.job_id, 0.6, None) is True, "worker learns about the cancellation"
 
-    # a worker that stops heart-beating: a is re-queued? no - cancel requested -> failed; b (1 attempt) -> failed
+    # both stop heart-beating: a (cancel requested) fails; b (1 attempt) fails with WORKER_LOST
     with psycopg.connect(DSN, autocommit=True) as conn:
         conn.execute("UPDATE ops.jobs SET heartbeat_at = now() - interval '10 minutes' WHERE job_id = ANY(%s)",
                      ([a.job_id, b.job_id],))
@@ -219,12 +207,10 @@ def test_postgres_async_claim_heartbeat_cancel_and_recovery(async_store):
         assert store.get(b.job_id).error["code"] == "WORKER_LOST"
 
 
+# A stale running job with attempts left is re-queued.
 def test_postgres_stale_job_is_requeued_for_retry(async_store):
-    from spatial_processing.jobs import QUEUED
-
     store, created = async_store
-    kind = "clip"
-    job = store.create(kind, {"dataset_id": "y"}, execution="async", max_attempts=3)
+    job = store.create("clip", {"dataset_id": "y"}, execution="async", max_attempts=3)
     created.append(job.job_id)
     with psycopg.connect(DSN, autocommit=True) as conn:  # isolate: claim exactly this job
         conn.execute("UPDATE ops.jobs SET status = 'running', attempts = 1, heartbeat_at = now() - interval '1 hour'"

@@ -1,4 +1,5 @@
-"""Completion P2/P3: bounded-memory blockwise processing and asynchronous background jobs."""
+# Bounded-memory blockwise processing (equal to the in-memory path) and asynchronous background jobs
+# (202 + polling, auto routing, limits, cancel, retry after a lost worker, queue TTL, time limit).
 
 from __future__ import annotations
 
@@ -13,20 +14,17 @@ from pyproj import CRS
 
 import synthetic
 from spatial_processing import blockwise, raster
-from spatial_processing.jobs import ASYNC, FAILED, QUEUED, RUNNING
-from spatial_processing.units import classify_units
-from synthetic import NODATA_CORNER, TOWN_A, TOWN_B, rect
-
-ZONAL = "/operations/zonal-statistics"
-CLIP = "/operations/clip"
+from spatial_processing.backends import ASYNC, FAILED, QUEUED, RUNNING
+from synthetic import CLIP, NODATA_CORNER, TOWN_A, TOWN_B, ZONAL, payload, rect
 # Off-lattice vertices: no edge passes exactly through a pixel centre. (At an exact tie the two
-# implementations may break the tie differently by one boundary pixel; see docs/API.md.)
+# implementations may break the tie differently by one boundary pixel.)
 IRREGULAR = {"type": "Polygon", "coordinates": [[[78.0031371, 17.9412297], [78.0610833, 17.9521419],
                                                  [78.0401171, 17.9960613], [78.0219887, 17.9703129],
                                                  [78.0061113, 17.9931917], [78.0031371, 17.9412297]]]}
 WHOLE = rect(77.99, 17.93, 78.07, 18.01)
 
 
+# Poll a job until it is completed/failed (or the timeout passes); returns the last job body.
 def _wait(client, job_id, timeout=20.0):
     deadline = time.monotonic() + timeout
     while True:
@@ -39,17 +37,17 @@ def _wait(client, job_id, timeout=20.0):
 # ------------------------------------------------------------------ blockwise == in-memory
 @pytest.mark.parametrize("aoi", [TOWN_A, TOWN_B, NODATA_CORNER, IRREGULAR, WHOLE],
                          ids=["townA", "townB", "nodata-corner", "irregular", "whole"])
+# Blockwise zonal statistics equal the in-memory result for several AOIs and block sizes.
 @pytest.mark.parametrize("block", [5, 16, 64])
 def test_blockwise_zonal_equals_in_memory(asset_root, aoi, block):
     from shapely.geometry import shape
 
     geom = shape(aoi)
-    sem = classify_units("people_per_cell")
     with rasterio.open(asset_root / "fine_2001.tif") as src:
         ref = raster.zonal_statistics(raster.select_pixels(src, geom, max_window_pixels=10**9,
                                                            catalog_nodata=synthetic.NODATA),
-                                      sem, ["sum", "mean", "count"])
-        got = blockwise.zonal_blockwise(src, geom, semantics=sem, operations=["sum", "mean", "count"],
+                                      "people_per_cell", ["sum", "mean", "count"])
+        got = blockwise.zonal_blockwise(src, geom, units="people_per_cell", operations=["sum", "mean", "count"],
                                         catalog_nodata=synthetic.NODATA, block=block)
     for key in ("count_valid", "pixels_in_aoi", "nodata_excluded"):
         assert got[key] == ref[key]
@@ -58,6 +56,7 @@ def test_blockwise_zonal_equals_in_memory(asset_root, aoi, block):
     assert got["processing"]["path"] == "blockwise"
 
 
+# Blocks that miss an L-shaped AOI are not read.
 def test_blockwise_skips_blocks_outside_the_aoi(asset_root):
     from shapely.geometry import shape
 
@@ -65,22 +64,24 @@ def test_blockwise_skips_blocks_outside_the_aoi(asset_root):
                                                          [78.004, 17.940], [78.004, 18.0], [78.0, 18.0],
                                                          [78.0, 17.936]]]})
     with rasterio.open(asset_root / "synthetic_2001.tif") as src:
-        got = blockwise.zonal_blockwise(src, l_shape, semantics=classify_units("people_per_cell"),
+        got = blockwise.zonal_blockwise(src, l_shape, units="people_per_cell",
                                         operations=["count"], catalog_nodata=synthetic.NODATA, block=8)
     assert got["processing"]["blocks_read"] < (64 // 8) ** 2
 
 
+# Integer rasters get an exact int sum blockwise.
 def test_blockwise_integer_raster_sum_is_exact(asset_root):
     from shapely.geometry import shape
 
     with rasterio.open(asset_root / "unmasked_int.tif") as src:
         ref = raster.zonal_statistics(raster.select_pixels(src, shape(WHOLE), max_window_pixels=10**9),
-                                      classify_units("count"), ["sum", "count"])
-        got = blockwise.zonal_blockwise(src, shape(WHOLE), semantics=classify_units("count"),
+                                      "count", ["sum", "count"])
+        got = blockwise.zonal_blockwise(src, shape(WHOLE), units="count",
                                         operations=["sum", "count"], catalog_nodata=None, block=7)
     assert isinstance(got["sum"], int) and got["sum"] == ref["sum"] and got["count_valid"] == ref["count_valid"]
 
 
+# A blockwise clip is pixel-identical to the in-memory clip (GTiff and COG).
 @pytest.mark.parametrize("fmt", ["GTiff", "COG"])
 @pytest.mark.parametrize("aoi", [TOWN_A, IRREGULAR], ids=["townA", "irregular"])
 def test_blockwise_clip_equals_in_memory(asset_root, tmp_path, fmt, aoi):
@@ -104,6 +105,7 @@ def test_blockwise_clip_equals_in_memory(asset_root, tmp_path, fmt, aoi):
     assert got["count_valid"] == int(sel.valid.sum()) and got["pixels_in_aoi"] == int(sel.inside.sum())
 
 
+# Blockwise clips reproject with a warning and enforce the output size limit.
 def test_blockwise_clip_reprojects_and_limits_size(asset_root, tmp_path):
     from shapely.geometry import shape
 
@@ -121,10 +123,12 @@ def test_blockwise_clip_reprojects_and_limits_size(asset_root, tmp_path):
 
 
 # ------------------------------------------------------------------ async API
+# Request body defaulting to the irregular AOI on the fine raster. Used by the API tests below.
 def _body(dataset_id="fine-2001", aoi=IRREGULAR, **extra):
-    return {"dataset_id": dataset_id, "aoi": aoi, "aoi_crs": "EPSG:4326", **extra}
+    return payload(dataset_id, aoi, **extra)
 
 
+# An async zonal job answers 202 + Location and completes with the sync numbers.
 def test_async_zonal_job_completes_with_same_numbers(make_client):
     client, store, _ = make_client()
     sync = client.post(ZONAL, json=_body())
@@ -143,6 +147,7 @@ def test_async_zonal_job_completes_with_same_numbers(make_client):
     assert res["processing"]["path"] == "blockwise"
 
 
+# An async COG clip job produces a download and a blockwise metadata sidecar.
 def test_async_clip_job_produces_a_download(make_client):
     client, _, _ = make_client(block_size=7)
     job = client.post(CLIP, json=_body(mode="async", format="COG")).json()
@@ -153,6 +158,7 @@ def test_async_clip_job_produces_a_download(make_client):
     assert client.get(f"/downloads/{job['job_id']}/metadata").json()["processing"]["path"] == "blockwise"
 
 
+# mode=auto runs small AOIs synchronously and queues large ones.
 def test_auto_mode_routes_by_aoi_size(make_client):
     client, _, _ = make_client(max_window_pixels=200)
     small = client.post(ZONAL, json=_body("synthetic-worldpop-2001", TOWN_B, mode="auto"))
@@ -162,6 +168,7 @@ def test_auto_mode_routes_by_aoi_size(make_client):
     assert _wait(client, big.json()["job_id"])["result"]["count_valid"] == 60 * 60
 
 
+# A too-large sync AOI gets 413 with a hint to use async mode.
 def test_sync_large_aoi_gets_413_with_async_hint(make_client):
     client, _, _ = make_client(max_window_pixels=200)
     r = client.post(ZONAL, json=_body("synthetic-worldpop-2001", WHOLE))
@@ -170,6 +177,7 @@ def test_sync_large_aoi_gets_413_with_async_hint(make_client):
     assert err["code"] == "AOI_TOO_LARGE" and "async" in err["details"]["hint"]
 
 
+# AOIs over the async limit get 413 before any job exists.
 def test_async_limit_rejects_without_creating_a_job(make_client):
     client, store, _ = make_client(max_window_pixels=10, async_max_window_pixels=100)
     r = client.post(ZONAL, json=_body("synthetic-worldpop-2001", WHOLE, mode="async"))
@@ -177,18 +185,21 @@ def test_async_limit_rejects_without_creating_a_job(make_client):
     assert store.history == {}
 
 
+# Async requests get 503 ASYNC_UNAVAILABLE when ASYNC_WORKERS=0.
 def test_async_unavailable_when_no_workers(make_client):
     client, _, _ = make_client(async_workers=0)
     r = client.post(ZONAL, json=_body(mode="async"))
     assert r.status_code == 503 and r.json()["error"]["code"] == "ASYNC_UNAVAILABLE"
 
 
+# An unknown mode is a 422 INVALID_REQUEST.
 def test_invalid_mode_is_rejected(client):
     r = client.post(ZONAL, json=_body(mode="later"))
     assert r.status_code == 422 and r.json()["error"]["code"] == "INVALID_REQUEST"
 
 
 # ------------------------------------------------------------------ cancel / retry / TTL
+# Cancelling a queued job fails it with CANCELLED; a second cancel is 409.
 def test_cancel_queued_job(make_client):
     client, store, _ = make_client()
     client.app.state.workers.stop()            # nothing claims the job
@@ -201,6 +212,7 @@ def test_cancel_queued_job(make_client):
     assert again.status_code == 409 and again.json()["error"]["code"] == "JOB_NOT_CANCELLABLE"
 
 
+# A running job stops at its next checkpoint after a cancel and leaves no outputs.
 def test_cancel_running_job_stops_at_checkpoint(make_client):
     client, store, _ = make_client()
     client.app.state.workers.stop()
@@ -214,12 +226,14 @@ def test_cancel_running_job_stops_at_checkpoint(make_client):
     assert not service.outputs.job_dir(job_id).exists(), "partial outputs removed"
 
 
+# Sync jobs cannot be cancelled (409).
 def test_sync_job_cannot_be_cancelled(client):
     job_id = client.post(ZONAL, json=_body("synthetic-worldpop-2001", TOWN_A)).json()["job_id"]
     r = client.post(f"/operations/{job_id}/cancel")
     assert r.status_code == 409 and r.json()["error"]["code"] == "JOB_NOT_CANCELLABLE"
 
 
+# A job whose worker died is re-queued, then fails with WORKER_LOST when attempts run out.
 def test_stale_running_job_is_retried_then_failed(make_client):
     client, store, settings = make_client(async_max_attempts=2)
     pool = client.app.state.workers
@@ -235,6 +249,7 @@ def test_stale_running_job_is_retried_then_failed(make_client):
     assert store.get(job_id).error["code"] == "WORKER_LOST"
 
 
+# A re-queued job completes on its second attempt.
 def test_requeued_job_completes_on_a_new_worker(make_client):
     client, store, settings = make_client(async_max_attempts=2)
     pool = client.app.state.workers
@@ -248,6 +263,7 @@ def test_requeued_job_completes_on_a_new_worker(make_client):
     assert job.status == "completed" and job.attempts == 2
 
 
+# A job queued past the TTL fails with JOB_EXPIRED.
 def test_queued_job_expires_after_ttl(make_client):
     client, store, settings = make_client()
     pool = client.app.state.workers
@@ -258,6 +274,7 @@ def test_queued_job_expires_after_ttl(make_client):
     assert store.get(job_id).error["code"] == "JOB_EXPIRED"
 
 
+# A dataset version change while queued fails the job with DATASET_VERSION_CHANGED.
 def test_dataset_version_change_while_queued_fails_safely(make_client, catalog):
     client, store, _ = make_client()
     client.app.state.workers.stop()
@@ -268,6 +285,7 @@ def test_dataset_version_change_while_queued_fails_safely(make_client, catalog):
     assert store.get(job_id).error["code"] == "DATASET_VERSION_CHANGED"
 
 
+# An async job over its time limit fails with JOB_TIMEOUT.
 def test_async_time_limit(make_client):
     client, store, _ = make_client(async_max_job_seconds=0)
     job = client.post(ZONAL, json=_body(mode="async")).json()
@@ -275,6 +293,7 @@ def test_async_time_limit(make_client):
     assert done["status"] == "failed" and done["error"]["code"] == "JOB_TIMEOUT"
 
 
+# The job store records execution=async, max_attempts and the candidate window size.
 def test_job_store_records_async_execution(make_client):
     client, store, _ = make_client()
     client.app.state.workers.stop()

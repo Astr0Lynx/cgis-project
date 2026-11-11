@@ -1,4 +1,4 @@
-# CyberGIS Phase 2 — spatial processing service (Agent 5).
+# Spatial processing service. Targets: `test` (runs the standalone suite) and `runtime`.
 # rasterio wheels bundle GDAL/PROJ, so no system GDAL packages are needed.
 FROM python:3.12.12-slim AS base
 
@@ -8,8 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
-# Integration fix (Agent 6): the GDAL bundled in the rasterio wheel needs libexpat, which slim
-# images lack (ImportError: libexpat.so.1). Same fix as ingestion/ and ogc-services/tiler/.
+# The GDAL bundled in the rasterio wheel needs libexpat, which slim images lack.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libexpat1 \
     && rm -rf /var/lib/apt/lists/*
