@@ -1,4 +1,0 @@
-*.sql text eol=lf
-*.py text eol=lf
-*.geojson text eol=lf
-*.md text eol=lf

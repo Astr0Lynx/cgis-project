@@ -1,4 +1,4 @@
-"""Index usage evidence (EXPLAIN) and CLI behaviour."""
+# EXPLAIN index-usage evidence and CLI behaviour (run as a subprocess).
 
 import json
 import subprocess
@@ -12,6 +12,7 @@ from cgis_db import explain
 DB_DIR = Path(__file__).resolve().parent.parent
 
 
+# On the benchmark grid the GiST indexes are used, the anti-pattern seq-scans, and data is rolled back.
 def test_explain_shows_gist_usage_on_benchmark_grid(migrated_dsn):
     with psycopg.connect(migrated_dsn) as c:
         report = explain.run(c, grid=60, datasets=1000)
@@ -28,11 +29,13 @@ def test_explain_shows_gist_usage_on_benchmark_grid(migrated_dsn):
         "catalog.current_datasets with bbox predicate (pushes down to GiST + PK anti-join)"]
 
 
+# Runs `python -m cgis_db --dsn DSN ...` in a subprocess. Used by the CLI tests here.
 def _cli(dsn, *args):
     return subprocess.run([sys.executable, "-m", "cgis_db", "--dsn", dsn, *args], cwd=DB_DIR,
                           capture_output=True, text=True, timeout=300)
 
 
+# migrate up (twice), status, fixtures load and the --steps/--target conflict via the CLI.
 def test_cli_end_to_end(fresh_dsn):
     r = _cli(fresh_dsn, "migrate", "up")
     assert r.returncode == 0, r.stderr
@@ -46,6 +49,7 @@ def test_cli_end_to_end(fresh_dsn):
     assert r.returncode != 0
 
 
+# Connection errors print one line without traceback or password and exit 1.
 def test_cli_errors_are_clean_and_redacted(fresh_dsn):
     r = _cli("postgresql://someone:s3cret@127.0.0.1:1/nope", "migrate", "status")
     assert r.returncode == 1

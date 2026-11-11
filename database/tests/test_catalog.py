@@ -1,4 +1,4 @@
-"""catalog.datasets constraints, registration semantics, current_datasets view, concurrency."""
+# catalog.datasets: constraints, register_dataset semantics, the current_datasets view and concurrency.
 
 import threading
 
@@ -19,6 +19,7 @@ INSERT = (
 BBOX = "SRID=4326;POLYGON((78 17.936,78.064 17.936,78.064 18,78 18,78 17.936))"
 
 
+# Insert parameters for a valid raster row, with overrides. Used by the INSERT-based tests here.
 def row(**overrides):
     r = raster_record(bbox=BBOX)
     r.update(overrides)
@@ -26,6 +27,7 @@ def row(**overrides):
     return r
 
 
+# A complete ready row inserts and gets created_at = updated_at.
 def test_valid_insert(conn):
     conn.execute(INSERT, row())
     got = conn.execute("SELECT status, created_at = updated_at FROM catalog.datasets"
@@ -33,6 +35,7 @@ def test_valid_insert(conn):
     assert got == ("ready", True)
 
 
+# Each invalid column value is rejected with the expected error class.
 @pytest.mark.parametrize("overrides, error", [
     ({"dataset_id": None}, psycopg.errors.NotNullViolation),
     ({"dataset_id": "Bad ID!"}, psycopg.errors.CheckViolation),
@@ -72,25 +75,30 @@ def test_constraint_rejections(conn, overrides, error):
         conn.execute(INSERT, row(**overrides))
 
 
+# provenance must be a JSON object.
 def test_provenance_must_be_object(conn):
     with pytest.raises(psycopg.errors.CheckViolation):
         conn.execute(INSERT, {**row(), "provenance": Jsonb([1, 2])})
 
 
+# Staged rows may omit bbox, checksum, asset_path and units.
 def test_staged_rows_may_be_incomplete(conn):
     conn.execute(INSERT, row(status="staged", bbox=None, checksum_sha256=None, asset_path=None, units=None))
 
 
+# A projected native CRS (EPSG:32644) is accepted.
 def test_projected_native_crs_is_accepted(conn):
     conn.execute(INSERT, row(dataset_id="utm-raster", crs="EPSG:32644", resolution_x=100, resolution_y=100))
 
 
+# (dataset_id, version) is unique.
 def test_duplicate_primary_key_rejected(conn):
     conn.execute(INSERT, row())
     with pytest.raises(psycopg.errors.UniqueViolation):
         conn.execute(INSERT, row())
 
 
+# register_dataset: insert, unchanged re-run, no ready->staged downgrade, checksum conflict.
 def test_register_is_idempotent_and_rejects_conflicts(conn):
     rec = raster_record()
     assert queries.register_dataset(conn, rec)["outcome"] == "inserted"
@@ -102,6 +110,7 @@ def test_register_is_idempotent_and_rejects_conflicts(conn):
         queries.register_dataset(conn, {**rec, "checksum_sha256": "b" * 64})
 
 
+# Changing metadata of a ready version is a conflict.
 def test_register_ready_metadata_change_is_conflict(conn):
     rec = raster_record()
     queries.register_dataset(conn, rec)
@@ -109,6 +118,7 @@ def test_register_ready_metadata_change_is_conflict(conn):
         queries.register_dataset(conn, {**rec, "title": "SYNTHETIC renamed"})
 
 
+# A staged row can be refreshed, then published; checksum changes conflict.
 def test_register_staged_then_ready_flow(conn):
     rec = raster_record(status="staged", checksum_sha256=None)
     assert queries.register_dataset(conn, rec)["outcome"] == "inserted"
@@ -121,6 +131,7 @@ def test_register_staged_then_ready_flow(conn):
     assert queries.resolve_dataset(conn, rec["dataset_id"])["checksum_sha256"] == "c" * 64
 
 
+# bbox accepted as array, GeoJSON or EWKT, stored as EPSG:4326.
 @pytest.mark.parametrize("bbox", [
     [78.0, 17.936, 78.064, 18.0],
     {"type": "Polygon", "coordinates": [[[78, 17.936], [78.064, 17.936], [78.064, 18], [78, 18], [78, 17.936]]]},
@@ -133,6 +144,7 @@ def test_register_bbox_forms(conn, bbox):
     assert ext == pytest.approx((78.0, 17.936, 78.064, 18.0, 4326))
 
 
+# A projected EWKT bbox is transformed to EPSG:4326.
 def test_register_projected_bbox_is_transformed(conn):
     ewkt = conn.execute(
         "SELECT ST_AsEWKT(ST_Transform(ST_MakeEnvelope(78.0, 17.936, 78.064, 18.0, 4326), 3857))").fetchone()[0]
@@ -140,6 +152,7 @@ def test_register_projected_bbox_is_transformed(conn):
     assert conn.execute("SELECT ST_SRID(bbox) FROM catalog.datasets").fetchone()[0] == 4326
 
 
+# register_dataset rejects malformed bbox, kind and missing id.
 @pytest.mark.parametrize("bad, error", [
     ({"bbox": [1, 2, 3]}, psycopg.errors.InvalidParameterValue),
     ({"bbox": [3, 0, 1, 1]}, psycopg.errors.InvalidParameterValue),
@@ -152,6 +165,7 @@ def test_register_rejects_bad_input(conn, bad, error):
         queries.register_dataset(conn, raster_record(**bad))
 
 
+# current_datasets shows the highest ready version and ignores staged/failed.
 def test_current_view_selects_highest_ready_version(conn):
     did = "synthetic-worldpop-2011"
     reg = lambda v, status, ck: queries.register_dataset(  # noqa: E731
@@ -170,6 +184,7 @@ def test_current_view_selects_highest_ready_version(conn):
     assert conn.execute("SELECT count(*) FROM catalog.datasets WHERE dataset_id=%s", (did,)).fetchone()[0] == 3
 
 
+# Ready rows cannot be edited; only ready -> failed is allowed.
 def test_ready_rows_are_immutable(conn):
     queries.register_dataset(conn, raster_record())
     for stmt in [
@@ -185,12 +200,14 @@ def test_ready_rows_are_immutable(conn):
     queries.set_dataset_status(conn, "synthetic-worldpop-2001", 1, "failed")
 
 
+# failed -> ready is rejected.
 def test_failed_rows_can_be_restaged_not_published_directly(conn):
     queries.register_dataset(conn, raster_record(status="failed"))
     with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
         queries.set_dataset_status(conn, "synthetic-worldpop-2001", 1, "ready")
 
 
+# created_at is preserved and updated_at maintained on update.
 def test_timestamps_maintained(conn):
     queries.register_dataset(conn, raster_record(status="staged"))
     created = conn.execute("SELECT created_at FROM catalog.datasets"
@@ -202,6 +219,7 @@ def test_timestamps_maintained(conn):
     assert c2 == created and u2.tzinfo is not None
 
 
+# datasets_in_bbox filters by area, kind and CRS of the query bbox.
 def test_bbox_discovery(conn):
     queries.register_dataset(conn, raster_record())
     assert {d["dataset_id"] for d in queries.datasets_in_bbox(conn, (78.01, 17.98, 78.02, 17.99))} == {
@@ -215,6 +233,7 @@ def test_bbox_discovery(conn):
     assert len(queries.datasets_in_bbox(conn, merc, srid=3857, kind="raster")) == 1
 
 
+# Hostile ids are treated as data, never executed.
 def test_sql_injection_is_inert(conn):
     hostile = "x'; DROP TABLE catalog.datasets; --"
     assert queries.resolve_dataset(conn, hostile) is None
@@ -224,6 +243,7 @@ def test_sql_injection_is_inert(conn):
     assert conn.execute("SELECT to_regclass('catalog.datasets') IS NOT NULL").fetchone()[0]
 
 
+# Six racing registrations: exactly one insert, conflicting checksums rejected.
 def test_concurrent_registration_single_winner(migrated_dsn):
     rec = raster_record()
     barrier = threading.Barrier(6)

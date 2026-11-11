@@ -1,9 +1,5 @@
-"""Reproducible EXPLAIN ANALYZE samples.
-
-Runs inside ONE transaction that is always rolled back: it inserts a synthetic
-benchmark grid of units / catalog rows, ANALYZEs, captures plans, then discards
-everything. Safe to run against a dev database; never leaves data behind.
-"""
+# Reproducible EXPLAIN ANALYZE samples that show which spatial indexes the key queries use.
+# Seeds a synthetic benchmark grid inside one transaction that is always rolled back.
 
 from __future__ import annotations
 
@@ -11,6 +7,7 @@ import platform
 
 import psycopg
 
+# (title, SQL) pairs; tests/test_explain_and_cli.py looks plans up by these titles.
 QUERIES = [
     (
         "geo.admin_units bbox filter (&& + ST_Intersects)",
@@ -46,6 +43,7 @@ QUERIES = [
     ),
 ]
 
+# Benchmark rows: an n x n grid of 0.01 deg units and m dataset ids x 3 versions.
 SEED_SQL = """
 INSERT INTO geo.admin_units (unit_id, name, level, geom, source, provenance)
 SELECT format('bench-%s-%s', i, j), format('Bench %s/%s', i, j), 'bench_cell',
@@ -69,43 +67,31 @@ ANALYZE catalog.datasets;
 """
 
 
+# Builds the Markdown report: section A on the existing (tiny) data, section B on the seeded grid.
+# Used by cli.cmd_explain and tests/test_explain_and_cli.py.
 def run(conn: psycopg.Connection, grid: int = 150, datasets: int = 5000) -> str:
-    out: list[str] = []
-    server = conn.execute("SELECT version(), postgis_lib_version()").fetchone()
-    out.append(f"- PostgreSQL: `{server[0]}`")
-    out.append(f"- PostGIS: `{server[1]}`; client platform: `{platform.platform()}`")
+    version, postgis = conn.execute("SELECT version(), postgis_lib_version()").fetchone()
+    out = [f"- PostgreSQL: `{version}`",
+           f"- PostGIS: `{postgis}`; client platform: `{platform.platform()}`"]
     with conn.transaction(force_rollback=True):
-        counts = {
-            "admin_units (before seeding)": conn.execute("SELECT count(*) FROM geo.admin_units").fetchone()[0],
-        }
-        out.append("")
-        out.append("## A. Tiny fixture only (expect sequential scans; no speed claims)")
-        out.append("")
-        out.append(f"Rows in `geo.admin_units`: {counts['admin_units (before seeding)']}")
+        n_units = conn.execute("SELECT count(*) FROM geo.admin_units").fetchone()[0]
+        out += ["", "## A. Tiny fixture only (expect sequential scans; no speed claims)", "",
+                f"Rows in `geo.admin_units`: {n_units}"]
         conn.execute("ANALYZE geo.admin_units; ANALYZE catalog.datasets")
-        out.extend(_explain(conn, QUERIES[:1]))
+        out += _explain(conn, QUERIES[:1])
 
         conn.execute(SEED_SQL.replace("%(n)s", str(int(grid))).replace("%(m)s", str(int(datasets))))
         n_units = conn.execute("SELECT count(*) FROM geo.admin_units").fetchone()[0]
         n_ds = conn.execute("SELECT count(*) FROM catalog.datasets").fetchone()[0]
-        out.append("")
-        out.append(f"## B. Benchmark grid (rolled back): {n_units} units, {n_ds} catalog rows")
-        out.extend(_explain(conn, QUERIES))
+        out += ["", f"## B. Benchmark grid (rolled back): {n_units} units, {n_ds} catalog rows"]
+        out += _explain(conn, QUERIES)
     return "\n".join(out) + "\n"
 
 
+# Runs EXPLAIN ANALYZE for each query and formats title, SQL and plan as Markdown. Used by run.
 def _explain(conn: psycopg.Connection, queries) -> list[str]:
     out = []
     for title, sql in queries:
-        rows = conn.execute("EXPLAIN (ANALYZE, BUFFERS, COSTS OFF, SUMMARY ON) " + sql).fetchall()
-        out.append("")
-        out.append(f"### {title}")
-        out.append("")
-        out.append("```sql")
-        out.append(sql)
-        out.append("```")
-        out.append("")
-        out.append("```text")
-        out.extend(r[0] for r in rows)
-        out.append("```")
+        plan = conn.execute("EXPLAIN (ANALYZE, BUFFERS, COSTS OFF, SUMMARY ON) " + sql).fetchall()
+        out += ["", f"### {title}", "", "```sql", sql, "```", "", "```text", *(r[0] for r in plan), "```"]
     return out

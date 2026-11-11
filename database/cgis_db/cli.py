@@ -1,27 +1,20 @@
-"""Command line interface: ``python -m cgis_db <command>``.
-
-  migrate up     [--track core] [--target N]
-  migrate down   [--track core] [--steps N | --target N]
-  migrate status
-  fixtures load  [--geojson PATH] [--dataset-id ID] [--dataset-version N]
-  raster-demo    [--tile-size 16]
-  explain        [--grid 150] [--datasets 5000]
-
-Connection: --dsn, else CGIS_DATABASE_URL, DATABASE_URL, else libpq PG* variables.
-Exit codes: 0 ok, 1 database/migration error, 2 usage error.
-"""
+# Command line interface: python -m cgis_db [--dsn DSN] migrate|fixtures|raster-demo|explain ...
+# Connection: --dsn, else CGIS_DATABASE_URL, else DATABASE_URL, else libpq PG* variables.
+# Exit codes: 0 ok, 1 database/migration error, 2 usage error.
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 import psycopg
 
 from . import explain, fixtures, migrate
-from .connection import connect
 
+# Fixed test AOIs (the two towns plus a nodata-edge and a disjoint case).
+# Used by cmd_raster_demo and tests/test_raster_demo.py.
 TOWN_AOIS = {
     "town-a": "SRID=4326;POLYGON((78.010 17.980,78.020 17.980,78.020 17.990,78.010 17.990,78.010 17.980))",
     "town-b": "SRID=4326;POLYGON((78.030 17.950,78.035 17.950,78.035 17.955,78.030 17.955,78.030 17.950))",
@@ -31,10 +24,19 @@ TOWN_AOIS = {
 DEMO_RASTERS = (("synthetic-worldpop-2001", 1.0), ("synthetic-worldpop-2011", 2.0))
 
 
+# Opens a connection from --dsn or the environment (an empty conninfo makes libpq read PG*).
+# Used by every cmd_* function.
+def connect(dsn: str | None, **kwargs) -> psycopg.Connection:
+    dsn = dsn or os.environ.get("CGIS_DATABASE_URL") or os.environ.get("DATABASE_URL") or ""
+    return psycopg.connect(dsn, application_name="cgis_db", **kwargs)
+
+
+# Progress messages go to stderr so stdout stays machine-readable. Passed as log= to migrate.up/down.
 def _log(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
+# `migrate up|down|status`. Used by main via build_parser.
 def cmd_migrate(args) -> int:
     with connect(args.dsn, autocommit=True) as conn:
         if args.action == "up":
@@ -52,6 +54,7 @@ def cmd_migrate(args) -> int:
     return 0
 
 
+# `fixtures load`: loads a GeoJSON of units and prints the result as JSON. Used by main.
 def cmd_fixtures(args) -> int:
     with connect(args.dsn) as conn:
         result = fixtures.load_units(conn, args.geojson, dataset_id=args.dataset_id,
@@ -60,6 +63,8 @@ def cmd_fixtures(args) -> int:
     return 0
 
 
+# `raster-demo`: applies the raster_demo track, loads the synthetic tiles and prints zonal stats
+# for every TOWN_AOIS entry as JSON. Used by main.
 def cmd_raster_demo(args) -> int:
     with connect(args.dsn, autocommit=True) as conn:
         migrate.up(conn, "raster_demo", log=_log)
@@ -80,12 +85,14 @@ def cmd_raster_demo(args) -> int:
     return 0
 
 
+# `explain`: prints the EXPLAIN ANALYZE report of explain.run. Used by main.
 def cmd_explain(args) -> int:
     with connect(args.dsn) as conn:
         sys.stdout.write(explain.run(conn, grid=args.grid, datasets=args.datasets))
     return 0
 
 
+# Defines all subcommands and flags. Used by main.
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="python -m cgis_db", description="CyberGIS database tooling")
     p.add_argument("--dsn", help="libpq connection string/URL (default: env)")
@@ -116,6 +123,8 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+# Entry point: runs one subcommand and turns expected errors into a one-line message and exit 1.
+# Used by __main__.py and the `cgis-db` console script.
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:

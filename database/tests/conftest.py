@@ -1,9 +1,5 @@
-"""Integration-test fixtures: every test runs against a REAL PostgreSQL/PostGIS server.
-
-Set ``CGIS_TEST_ADMIN_DSN`` to a role that may CREATE/DROP DATABASE, e.g.
-``postgresql://postgres@localhost:55432/postgres``. Each test session creates
-throw-away databases named ``cgis_test_*`` and drops them afterwards.
-"""
+# Pytest fixtures. Every test runs against a real PostgreSQL/PostGIS server: CGIS_TEST_ADMIN_DSN must
+# name a role that may CREATE/DROP DATABASE; throw-away cgis_test_* databases are dropped at the end.
 
 from __future__ import annotations
 
@@ -17,6 +13,7 @@ import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
+# Import cgis_db from this source tree, even when an installed copy exists.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from cgis_db import fixtures, migrate  # noqa: E402
@@ -24,6 +21,7 @@ from cgis_db import fixtures, migrate  # noqa: E402
 ADMIN_ENV = "CGIS_TEST_ADMIN_DSN"
 
 
+# Admin DSN from CGIS_TEST_ADMIN_DSN, or a clear failure. Used by db_factory.
 def _admin_dsn() -> str:
     dsn = os.environ.get(ADMIN_ENV)
     if not dsn:
@@ -32,11 +30,13 @@ def _admin_dsn() -> str:
     return dsn
 
 
+# Creates uniquely named throw-away databases and drops them all at session end.
 class DatabaseFactory:
     def __init__(self, admin_dsn: str):
         self.admin_dsn = admin_dsn
         self.created: list[str] = []
 
+    # New empty database; returns its DSN. Used by the fixtures below and tests/test_raster_demo.py.
     def create(self) -> str:
         name = f"cgis_test_{uuid.uuid4().hex[:12]}"
         with psycopg.connect(self.admin_dsn, autocommit=True) as c:
@@ -44,12 +44,14 @@ class DatabaseFactory:
         self.created.append(name)
         return make_conninfo(self.admin_dsn, dbname=name)
 
+    # Drops every database this factory created. Used by db_factory teardown.
     def drop_all(self) -> None:
         with psycopg.connect(self.admin_dsn, autocommit=True) as c:
             for name in self.created:
                 c.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(name)))
 
 
+# Session-wide DatabaseFactory.
 @pytest.fixture(scope="session")
 def db_factory():
     factory = DatabaseFactory(_admin_dsn())
@@ -57,46 +59,48 @@ def db_factory():
     factory.drop_all()
 
 
-def _quiet(_msg):
+# No-op log= callback for migrate.up/down. Also used by test_migrations.py, test_raster_demo.py
+# and test_versioned_units.py.
+def quiet(_msg):
     pass
 
 
+# An empty database (no migrations).
 @pytest.fixture
 def fresh_dsn(db_factory) -> str:
-    """An empty database (no migrations)."""
     return db_factory.create()
 
 
+# A database with core migrations only; tests may commit to it.
 @pytest.fixture
 def migrated_dsn(db_factory) -> str:
-    """A database with core migrations applied and nothing else; committed state allowed."""
     dsn = db_factory.create()
     with psycopg.connect(dsn, autocommit=True) as c:
-        migrate.up(c, log=_quiet)
+        migrate.up(c, log=quiet)
     return dsn
 
 
+# Session-wide migrated database with the stub towns loaded; tests must not commit to it.
 @pytest.fixture(scope="session")
 def shared_dsn(db_factory) -> str:
-    """Session-wide migrated database with the synthetic towns loaded. Tests must not commit to it."""
     dsn = db_factory.create()
     with psycopg.connect(dsn, autocommit=True) as c:
-        migrate.up(c, log=_quiet)
+        migrate.up(c, log=quiet)
     with psycopg.connect(dsn) as c:
         fixtures.load_units(c)
     return dsn
 
 
+# Connection to the shared database whose transaction is always rolled back.
 @pytest.fixture
 def conn(shared_dsn):
-    """Connection to the shared database inside a transaction that is always rolled back."""
     with psycopg.connect(shared_dsn) as c:
         yield c
         c.rollback()
 
 
+# A complete, valid ready raster catalog record (synthetic), with overrides. Used by test_catalog.py.
 def raster_record(**overrides) -> dict:
-    """A complete, valid raster catalog record following the SYNTHETIC fixture contract."""
     rec = {
         "dataset_id": "synthetic-worldpop-2001",
         "version": 1,

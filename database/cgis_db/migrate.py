@@ -1,21 +1,13 @@
-"""Deterministic, versioned SQL migrations.
-
-Layout: ``migrations/<track>/<NNNN>_<name>.up.sql`` with a matching ``.down.sql``.
-``core`` is required; other tracks (``raster_demo``) are optional and opt-in.
-
-Guarantees:
-- each migration runs in its own transaction together with its ledger row;
-- a session advisory lock serialises concurrent runners;
-- applied migrations are recorded with a SHA-256 of their (LF-normalised) SQL,
-  and ``up`` refuses to continue if an applied file has since been edited;
-- re-running ``up`` is a no-op once the target is reached.
-"""
+# Versioned SQL migration runner: migrations/<track>/<NNNN>_<name>.up.sql (+ .down.sql).
+# Each migration runs in its own transaction with its ledger row; an advisory lock serialises
+# concurrent runners and a SHA-256 per applied file detects later edits ("drift").
 
 from __future__ import annotations
 
 import hashlib
 import os
 import re
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -49,6 +41,12 @@ class MigrationError(RuntimeError):
     pass
 
 
+# Reads a SQL file with line endings normalised to LF (so CRLF checkouts do not cause drift).
+# Used by Migration.up_sql / down_sql.
+def _read_sql(path: Path) -> str:
+    return path.read_text(encoding="utf-8").replace("\r\n", "\n")
+
+
 @dataclass(frozen=True)
 class Migration:
     track: str
@@ -57,41 +55,39 @@ class Migration:
     up_path: Path
     down_path: Path | None
 
+    # SQL of the .up.sql file. Used by up(), checksum and tests/test_migrations.py.
     @property
     def up_sql(self) -> str:
         return _read_sql(self.up_path)
 
+    # SQL of the .down.sql file. Used by down().
     @property
     def down_sql(self) -> str:
         if self.down_path is None:
             raise MigrationError(f"{self.label} has no .down.sql; it cannot be rolled back")
         return _read_sql(self.down_path)
 
+    # SHA-256 of the normalised up SQL, stored in the ledger. Used by up(), status(), _check_drift().
     @property
     def checksum(self) -> str:
         return hashlib.sha256(self.up_sql.encode("utf-8")).hexdigest()
 
+    # "track/NNNN_name" for log and error messages.
     @property
     def label(self) -> str:
         return f"{self.track}/{self.version:04d}_{self.name}"
 
 
-def _read_sql(path: Path) -> str:
-    return path.read_text(encoding="utf-8").replace("\r\n", "\n")
-
-
+# Migrations root: $CGIS_DB_MIGRATIONS_DIR (set in database/Dockerfile) or database/migrations.
+# Used by discover(), status() and tests/test_migrations.py.
 def migrations_dir() -> Path:
     return Path(os.environ.get(MIGRATIONS_ENV) or DEFAULT_MIGRATIONS_DIR)
 
 
-def available_tracks(root: Path | None = None) -> list[str]:
-    root = root or migrations_dir()
-    return sorted(p.name for p in root.iterdir() if p.is_dir())
-
-
-def discover(track: str = CORE, root: Path | None = None) -> list[Migration]:
-    root = root or migrations_dir()
-    track_dir = root / track
+# Lists the migrations of a track in version order, checking names and contiguous numbering.
+# Used by up(), down(), status() and the tests.
+def discover(track: str = CORE) -> list[Migration]:
+    track_dir = migrations_dir() / track
     if not track_dir.is_dir():
         raise MigrationError(f"unknown migration track {track!r} (looked in {track_dir})")
     found: dict[int, Migration] = {}
@@ -110,15 +106,10 @@ def discover(track: str = CORE, root: Path | None = None) -> list[Migration]:
     return [found[v] for v in versions]
 
 
-def _ensure_ledger(conn: psycopg.Connection) -> None:
-    with conn.transaction():
-        conn.execute(LEDGER_DDL)
-
-
+# Applied migrations of a track as {version: (name, checksum)}; empty if there is no ledger yet.
+# Used by up(), down(), status() and the tests.
 def applied(conn: psycopg.Connection, track: str) -> dict[int, tuple[str, str]]:
-    """version -> (name, checksum) for applied migrations of a track."""
-    exists = conn.execute("SELECT to_regclass('cgis_meta.schema_migrations') IS NOT NULL").fetchone()[0]
-    if not exists:
+    if not conn.execute("SELECT to_regclass('cgis_meta.schema_migrations') IS NOT NULL").fetchone()[0]:
         return {}
     rows = conn.execute(
         "SELECT version, name, checksum_sha256 FROM cgis_meta.schema_migrations WHERE track = %s",
@@ -127,18 +118,20 @@ def applied(conn: psycopg.Connection, track: str) -> dict[int, tuple[str, str]]:
     return {v: (n, c) for v, n, c in rows}
 
 
-class _Lock:
-    def __init__(self, conn: psycopg.Connection):
-        self.conn = conn
+# Holds the session advisory lock that serialises concurrent runners. Used by up() and down().
+@contextmanager
+def _locked(conn: psycopg.Connection):
+    if not conn.autocommit:
+        raise MigrationError("migration runner needs an autocommit connection (connect(autocommit=True))")
+    conn.execute("SELECT pg_advisory_lock(%s)", (LOCK_KEY,))
+    try:
+        yield
+    finally:
+        conn.execute("SELECT pg_advisory_unlock(%s)", (LOCK_KEY,))
 
-    def __enter__(self):
-        self.conn.execute("SELECT pg_advisory_lock(%s)", (LOCK_KEY,))
-        return self
 
-    def __exit__(self, *exc):
-        self.conn.execute("SELECT pg_advisory_unlock(%s)", (LOCK_KEY,))
-
-
+# Raises if an applied migration is missing on disk or was edited after it was applied.
+# Used by up() and down().
 def _check_drift(migs: list[Migration], done: dict[int, tuple[str, str]]) -> None:
     by_version = {m.version: m for m in migs}
     for version, (name, checksum) in sorted(done.items()):
@@ -152,18 +145,14 @@ def _check_drift(migs: list[Migration], done: dict[int, tuple[str, str]]) -> Non
             )
 
 
-def _require_conn_autocommit(conn: psycopg.Connection) -> None:
-    if not conn.autocommit:
-        raise MigrationError("migration runner needs an autocommit connection (connect(autocommit=True))")
-
-
+# Applies pending migrations up to target (default: latest) and returns those applied.
+# Used by cli.cmd_migrate / cmd_raster_demo, setup.main (python -m cgis_db migrate up) and the tests.
 def up(conn: psycopg.Connection, track: str = CORE, target: int | None = None,
        log=print) -> list[Migration]:
-    """Apply pending migrations up to ``target`` (default: latest). Returns those applied."""
-    _require_conn_autocommit(conn)
     migs = discover(track)
-    with _Lock(conn):
-        _ensure_ledger(conn)
+    with _locked(conn):
+        with conn.transaction():
+            conn.execute(LEDGER_DDL)
         if track in TRACK_REQUIRES:
             dep_track, dep_version = TRACK_REQUIRES[track]
             if max(applied(conn, dep_track), default=0) < dep_version:
@@ -194,12 +183,12 @@ def up(conn: psycopg.Connection, track: str = CORE, target: int | None = None,
         return ran
 
 
+# Rolls back every migration above target, or the last `steps` (default 1); returns those rolled back.
+# Used by cli.cmd_migrate and the tests.
 def down(conn: psycopg.Connection, track: str = CORE, target: int | None = None,
          steps: int | None = None, log=print) -> list[Migration]:
-    """Roll back to ``target`` (inclusive) or by ``steps`` (default 1)."""
-    _require_conn_autocommit(conn)
     migs = {m.version: m for m in discover(track)}
-    with _Lock(conn):
+    with _locked(conn):
         done = applied(conn, track)
         if not done:
             log(f"track {track}: nothing to roll back")
@@ -230,15 +219,18 @@ def down(conn: psycopg.Connection, track: str = CORE, target: int | None = None,
         return ran
 
 
+# One row per migration of every track: pending / applied / DRIFT / MISSING-FILE.
+# Used by cli.cmd_migrate (migrate status) and tests/test_migrations.py.
 def status(conn: psycopg.Connection) -> list[dict]:
     rows = []
-    for track in available_tracks():
+    for track in sorted(p.name for p in migrations_dir().iterdir() if p.is_dir()):
         done = applied(conn, track)
-        for m in discover(track):
+        migs = discover(track)
+        for m in migs:
             rec = done.get(m.version)
             state = "pending" if rec is None else ("applied" if rec[1] == m.checksum else "DRIFT")
             rows.append({"track": track, "version": m.version, "name": m.name, "state": state})
-        known = {m.version for m in discover(track)}
+        known = {m.version for m in migs}
         for v, (name, _) in sorted(done.items()):
             if v not in known:
                 rows.append({"track": track, "version": v, "name": name, "state": "MISSING-FILE"})

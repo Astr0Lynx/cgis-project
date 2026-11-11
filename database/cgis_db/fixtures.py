@@ -1,15 +1,6 @@
-"""Test/development fixture loader for vector units.
-
-Independent of Agent 3's importer: it only needs a GeoJSON FeatureCollection
-whose features carry ``unit_id`` and ``name`` properties. By default it loads
-the database test stub (``fixtures/synthetic_towns.stub.geojson``); pass the
-generator's ``synthetic_towns.geojson`` to load the authoritative file.
-
-The load is a single transaction and idempotent: the catalog row is registered
-(staged), units are upserted, then the row is marked ready. Re-running with the
-same file is a no-op; a different file under the same (dataset_id, version)
-raises :class:`cgis_db.queries.CatalogConflict`.
-"""
+# Loads a GeoJSON FeatureCollection of units (properties unit_id, name) into geo.admin_units and
+# registers it in catalog.datasets, in one idempotent transaction. Default file: the test stub;
+# pass the generated synthetic_towns.geojson to load the real fixture.
 
 from __future__ import annotations
 
@@ -22,6 +13,7 @@ from psycopg.types.json import Jsonb
 
 from . import queries
 
+# Default input. Also used by tests/test_geo.py.
 STUB_GEOJSON = Path(__file__).resolve().parent.parent / "fixtures" / "synthetic_towns.stub.geojson"
 _WGS84_CRS_NAMES = {
     "urn:ogc:def:crs:OGC:1.3:CRS84",
@@ -29,6 +21,7 @@ _WGS84_CRS_NAMES = {
     "urn:ogc:def:crs:EPSG::4326",
     "EPSG:4326",
 }
+# Properties stored in their own columns rather than in admin_units.properties.
 _UNIT_KEYS = {"unit_id", "name", "level", "source"}
 
 
@@ -36,6 +29,8 @@ class FixtureError(ValueError):
     pass
 
 
+# Validates the GeoJSON (FeatureCollection, WGS84, unique non-empty unit_id/name, geometry present)
+# and returns its features. Used by load_units.
 def _parse(raw: bytes) -> list[dict]:
     doc = json.loads(raw)
     if doc.get("type") != "FeatureCollection" or not isinstance(doc.get("features"), list):
@@ -60,6 +55,9 @@ def _parse(raw: bytes) -> list[dict]:
     return feats
 
 
+# Registers the dataset as staged, upserts every unit, then marks it ready. Re-running with the same
+# file is a no-op; a different file under the same (dataset_id, version) raises queries.CatalogConflict.
+# Used by cli.cmd_fixtures, tests/conftest.py and tests/test_geo.py.
 def load_units(conn: psycopg.Connection, geojson_path: Path | str | None = None, *,
                dataset_id: str = "synthetic-towns", version: int = 1,
                title: str = "SYNTHETIC towns (deterministic-fixture)",
