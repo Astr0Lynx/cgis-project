@@ -1,1 +1,1 @@
-"""CyberGIS OGC publication: catalog-driven pygeoapi config, providers and standards adapter."""
+# CyberGIS OGC publication: catalog-driven pygeoapi config, custom providers and standards adapter.

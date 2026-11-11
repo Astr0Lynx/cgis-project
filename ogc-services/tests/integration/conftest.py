@@ -1,8 +1,5 @@
-"""Integration fixtures: every request goes over HTTP through the gateway stub.
-
-Run via ``docker compose -f tests/stack/compose.yaml run --rm tests``. The
-catalog fixtures (SYNTHETIC) come from tests/stack/stub_catalog.sql.
-"""
+# Integration fixtures and helpers: every request goes over HTTP through the gateway (CGIS_GATEWAY_URL);
+# temporary catalog rows are inserted directly into the database. Run by tests/run.sh modules.
 
 import hashlib
 import io
@@ -30,12 +27,14 @@ REL = "http://www.opengis.net/def/rel/ogc/1.0/"
 PUBLISH_TIMEOUT = 45
 
 
+# Session-wide HTTP client (redirects not followed).
 @pytest.fixture(scope="session")
 def http():
     with httpx.Client(timeout=30, follow_redirects=False) as client:
         yield client
 
 
+# Session-wide autocommit connection to the stack database.
 @pytest.fixture(scope="session")
 def db():
     conninfo = psycopg.conninfo.make_conninfo(
@@ -46,6 +45,7 @@ def db():
         yield conn
 
 
+# First link with the given rel (and type); fails the test if missing.
 def link(doc, rel, type_=None):
     for item in doc.get("links", []):
         if item["rel"] == rel and (type_ is None or item.get("type") == type_):
@@ -53,12 +53,14 @@ def link(doc, rel, type_=None):
     raise AssertionError(f"no link rel={rel} type={type_} in {[ (l['rel'], l.get('type')) for l in doc.get('links', [])]}")
 
 
+# GET a URL, assert HTTP 200 and return the JSON body.
 def get_json(http, url, **kw):
     resp = http.get(url, **kw)
     assert resp.status_code == 200, (url, resp.status_code, resp.text[:300])
     return resp.json()
 
 
+# Asserts a 200 PNG response and returns it as an RGBA image.
 def png_image(resp):
     assert resp.status_code == 200, (resp.status_code, resp.text[:300])
     assert resp.headers["content-type"].startswith("image/png")
@@ -66,8 +68,8 @@ def png_image(resp):
     return Image.open(io.BytesIO(resp.content)).convert("RGBA")
 
 
+# (tile, (col, row) pixel) of a lon/lat inside its tile at the given zoom.
 def tile_pixel(tms_id, lon, lat, zoom):
-    """(tile, (col, row) pixel) of a lon/lat inside its tile at ``zoom``."""
     tms = morecantile.tms.get(tms_id)
     tile = tms.tile(lon, lat, zoom)
     bounds = tms.xy_bounds(tile)
@@ -77,10 +79,9 @@ def tile_pixel(tms_id, lon, lat, zoom):
     return tile, (col, row)
 
 
+# Inserts a catalog row (with a dummy checksum, required for ready rows by the schema).
 def insert_dataset(db, dataset_id, kind, asset_path=None, status="ready", version=1, provenance=None,
                    bbox=RASTER_BBOX, title=None):
-    # Integration fix (Agent 6): Agent 2's schema requires checksum_sha256 on every ready row
-    # (constraint datasets_ready_complete), so test rows carry a deterministic dummy checksum.
     checksum = hashlib.sha256(f"{dataset_id}:{version}".encode()).hexdigest()
     with db.cursor() as cur:
         cur.execute(
@@ -94,8 +95,8 @@ def insert_dataset(db, dataset_id, kind, asset_path=None, status="ready", versio
              asset_path, checksum, json.dumps(provenance or {"synthetic": True}), status))
 
 
+# Stored asset_path of a ready dataset (layout is the ingestion service's choice).
 def asset_path_of(db, dataset_id):
-    """Stored asset_path of a ready dataset (layout is the ingestion service's choice)."""
     with db.cursor() as cur:
         cur.execute("SELECT asset_path FROM catalog.current_datasets WHERE dataset_id = %s", (dataset_id,))
         row = cur.fetchone()
@@ -103,16 +104,18 @@ def asset_path_of(db, dataset_id):
     return row[0]
 
 
+# Deletes every version of a catalog dataset.
 def delete_dataset(db, dataset_id):
     with db.cursor() as cur:
         cur.execute("DELETE FROM catalog.datasets WHERE dataset_id = %s", (dataset_id,))
 
 
+# Factory for itest-* catalog rows that are always removed afterwards.
 @pytest.fixture
 def temp_dataset(db):
-    """Factory for catalog rows that are always removed afterwards."""
     created = []
 
+    # Inserts one temporary row and returns its dataset_id.
     def make(kind, **kw):
         dataset_id = kw.pop("dataset_id", None) or f"itest-{kind}-{uuid.uuid4().hex[:8]}"
         insert_dataset(db, dataset_id, kind, **kw)
@@ -124,6 +127,7 @@ def temp_dataset(db):
         delete_dataset(db, dataset_id)
 
 
+# Polls predicate until truthy or timeout (publication refresh is periodic); returns its last result.
 def wait_for(predicate, timeout=PUBLISH_TIMEOUT, interval=1.0):
     deadline = time.monotonic() + timeout
     while True:
@@ -133,5 +137,6 @@ def wait_for(predicate, timeout=PUBLISH_TIMEOUT, interval=1.0):
         time.sleep(interval)
 
 
+# IDs of the collections currently published at /ogc/collections.
 def collection_ids(http):
     return {c["id"] for c in get_json(http, f"{OGC}/collections?f=json")["collections"]}

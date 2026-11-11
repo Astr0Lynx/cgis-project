@@ -1,8 +1,5 @@
-"""Catalog-driven publication: catalog rows appear/disappear as collections with no config edits.
-
-The test stack runs the ogc container with OGC_REFRESH_INTERVAL=3, i.e. the same
-`python -m cgis_ogc.publish --refresh` command an operator would run, on a timer.
-"""
+# Integration tests: catalog rows appear/disappear as collections with no config edits. Needs the ogc
+# service running with OGC_REFRESH_INTERVAL set (the periodic `python -m cgis_ogc.publish --refresh`).
 
 from conftest import (
     OGC,
@@ -16,6 +13,7 @@ from conftest import (
 )
 
 
+# A new vector row is published and scoped to its own rows only.
 def test_new_vector_dataset_is_published_and_scoped(http, db, temp_dataset):
     dataset_id = temp_dataset("vector", provenance={"ogc_publication": {"filter": {"name": "Town B"}}},
                               bbox=[78.03, 17.95, 78.035, 17.955])
@@ -25,9 +23,8 @@ def test_new_vector_dataset_is_published_and_scoped(http, db, temp_dataset):
         has_dataset_id = cur.fetchone() is not None
     unit = "town-b"
     if has_dataset_id:
-        # Integration (Agent 6): with Agent 2's dataset_id column the publisher scopes by
-        # dataset_id = <catalog id> (CCR-4.1, preferred over the provenance hint), so this new
-        # dataset needs its own unit row.
+        # With a dataset_id column the publisher scopes by dataset_id = <catalog id> (preferred over
+        # the provenance hint), so this new dataset needs its own unit row.
         unit = f"{dataset_id}-unit"
         with db.cursor() as cur:
             cur.execute("INSERT INTO geo.admin_units (unit_id, name, level, geom, dataset_id, dataset_version) "
@@ -47,6 +44,7 @@ def test_new_vector_dataset_is_published_and_scoped(http, db, temp_dataset):
                 cur.execute("DELETE FROM geo.admin_units WHERE unit_id = %s", (unit,))
 
 
+# A new raster row is published and its tiles render.
 def test_new_raster_dataset_is_published_with_tiles(http, db, temp_dataset):
     dataset_id = temp_dataset("raster", asset_path=asset_path_of(db, "synthetic-worldpop-2011"))
     assert wait_for(lambda: dataset_id in collection_ids(http)), "new raster dataset not published"
@@ -56,6 +54,7 @@ def test_new_raster_dataset_is_published_with_tiles(http, db, temp_dataset):
     assert png_image(resp).getpixel(pixel)[3] == 255
 
 
+# Staged rows stay unpublished; deleted rows are withdrawn.
 def test_staged_row_is_not_published_and_removed_row_is_withdrawn(http, db, temp_dataset):
     staged = temp_dataset("vector", status="staged")
     ready = temp_dataset("vector")
@@ -66,11 +65,13 @@ def test_staged_row_is_not_published_and_removed_row_is_withdrawn(http, db, temp
     assert wait_for(lambda: ready not in collection_ids(http)), "removed dataset still published"
 
 
+# A higher ready version replaces the collection metadata.
 def test_higher_ready_version_replaces_metadata(http, db, temp_dataset):
     dataset_id = temp_dataset("vector", title="TEST version one")
     assert wait_for(lambda: dataset_id in collection_ids(http))
     insert_dataset(db, dataset_id, "vector", version=2, title="TEST version two")
 
+    # Current title of the test collection.
     def title():
         return get_json(http, f"{OGC}/collections/{dataset_id}?f=json")["title"]
 

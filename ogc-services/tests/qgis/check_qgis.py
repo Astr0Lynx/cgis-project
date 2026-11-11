@@ -1,11 +1,8 @@
-"""Headless QGIS interoperability check against the test stack.
-
-    docker run --rm --network cgis-ogc-test_default -e QT_QPA_PLATFORM=offscreen \
-        -v "$PWD/ogc-services/tests/qgis:/qgis:ro" qgis/qgis:3.44.15 python3 /qgis/check_qgis.py
-
-Loads synthetic-towns through QGIS's own OGC API - Features provider (OAPIF) and the OGC API - Tiles
-URI template as an XYZ raster layer, renders the raster, and checks pixels. Exits non-zero on failure.
-"""
+# Headless QGIS interoperability check against the running stack (exits non-zero on failure):
+# loads synthetic-towns through QGIS's OAPIF provider and the OGC API - Tiles URI template as an XYZ
+# raster layer, renders it and checks pixels. Run by tests/run.sh modules --qgis:
+#   docker run --rm --network <stack network> -e QT_QPA_PLATFORM=offscreen \
+#       -v "$PWD/ogc-services/tests/qgis:/qgis:ro" qgis/qgis:3.44.15 python3 /qgis/check_qgis.py
 
 import os
 import sys
@@ -29,6 +26,7 @@ OGC = os.environ.get("CGIS_OGC_URL", "http://gateway:8080/ogc")
 failures = []
 
 
+# Prints PASS/FAIL and records failures.
 def check(condition, message):
     print(("PASS " if condition else "FAIL ") + message)
     if not condition:
@@ -81,6 +79,7 @@ if raster.isValid():
     job.waitForFinished()
     image = job.renderedImage()
 
+    # Rendered pixel colour at a lon/lat.
     def pixel(lon, lat):
         pt = settings.mapToPixel().transform(to_web.transform(QgsPointXY(lon, lat)))
         return QColor(image.pixel(int(pt.x()), int(pt.y())))

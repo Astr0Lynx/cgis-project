@@ -1,34 +1,6 @@
-"""Standards adapter: align pygeoapi 0.24.0's advertised conformance with this deployment.
-
-pygeoapi declares conformance classes per *provider type*, not per capability
-actually enabled. For the resources the CyberGIS publisher generates, that
-over-claims. This module corrects the declaration and the tiles OpenAPI, and
-refuses to start if the configuration falls outside the invariants that make
-the corrections true.
-
-Changes (each covered by tests/integration/test_conformance.py):
-
-* drop ``ogcapi-tiles-1 .../conf/mvt``: only PNG map tiles are served; add
-  ``.../conf/png`` (OGC 20-057 /req/png/content).
-* drop ``ogcapi-features-4 .../conf/create-replace-delete``: Part 4 is an OGC
-  draft and no resource is ``editable``.
-* drop ``ogcapi-common-3 .../conf/schemas`` and ``.../advanced-property-roles``:
-  draft documents; not verified here.
-* drop ``ogcapi-common-2 .../conf/collections``: Common Part 2 is a draft.
-* OpenAPI: add the tileset resource ``/collections/{id}/tiles/{tileMatrixSetId}``
-  (operationId suffix ``.collection.map.getTileSet``), which pygeoapi serves but
-  omits, as required by /req/oas30/completeness.
-* OpenAPI: declare ``datetime`` on every items path (/req/core/fc-time-definition);
-  pygeoapi omits it when the provider has no ``time_field``. The ``sortby``
-  parameter, which pygeoapi references from a GitHub ``master`` branch, is inlined.
-* tileset metadata errors raised by a provider (e.g. unknown TileMatrixSet) are
-  returned as OGC exception responses instead of HTTP 500.
-* tile requests: HTTP content negotiation (``Accept``) selects PNG when no
-  ``f`` is given (OGC 20-057 7.1.1), unacceptable formats get 406/400, and error
-  responses are labelled ``application/json`` instead of ``image/png``.
-* feature items/item responses in JSON are labelled ``application/geo+json``
-  (OGC 17-069r4 /req/geojson/definition); pygeoapi sends ``application/json``.
-"""
+# Standards adapter for pygeoapi 0.24.0: corrects the advertised conformance classes and a few protocol
+# details (tiles OpenAPI, datetime/sortby params, tile negotiation, GeoJSON media type), and refuses to
+# start on configurations where the corrected declaration would be untrue. Used by wsgi and publish.
 
 from __future__ import annotations
 
@@ -58,12 +30,14 @@ WITHDRAWN = frozenset({
 _applied = False
 
 
+# Raised when the config or pygeoapi version falls outside what the adapter is verified for.
 class UnsupportedConfiguration(RuntimeError):
     pass
 
 
+# Checks the invariants that make the corrections true: only read-only collections with our PNG tile
+# provider or our feature provider. Used by apply and the unit tests.
 def validate_config(config: dict) -> None:
-    """Invariants under which the conformance corrections are accurate."""
     for name, resource in (config.get("resources") or {}).items():
         if resource.get("type") != "collection":
             raise UnsupportedConfiguration(f"{name}: only collections are published (got {resource.get('type')!r})")
@@ -81,6 +55,7 @@ def validate_config(config: dict) -> None:
                 raise UnsupportedConfiguration(f"{name}: provider type {ptype!r} is not vetted")
 
 
+# Drops WITHDRAWN classes from pygeoapi's conformance lists and adds the PNG class. Used by apply.
 def _correct_lists() -> None:
     import pygeoapi.api as core_api
     from pygeoapi.api import itemtypes, tiles
@@ -93,12 +68,15 @@ def _correct_lists() -> None:
         tiles.CONFORMANCE_CLASSES.append(TILES_PNG)
 
 
+# Adds the /collections/{id}/tiles/{tileMatrixSetId} path pygeoapi serves but omits from OpenAPI
+# (/req/oas30/completeness). Used by apply.
 def _patch_tiles_openapi() -> None:
     from pygeoapi.api import tiles
     from pygeoapi.openapi import OPENAPI_YAML
 
     original = tiles.get_oas_30
 
+    # Wraps tiles.get_oas_30: adds one tileset path per tiles path.
     @functools.wraps(original)
     def get_oas_30(cfg: dict, locale: str):
         tags, fragment = original(cfg, locale)
@@ -124,6 +102,8 @@ def _patch_tiles_openapi() -> None:
     tiles.get_oas_30 = get_oas_30
 
 
+# Declares `datetime` on every items path and inlines `sortby` (pygeoapi $refs a GitHub master file).
+# Used by apply.
 def _patch_items_openapi() -> None:
     from pygeoapi.api import itemtypes
 
@@ -154,6 +134,7 @@ def _patch_items_openapi() -> None:
         "style": "form",
     }
 
+    # Wraps itemtypes.get_oas_30: fixes the parameters of every items path.
     @functools.wraps(original)
     def get_oas_30(cfg: dict, locale: str):
         tags, fragment = original(cfg, locale)
@@ -172,12 +153,14 @@ def _patch_items_openapi() -> None:
     itemtypes.get_oas_30 = get_oas_30
 
 
+# Returns provider errors in tileset metadata as OGC exceptions instead of HTTP 500. Used by apply.
 def _patch_tileset_errors() -> None:
     from pygeoapi.api import tiles
     from pygeoapi.provider.base import ProviderGenericError
 
     original = tiles.get_collection_tiles_metadata
 
+    # Wraps tiles.get_collection_tiles_metadata: provider errors -> OGC exception response.
     @functools.wraps(original)
     def get_collection_tiles_metadata(api, request, dataset=None, matrix_id=None):
         try:
@@ -190,8 +173,9 @@ def _patch_tileset_errors() -> None:
     tiles.get_collection_tiles_metadata = get_collection_tiles_metadata
 
 
+# True if an HTTP Accept header admits image/png (an absent header admits all).
+# Used by _patch_tile_negotiation and the unit tests.
 def accepts_png(accept: str | None) -> bool:
-    """True if an HTTP Accept header admits image/png (absent header admits all)."""
     if not accept or not accept.strip():
         return True
     for media_range in accept.split(","):
@@ -207,6 +191,8 @@ def accepts_png(accept: str | None) -> bool:
     return False
 
 
+# Tile requests: PNG by Accept negotiation when no `f`, 406/400 for other formats, and JSON-labelled
+# error responses instead of image/png. Used by apply.
 def _patch_tile_negotiation() -> None:
     import json
 
@@ -215,11 +201,13 @@ def _patch_tile_negotiation() -> None:
 
     original = tiles.get_collection_tiles_data
 
+    # JSON OGC exception response. Used by get_collection_tiles_data below.
     def ogc_error(api, request, status, code, description):
         headers = request.get_response_headers(**api.api_headers)
         headers["Content-Type"] = "application/json"
         return api.get_exception(status, headers, F_JSON, code, description)
 
+    # Wraps tiles.get_collection_tiles_data: format negotiation and JSON error responses.
     @functools.wraps(original)
     def get_collection_tiles_data(api, request, dataset=None, matrix_id=None, z_idx=None, y_idx=None, x_idx=None):
         requested = (request.params.get("f") or "").strip().lower()
@@ -244,10 +232,13 @@ def _patch_tile_negotiation() -> None:
     tiles.get_collection_tiles_data = get_collection_tiles_data
 
 
+# Labels JSON items/item responses as application/geo+json. Used by apply.
 def _patch_geojson_media_type() -> None:
     from pygeoapi.api import itemtypes
 
+    # Wraps an items/item handler so successful JSON responses say application/geo+json.
     def label_geojson(original):
+        # Relabels successful JSON responses.
         @functools.wraps(original)
         def wrapper(api, request, *args, **kwargs):
             headers, status, content = original(api, request, *args, **kwargs)
@@ -260,8 +251,9 @@ def _patch_geojson_media_type() -> None:
     itemtypes.get_collection_item = label_geojson(itemtypes.get_collection_item)
 
 
+# Checks the pygeoapi version and config, then patches pygeoapi in this process (idempotent).
+# Used by apply_from_env, publish.write_openapi and the unit tests.
 def apply(config: dict) -> None:
-    """Validate ``config`` and patch pygeoapi in this process (idempotent)."""
     global _applied
     import pygeoapi
 
@@ -281,6 +273,7 @@ def apply(config: dict) -> None:
     LOGGER.info("pygeoapi conformance adapter applied")
 
 
+# Loads $PYGEOAPI_CONFIG and applies the adapter to it. Used by wsgi.
 def apply_from_env() -> dict:
     from pygeoapi.util import yaml_load
 

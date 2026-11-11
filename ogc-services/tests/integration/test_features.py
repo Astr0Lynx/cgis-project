@@ -1,4 +1,4 @@
-"""OGC API - Features (Part 1 Core, Part 2 CRS, Part 3 queryables/CQL2 subset) over HTTP."""
+# Integration tests: OGC API - Features (Part 1 Core, Part 2 CRS, Part 3 queryables/CQL2 subset) over HTTP.
 
 import pytest
 from conftest import CRS84, EPSG4326, OGC, RASTERS, TOWNS, get_json, link
@@ -31,10 +31,12 @@ EXPECTED_CONFORMANCE = {
 }
 
 
+# GET the towns items as JSON with extra query params.
 def items(http, **params):
     return get_json(http, ITEMS, params={"f": "json", **params})
 
 
+# Landing page has the required links under the public prefix.
 def test_landing_page_links(http):
     landing = get_json(http, f"{OGC}/?f=json")
     for rel in ("self", "service-desc", "service-doc", "conformance", "data"):
@@ -42,6 +44,7 @@ def test_landing_page_links(http):
     assert link(landing, "http://www.opengis.net/def/rel/ogc/1.0/tiling-schemes")
 
 
+# Declared conformance is exactly EXPECTED_CONFORMANCE (no drafts, no MVT).
 def test_conformance_declares_exactly_what_is_supported(http):
     declared = set(get_json(http, f"{OGC}/conformance?f=json")["conformsTo"])
     assert declared == EXPECTED_CONFORMANCE
@@ -49,6 +52,7 @@ def test_conformance_declares_exactly_what_is_supported(http):
     assert not any(d in c for d in drafts for c in declared) and not any(c.endswith("/conf/mvt") for c in declared)
 
 
+# Catalog datasets are listed with extent, CRS and storageCrs.
 def test_collections_list_catalog_datasets(http):
     collections = {c["id"]: c for c in get_json(http, f"{OGC}/collections?f=json")["collections"]}
     assert {TOWNS, *RASTERS} <= set(collections)
@@ -60,12 +64,14 @@ def test_collections_list_catalog_datasets(http):
     assert towns["storageCrs"] == CRS84
 
 
+# Collection metadata has id, title and self link.
 def test_collection_metadata(http):
     towns = get_json(http, f"{OGC}/collections/{TOWNS}?f=json")
     assert towns["id"] == TOWNS and "SYNTHETIC" in towns["title"]
     assert link(towns, "self")["href"].startswith(f"{OGC}/collections/{TOWNS}")
 
 
+# Items: GeoJSON media type, Content-Crs, counts, properties and geometry.
 def test_items_feature_collection(http):
     resp = http.get(ITEMS, params={"f": "json"})
     assert resp.status_code == 200
@@ -83,6 +89,7 @@ def test_items_feature_collection(http):
     assert sorted(map(tuple, town_a["geometry"]["coordinates"][0][0])) == sorted(map(tuple, TOWN_A_RING))
 
 
+# Single item by id as GeoJSON with a collection link.
 def test_item_by_id(http):
     resp = http.get(f"{ITEMS}/town-b", params={"f": "json"})
     assert resp.status_code == 200 and resp.headers["content-type"].startswith("application/geo+json")
@@ -93,32 +100,38 @@ def test_item_by_id(http):
 
 @pytest.mark.parametrize("url", [f"{ITEMS}/no-such-town", f"{OGC}/collections/no-such-collection/items",
                                  f"{OGC}/collections/no-such-collection"])
+# Unknown items/collections return a 404 OGC exception.
 def test_unknown_resources_return_404(http, url):
     resp = http.get(url, params={"f": "json"})
     assert resp.status_code == 404
     assert resp.json()["code"] in {"NotFound", "InvalidParameterValue"}
 
 
+# bbox around Town A returns only Town A.
 def test_bbox_filter_selects_town_a(http):
     fc = items(http, bbox="78.009,17.979,78.021,17.991")
     assert [f["id"] for f in fc["features"]] == ["town-a"]
 
 
+# bbox around Town B returns only Town B.
 def test_bbox_filter_selects_town_b(http):
     fc = items(http, bbox="78.029,17.949,78.036,17.956")
     assert [f["id"] for f in fc["features"]] == ["town-b"]
 
 
+# A disjoint bbox returns an empty collection.
 def test_disjoint_bbox_returns_empty_collection(http):
     fc = items(http, bbox="0,0,1,1")
     assert fc["numberMatched"] == 0 and fc["features"] == []
 
 
+# Malformed bbox values return 400.
 @pytest.mark.parametrize("bbox", ["1,2,3", "a,b,c,d", "78.1,17.9"])
 def test_invalid_bbox_is_400(http, bbox):
     assert http.get(ITEMS, params={"f": "json", "bbox": bbox}).status_code == 400
 
 
+# limit=1 paging via next/prev links covers both features.
 def test_pagination_with_next_links(http):
     first = items(http, limit=1)
     assert first["numberReturned"] == 1 and first["numberMatched"] == 2
@@ -128,12 +141,14 @@ def test_pagination_with_next_links(http):
     assert link(second, "prev")
 
 
+# Non-numeric limit is 400; an oversized limit is capped.
 def test_limit_validation(http):
     assert http.get(ITEMS, params={"f": "json", "limit": "abc"}).status_code == 400
     capped = items(http, limit=100000)  # over max_items: throttled, not an error
     assert capped["numberReturned"] == 2
 
 
+# crs=EPSG:4326 returns lat/lon coordinates and Content-Crs.
 def test_crs_epsg4326_uses_lat_lon_axis_order(http):
     resp = http.get(f"{ITEMS}/town-a", params={"f": "json", "crs": EPSG4326})
     assert resp.status_code == 200
@@ -142,26 +157,31 @@ def test_crs_epsg4326_uses_lat_lon_axis_order(http):
     assert sorted(map(tuple, ring)) == sorted((lat, lon) for lon, lat in TOWN_A_RING)
 
 
+# bbox-crs=EPSG:4326 takes a lat/lon bbox.
 def test_bbox_crs_epsg4326(http):
     fc = items(http, bbox="17.979,78.009,17.991,78.021", **{"bbox-crs": EPSG4326})
     assert [f["id"] for f in fc["features"]] == ["town-a"]
 
 
+# An unsupported crs returns 400.
 def test_unsupported_crs_is_400(http):
     assert http.get(ITEMS, params={"f": "json", "crs": "http://www.opengis.net/def/crs/EPSG/0/9999"}).status_code == 400
 
 
+# datetime matches all features without time; malformed is 400.
 def test_datetime_matches_features_without_temporal_properties(http):
     for value in ("2001-01-01T00:00:00Z", "2001-01-01/..", "../2011-12-31T00:00:00Z"):
         assert items(http, datetime=value)["numberMatched"] == 2
     assert http.get(ITEMS, params={"f": "json", "datetime": "not-a-date"}).status_code == 400
 
 
+# Queryables list the published properties.
 def test_queryables(http):
     schema = get_json(http, f"{OGC}/collections/{TOWNS}/queryables?f=json")
     assert {"unit_id", "name", "level"} <= set(schema["properties"])
 
 
+# A queryable works as a query parameter.
 def test_queryable_as_query_parameter(http):
     assert [f["id"] for f in items(http, name="Town B")["features"]] == ["town-b"]
 
@@ -174,16 +194,19 @@ def test_queryable_as_query_parameter(http):
     ("level = 'synthetic_town' AND NOT (name = 'Town B')", ["town-a"]),
     ("level IS NULL", []),
 ])
+# CQL2-text filters with comparison, logical and IS NULL operators.
 def test_cql2_text_filter(http, expression, expected):
     fc = items(http, filter=expression, **{"filter-lang": "cql2-text"})
     assert sorted(f["id"] for f in fc["features"]) == expected
 
 
+# Items render as HTML.
 def test_html_representation(http):
     resp = http.get(ITEMS, params={"f": "html"})
     assert resp.status_code == 200 and resp.headers["content-type"].startswith("text/html")
 
 
+# OpenAPI validates, has local items params incl. datetime and all tiles operations.
 def test_openapi_document_is_valid_and_complete(http):
     resp = http.get(f"{OGC}/openapi", params={"f": "json"})
     assert resp.status_code == 200

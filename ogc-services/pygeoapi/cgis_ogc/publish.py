@@ -1,22 +1,6 @@
-"""Catalog-driven pygeoapi publication.
-
-Every ``ready`` dataset in ``catalog.current_datasets`` becomes one OGC API
-collection whose ``collectionId`` is the catalog ``dataset_id``:
-
-* ``kind = vector`` -> OGC API - Features (PostgreSQL provider over the contract
-  vector table, ``geo.admin_units`` by default);
-* ``kind = raster`` with an ``asset_path`` -> OGC API - Tiles map tilesets (PNG),
-  rendered by the internal restricted TiTiler service.
-
-No dataset IDs are hard-coded: the resource list is rebuilt from the catalog on
-every publish, so registering a new dataset needs no configuration edits.
-
-Usage (inside the ``ogc`` container)::
-
-    python -m cgis_ogc.publish            # write config + OpenAPI once
-    python -m cgis_ogc.publish --refresh  # same, then reload gunicorn if changed
-    python -m cgis_ogc.publish --dry-run  # print generated config
-"""
+# Catalog-driven pygeoapi publication: every ready catalog dataset becomes one collection
+# (vector -> OGC API Features, raster -> OGC API Tiles). Writes the config + OpenAPI document and,
+# with --refresh, reloads gunicorn when the config changed. Run as `python -m cgis_ogc.publish`.
 
 from __future__ import annotations
 
@@ -25,43 +9,38 @@ import copy
 import hashlib
 import logging
 import os
-import re
 import signal
 import sys
 from pathlib import Path
 
 import yaml
 
-from .catalog import CatalogDataset, CatalogReader, db_params_from_env
-from .tms import TILE_MATRIX_SETS, native_max_zoom
+from .catalog import DATASET_ID_RE, CatalogDataset, read_catalog
+from .conformance import FEATURE_PROVIDER, TILE_PROVIDER
+from .tms import CRS84, TILE_MATRIX_SETS, native_max_zoom
 
 LOGGER = logging.getLogger("cgis_ogc.publish")
 
-COLLECTION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-CRS84 = "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
 FEATURE_CRS = [
     CRS84,
     "http://www.opengis.net/def/crs/EPSG/0/4326",
     "http://www.opengis.net/def/crs/EPSG/0/3857",
 ]
-FEATURE_PROVIDER = "cgis_ogc.pygeoapi_plugins.postgresql.CatalogPostgreSQLProvider"
-TILE_PROVIDER = "cgis_ogc.pygeoapi_plugins.titiler_tiles.TiTilerTileProvider"
-# Optional, documented catalog provenance hint for narrowing a vector dataset to
-# a subset of rows when the vector table has no dataset_id column.
+# Optional catalog provenance key with publication hints ("filter" for vectors, "render" for rasters).
 PUBLICATION_HINT_KEY = "ogc_publication"
 FILTERABLE_VALUE_TYPES = (str, int, float, bool)
 
 
+# Publication settings from the OGC_* / TILES_PUBLIC_URL env vars. Used by main and the unit tests.
 class PublishSettings:
+    # env defaults to os.environ; raises ValueError on unknown tile schemes.
     def __init__(self, env: dict | None = None):
         env = os.environ if env is None else env
         self.vector_schema = env.get("OGC_VECTOR_SCHEMA", "geo")
         self.vector_table = env.get("OGC_VECTOR_TABLE", "admin_units")
         self.vector_id_field = env.get("OGC_VECTOR_ID_FIELD", "unit_id")
         self.vector_geom_field = env.get("OGC_VECTOR_GEOM_FIELD", "geom")
-        # Feature properties to publish (integration default: the frozen v1 contract columns of
-        # geo.admin_units). Additive internal columns (provenance, timestamps, the JSONB
-        # ``properties`` copy of source attributes) stay unpublished. Empty value = every column.
+        # Published feature properties; other (internal) columns stay hidden. Empty value = every column.
         self.vector_properties = [p.strip() for p in env.get("OGC_VECTOR_PROPERTIES", "unit_id,name,level").split(",")
                                   if p.strip()]
         self.tile_schemes = [s for s in env.get("OGC_TILE_SCHEMES", "WebMercatorQuad,WorldCRS84Quad").split(",") if s]
@@ -72,19 +51,7 @@ class PublishSettings:
             raise ValueError(f"unsupported OGC_TILE_SCHEMES: {sorted(unknown)}")
 
 
-def _db_data(settings: PublishSettings) -> dict:
-    # Credentials stay as ${VAR} references; pygeoapi substitutes them from the
-    # environment at load time, so the generated file holds no secrets.
-    return {
-        "host": "${POSTGRES_HOST}",
-        "port": "${POSTGRES_PORT:-5432}",
-        "dbname": "${POSTGRES_DB}",
-        "user": "${POSTGRES_USER}",
-        "password": "${POSTGRES_PASSWORD}",
-        "search_path": [settings.vector_schema, "public"],
-    }
-
-
+# Collection extents (CRS84 bbox, plus the catalog year as a temporal extent). Used by *_resource.
 def _extents(ds: CatalogDataset) -> dict:
     extents = {"spatial": {"bbox": list(ds.bbox), "crs": CRS84}}
     if ds.year:
@@ -96,22 +63,16 @@ def _extents(ds: CatalogDataset) -> dict:
     return extents
 
 
-def _keywords(ds: CatalogDataset) -> list[str]:
-    words = [ds.kind, ds.product_level, ds.source, ds.units]
-    if ds.year:
-        words.append(str(ds.year))
-    return [w for w in words if w]
-
-
+# Optional logical group (provenance.group_id, e.g. india-level2-2011) if it is a safe id.
+# Used by _collection and the unit tests.
 def group_id(ds: CatalogDataset) -> str | None:
-    """Optional logical group (``provenance.group_id``, e.g. ``india-level2-2011``; Agent 3 C3)."""
     value = (ds.provenance or {}).get("group_id")
-    return value if isinstance(value, str) and COLLECTION_ID_RE.match(value) else None
+    return value if isinstance(value, str) and DATASET_ID_RE.match(value) else None
 
 
-def _description(ds: CatalogDataset) -> str:
-    # Fact order is a parsing contract of the viewer (demo-client/js/catalog.js): unknown facts are
-    # ignored, "source" stays last because source labels may contain any text.
+# Common collection fields (title, description with catalog facts, keywords, extents). Used by *_resource.
+# The fact order is parsed by the viewer (webapp catalog.js): "source" stays last (free text).
+def _collection(ds: CatalogDataset, providers: list[dict], links: list[dict]) -> dict:
     facts = [f"catalog version {ds.version}"]
     if ds.crs:
         facts.append(f"native CRS {ds.crs}")
@@ -126,21 +87,24 @@ def _description(ds: CatalogDataset) -> str:
         facts.append(f"display scale {ds.render['profile_id']} {lo:g}..{hi:g}")
     if ds.source:
         facts.append(f"source {ds.source}")
-    base = (ds.description or ds.title).strip()
-    return f"{base} ({'; '.join(facts)})"
+    keywords = [ds.kind, ds.product_level, ds.source, ds.units, str(ds.year) if ds.year else None]
+    return {
+        "type": "collection",
+        "title": ds.title,
+        "description": f"{(ds.description or ds.title).strip()} ({'; '.join(facts)})",
+        "keywords": [w for w in keywords if w],
+        "links": links,
+        "extents": _extents(ds),
+        "providers": providers,
+    }
 
 
+# Row filter scoping the shared vector table to one dataset: dataset_id (and dataset_version, so only the
+# current catalog version is served) if the table has those columns, else the provenance hint {"ogc_publication": {"filter": {column: value}}}, else none.
+# Used by vector_resource and the unit tests.
 def vector_static_filter(ds: CatalogDataset, table_columns: list[str]) -> dict:
-    """Row filter that scopes the shared vector table to this dataset.
-
-    Preference order: a ``dataset_id`` column on the table (proposed in
-    docs/contract-change-requests/agent4.md), else the optional provenance hint
-    ``{"ogc_publication": {"filter": {<column>: <value>}}}``, else no filter.
-    """
     if "dataset_id" in table_columns:
         if "dataset_version" in table_columns:
-            # database core/0007: units are stored per dataset VERSION; the collection serves the
-            # current ready version only (the catalog row this resource was built from).
             return {"dataset_id": ds.dataset_id, "dataset_version": ds.version}
         return {"dataset_id": ds.dataset_id}
     hint = (ds.provenance or {}).get(PUBLICATION_HINT_KEY) or {}
@@ -157,11 +121,20 @@ def vector_static_filter(ds: CatalogDataset, table_columns: list[str]) -> dict:
     return accepted
 
 
+# pygeoapi resource for a vector dataset (CatalogPostgreSQLProvider). Used by build_config.
 def vector_resource(ds: CatalogDataset, settings: PublishSettings, table_columns: list[str]) -> dict:
     provider = {
         "type": "feature",
         "name": FEATURE_PROVIDER,
-        "data": _db_data(settings),
+        # Credentials stay ${VAR} references that pygeoapi substitutes at load time: no secrets on disk.
+        "data": {
+            "host": "${POSTGRES_HOST}",
+            "port": "${POSTGRES_PORT:-5432}",
+            "dbname": "${POSTGRES_DB}",
+            "user": "${POSTGRES_USER}",
+            "password": "${POSTGRES_PASSWORD}",
+            "search_path": [settings.vector_schema, "public"],
+        },
         "options": {"connect_timeout": 10},
         "id_field": settings.vector_id_field,
         "table": settings.vector_table,
@@ -177,69 +150,11 @@ def vector_resource(ds: CatalogDataset, settings: PublishSettings, table_columns
     static_filter = vector_static_filter(ds, table_columns)
     if static_filter:
         provider["static_filter"] = static_filter
-    return {
-        "type": "collection",
-        "title": ds.title,
-        "description": _description(ds),
-        "keywords": _keywords(ds),
-        "links": [],
-        "extents": _extents(ds),
-        "providers": [provider],
-    }
+    return _collection(ds, [provider], [])
 
 
-def raster_resource(ds: CatalogDataset, settings: PublishSettings) -> dict:
-    geographic = (ds.crs or "").upper() in {"EPSG:4326", "OGC:CRS84"}
-    resolutions = [abs(r) for r in (ds.resolution_x, ds.resolution_y) if r]
-    max_zoom = native_max_zoom(min(resolutions) if resolutions else None, geographic)
-    tilejson = f"{settings.tiles_public_url}/datasets/{ds.dataset_id}/WebMercatorQuad/tilejson.json"
-    options = {
-        "schemes": list(settings.tile_schemes),
-        "zoom": {"min": 0, "max": max_zoom},
-        "bbox": list(ds.bbox),
-        "colormap_name": settings.tile_colormap,
-    }
-    # Portrayal precedence (P3): shared render profile (catalog.render_profiles, units must match)
-    # > dataset's own provenance hint > per-dataset automatic range (diagnostic, not comparable).
-    if ds.render:
-        options["rescale"] = list(ds.render["rescale"])
-        options["colormap_name"] = ds.render["colormap"]
-        options["render_profile"] = {k: ds.render[k] for k in ("profile_id", "title", "units", "description")}
-    else:
-        rescale = raster_rescale_hint(ds)
-        if rescale:
-            options["rescale"] = rescale
-    return {
-        "type": "collection",
-        "title": ds.title,
-        "description": _description(ds),
-        "keywords": _keywords(ds),
-        "links": [{
-            "type": "application/json",
-            "rel": "alternate",
-            "title": "TiTiler TileJSON (vendor-specific, not an OGC API resource)",
-            "href": tilejson,
-        }, {
-            "type": "application/json",
-            "rel": "describedby",
-            "title": ("Dataset metadata: units, NoData, resolution, logical group, shared display scale "
-                      "(vendor-specific TiTiler route, not an OGC API resource)"),
-            "href": f"{settings.tiles_public_url}/datasets/{ds.dataset_id}",
-        }],
-        "extents": _extents(ds),
-        "providers": [{
-            "type": "tile",
-            "name": TILE_PROVIDER,
-            # A catalog dataset_id, never a path or URL; TiTiler resolves it.
-            "data": ds.dataset_id,
-            "format": {"name": "png", "mimetype": "image/png"},
-            "options": options,
-        }],
-    }
-
-
+# Optional {"ogc_publication": {"render": {"rescale": [lo, hi]}}} hint, validated. Used by raster_resource.
 def raster_rescale_hint(ds: CatalogDataset) -> list[float] | None:
-    """Optional ``{"ogc_publication": {"render": {"rescale": [lo, hi]}}}`` catalog hint."""
     render = ((ds.provenance or {}).get(PUBLICATION_HINT_KEY) or {}).get("render") or {}
     value = render.get("rescale") if isinstance(render, dict) else None
     if value is None:
@@ -252,79 +167,127 @@ def raster_rescale_hint(ds: CatalogDataset) -> list[float] | None:
     return None
 
 
-def build_resources(datasets: list[CatalogDataset], table_columns: list[str], settings: PublishSettings) -> dict:
+# pygeoapi resource for a raster dataset (TiTilerTileProvider, PNG map tiles). Used by build_config.
+def raster_resource(ds: CatalogDataset, settings: PublishSettings) -> dict:
+    geographic = (ds.crs or "").upper() in {"EPSG:4326", "OGC:CRS84"}
+    resolutions = [abs(r) for r in (ds.resolution_x, ds.resolution_y) if r]
+    options = {
+        "schemes": list(settings.tile_schemes),
+        "zoom": {"min": 0, "max": native_max_zoom(min(resolutions) if resolutions else None, geographic)},
+        "bbox": list(ds.bbox),
+        "colormap_name": settings.tile_colormap,
+    }
+    # Portrayal precedence: shared render profile > the dataset's own rescale hint > TiTiler autoscale.
+    if ds.render:
+        options["rescale"] = list(ds.render["rescale"])
+        options["colormap_name"] = ds.render["colormap"]
+        options["render_profile"] = {k: ds.render[k] for k in ("profile_id", "title", "units", "description")}
+    else:
+        rescale = raster_rescale_hint(ds)
+        if rescale:
+            options["rescale"] = rescale
+    provider = {
+        "type": "tile",
+        "name": TILE_PROVIDER,
+        "data": ds.dataset_id,  # a catalog dataset_id, never a path or URL; TiTiler resolves it
+        "format": {"name": "png", "mimetype": "image/png"},
+        "options": options,
+    }
+    vendor = f"{settings.tiles_public_url}/datasets/{ds.dataset_id}"
+    links = [{
+        "type": "application/json",
+        "rel": "alternate",
+        "title": "TiTiler TileJSON (vendor-specific, not an OGC API resource)",
+        "href": f"{vendor}/WebMercatorQuad/tilejson.json",
+    }, {
+        "type": "application/json",
+        "rel": "describedby",
+        "title": ("Dataset metadata: units, NoData, resolution, logical group, shared display scale "
+                  "(vendor-specific TiTiler route, not an OGC API resource)"),
+        "href": vendor,
+    }]
+    return _collection(ds, [provider], links)
+
+
+# Base config with `resources` rebuilt from the catalog (unpublishable rows skipped with a warning).
+# Used by render_config and the unit tests.
+def build_config(base: dict, datasets: list[CatalogDataset], table_columns: list[str],
+                 settings: PublishSettings) -> dict:
     resources: dict = {}
     for ds in sorted(datasets, key=lambda d: d.dataset_id):
         if ds.status != "ready":
             continue
-        if not COLLECTION_ID_RE.match(ds.dataset_id or ""):
+        if not DATASET_ID_RE.match(ds.dataset_id or ""):
             LOGGER.warning("skipping dataset with unsafe id %r", ds.dataset_id)
-            continue
-        if not ds.bbox:
+        elif not ds.bbox:
             LOGGER.warning("skipping %s: no bbox in catalog", ds.dataset_id)
-            continue
-        if ds.kind == "vector":
-            if not table_columns:
-                LOGGER.warning("skipping %s: vector table %s.%s not found",
-                               ds.dataset_id, settings.vector_schema, settings.vector_table)
-                continue
+        elif ds.kind == "vector" and not table_columns:
+            LOGGER.warning("skipping %s: vector table %s.%s not found",
+                           ds.dataset_id, settings.vector_schema, settings.vector_table)
+        elif ds.kind == "vector":
             resources[ds.dataset_id] = vector_resource(ds, settings, table_columns)
+        elif ds.kind == "raster" and not ds.asset_path:
+            LOGGER.warning("skipping %s: raster without asset_path", ds.dataset_id)
         elif ds.kind == "raster":
-            if not ds.asset_path:
-                LOGGER.warning("skipping %s: raster without asset_path", ds.dataset_id)
-                continue
             resources[ds.dataset_id] = raster_resource(ds, settings)
         else:
             LOGGER.warning("skipping %s: unknown kind %r", ds.dataset_id, ds.kind)
     unscoped = [k for k, v in resources.items()
                 if v["providers"][0]["type"] == "feature" and "static_filter" not in v["providers"][0]]
     if len(unscoped) > 1:
-        LOGGER.warning("vector datasets %s all publish the whole %s table; see contract change request",
+        LOGGER.warning("vector datasets %s all publish the whole %s table (no dataset_id column or filter hint)",
                        unscoped, settings.vector_table)
-    return resources
-
-
-def build_config(base: dict, datasets: list[CatalogDataset], table_columns: list[str],
-                 settings: PublishSettings) -> dict:
     config = copy.deepcopy(base)
-    config["resources"] = build_resources(datasets, table_columns, settings)
+    config["resources"] = resources
     return config
 
 
+# Serialises a config as YAML with a "generated" header. Used by render_config and the unit tests.
 def dump_config(config: dict) -> str:
     header = "# GENERATED by cgis_ogc.publish from catalog.current_datasets - do not edit by hand.\n"
     return header + yaml.safe_dump(config, sort_keys=False, default_flow_style=False, allow_unicode=True)
 
 
+# Reads the catalog and returns the generated config text. Used by main.
+def render_config(base_path: Path, settings: PublishSettings, wait_seconds: float) -> str:
+    base = yaml.safe_load(base_path.read_text(encoding="utf-8"))
+    datasets, columns = read_catalog(settings.vector_schema, settings.vector_table, wait_seconds)
+    return dump_config(build_config(base, datasets, columns, settings))
+
+
+# Writes a file via a temp file + rename so readers never see a partial file. Used by publish/write_openapi.
 def _write_atomic(path: Path, content: str) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(content, encoding="utf-8")
     os.replace(tmp, path)
 
 
-def generate_openapi(config_path: Path, openapi_path: Path) -> None:
-    from .openapi import write_openapi
+# Generates pygeoapi's OpenAPI document with the conformance adapter applied. Used by publish.
+def write_openapi(config_path: Path, openapi_path: Path) -> None:
+    from pygeoapi.openapi import generate_openapi_document
+    from pygeoapi.util import yaml_load
 
-    write_openapi(config_path, openapi_path)
+    from . import conformance
+
+    with config_path.open(encoding="utf-8") as fh:
+        conformance.apply(yaml_load(fh))
+    _write_atomic(openapi_path, generate_openapi_document(config_path, "yaml", fail_on_invalid_collection=True))
 
 
-def publish(base_path: Path, config_path: Path, openapi_path: Path, reader: CatalogReader,
-            settings: PublishSettings) -> bool:
-    """Regenerate config + OpenAPI. Returns True if the config changed."""
-    base = yaml.safe_load(base_path.read_text(encoding="utf-8"))
-    datasets, columns = reader.read(settings.vector_schema, settings.vector_table)
-    content = dump_config(build_config(base, datasets, columns, settings))
+# Writes config + OpenAPI if the config changed (or OpenAPI is missing); returns True if changed. Used by main.
+def publish(content: str, config_path: Path, openapi_path: Path) -> bool:
     old = config_path.read_text(encoding="utf-8") if config_path.exists() else None
     changed = old != content
     if changed or not openapi_path.exists():
         _write_atomic(config_path, content)
-        generate_openapi(config_path, openapi_path)
+        write_openapi(config_path, openapi_path)
     digest = hashlib.sha256(content.encode()).hexdigest()[:12]
     LOGGER.info("published %d collection(s) (config %s, %s)",
                 content.count("type: collection"), digest, "changed" if changed else "unchanged")
     return changed
 
 
+# Sends SIGHUP to the gunicorn master so workers reload the new config. Used by main (--refresh).
 def reload_server(pidfile: Path) -> None:
     try:
         pid = int(pidfile.read_text().strip())
@@ -335,8 +298,9 @@ def reload_server(pidfile: Path) -> None:
     LOGGER.info("sent SIGHUP to gunicorn master %d", pid)
 
 
+# CLI entry point. Used by docker/entrypoint.sh (serve, refresh loop, `publish`/`refresh` commands).
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(description="Catalog-driven pygeoapi publication.")
     parser.add_argument("--base", type=Path, default=Path(os.environ.get("CGIS_OGC_BASE_CONFIG", "/cgis/config/pygeoapi.base.yml")))
     parser.add_argument("--config", type=Path, default=Path(os.environ.get("PYGEOAPI_CONFIG", "/cgis/runtime/pygeoapi-config.yml")))
     parser.add_argument("--openapi", type=Path, default=Path(os.environ.get("PYGEOAPI_OPENAPI", "/cgis/runtime/pygeoapi-openapi.yml")))
@@ -348,16 +312,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     logging.basicConfig(level=os.environ.get("CGIS_OGC_LOG_LEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s")
 
-    settings = PublishSettings()
-    reader = CatalogReader(db_params_from_env(), wait_seconds=args.wait)
+    content = render_config(args.base, PublishSettings(), args.wait)
     if args.dry_run:
-        base = yaml.safe_load(args.base.read_text(encoding="utf-8"))
-        datasets, columns = reader.read(settings.vector_schema, settings.vector_table)
-        sys.stdout.write(dump_config(build_config(base, datasets, columns, settings)))
+        sys.stdout.write(content)
         return 0
     args.config.parent.mkdir(parents=True, exist_ok=True)
-    changed = publish(args.base, args.config, args.openapi, reader, settings)
-    if args.refresh and changed:
+    if publish(content, args.config, args.openapi) and args.refresh:
         reload_server(args.pidfile)
     return 0
 

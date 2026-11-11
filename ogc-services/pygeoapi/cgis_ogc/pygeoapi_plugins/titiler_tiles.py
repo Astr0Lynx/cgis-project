@@ -1,17 +1,11 @@
-"""OGC API - Tiles provider for pygeoapi backed by the internal restricted TiTiler.
-
-Publishes PNG *map* tilesets (``dataType: map``) for one catalog raster. The
-provider ``data`` is a catalog ``dataset_id``; the tile renderer URL comes only
-from the server environment (``CGIS_TILER_INTERNAL_URL``), never from a request,
-and TiTiler resolves the dataset to a file itself. Tileset metadata follows OGC
-API - Tiles 1.0 /req/tileset (OGC 20-057) and the TMS 2.0 tileset JSON model.
-"""
+# OGC API - Tiles provider for pygeoapi: PNG map tilesets (dataType map) for one catalog raster, rendered
+# by the internal TiTiler. Provider `data` is a catalog dataset_id; the renderer URL comes only from
+# CGIS_TILER_INTERNAL_URL, never from a request. Named in the generated config.
 
 from __future__ import annotations
 
 import logging
 import os
-import re
 import struct
 import threading
 import time
@@ -32,30 +26,31 @@ from pygeoapi.provider.tile import (
 )
 from pygeoapi.util import url_join
 
-from cgis_ogc.tms import TILE_MATRIX_SETS, matrix_size, tile_matrix_set_limits, tile_range
+from cgis_ogc.catalog import DATASET_ID_RE
+from cgis_ogc.tms import CRS84, TILE_MATRIX_SETS, matrix_size, tile_matrix_set_limits, tile_range
 
 LOGGER = logging.getLogger(__name__)
 
-DATASET_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-CRS84 = "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
 REL_TILING_SCHEME = "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme"
 REL_GEODATA = "http://www.opengis.net/def/rel/ogc/1.0/geodata"
 REL_CONFORMANCE = "http://www.opengis.net/def/rel/ogc/1.0/conformance"
 TILEJSON_TMS = "WebMercatorQuad"
 STATS_TTL_SECONDS = 300.0
 
+# dataset_id -> (expiry, (lo, hi)) of the per-dataset colour range fetched from TiTiler statistics.
 _stats_cache: dict[str, tuple[float, tuple[float, float]]] = {}
 _stats_lock = threading.Lock()
 
 
+# The tile renderer is unreachable or failed: OGC exception with HTTP 502.
 class TileRendererError(ProviderGenericError):
     default_msg = "Tile renderer unavailable"
     http_status_code = HTTPStatus.BAD_GATEWAY
     ogc_exception_code = "ServerError"
 
 
+# "lo,hi" or [lo, hi] -> [lo, hi] (None if unset or invalid). Used for OGC_TILE_RESCALE and by the unit tests.
 def parse_rescale(value) -> list[float] | None:
-    """``"lo,hi"`` or ``[lo, hi]`` -> ``[lo, hi]`` (None if unset/invalid)."""
     if not value:
         return None
     parts = value.split(",") if isinstance(value, str) else value
@@ -67,16 +62,9 @@ def parse_rescale(value) -> list[float] | None:
     return [lo, hi] if hi > lo else None
 
 
-def _error_code(resp) -> str | None:
-    """``error.code`` from the tile service's structured error body, if any."""
-    try:
-        return resp.json()["error"]["code"]
-    except (ValueError, KeyError, TypeError):
-        return None
-
-
+# Fully transparent RGBA PNG for in-range tiles without data. Used by get_tiles and the unit tests.
 def blank_png(width: int = 256, height: int = 256) -> bytes:
-    """Fully transparent RGBA PNG used for in-range tiles without data."""
+    # One length-prefixed, CRC-terminated PNG chunk.
     def chunk(tag: bytes, data: bytes) -> bytes:
         return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
 
@@ -87,9 +75,10 @@ def blank_png(width: int = 256, height: int = 256) -> bytes:
             + chunk(b"IEND", b""))
 
 
+# Tile provider instantiated by pygeoapi for every raster collection.
 class TiTilerTileProvider(BaseTileProvider):
-    """Raster map tiles for one catalog dataset, rendered by TiTiler."""
 
+    # Validates format (PNG only), dataset_id, schemes and reads zoom/bbox/render options.
     def __init__(self, provider_def):
         fmt = provider_def.get("format") or {}
         if fmt.get("name") != "png" or fmt.get("mimetype") != "image/png":
@@ -107,29 +96,31 @@ class TiTilerTileProvider(BaseTileProvider):
         self.bbox = tuple(float(v) for v in self.options["bbox"])
         self.colormap_name = self.options.get("colormap_name", "viridis")
         self.rescale = self.options.get("rescale") or parse_rescale(os.environ.get("OGC_TILE_RESCALE"))
-        # Shared display scale chosen by the publisher from catalog.render_profiles (P3), if any.
+        # Shared display scale chosen by the publisher from catalog.render_profiles, if any.
         profile = self.options.get("render_profile")
         self.render_profile = profile if isinstance(profile, dict) and profile.get("profile_id") else None
         self.internal_url = os.environ.get("CGIS_TILER_INTERNAL_URL", "http://tiles:8000").rstrip("/")
-        self._service_url = None
 
+    # Short description for pygeoapi logs.
     def __repr__(self):
         return f"<TiTilerTileProvider> {self.dataset_id}"
 
-    # -- discovery ---------------------------------------------------------
+    # pygeoapi hook: the single layer is the dataset itself.
     def get_layer(self):
         return self.dataset_id
 
+    # pygeoapi hook: map tiles have no attribute fields.
     def get_fields(self):
         return {}
 
+    # pygeoapi hook: TileMatrixSet models for the configured schemes.
     def get_tiling_schemes(self):
         by_id = {e.value.tileMatrixSet: e.value for e in TileMatrixSetEnum}
         return [by_id[s] for s in self.schemes if s in by_id]
 
+    # pygeoapi hook: templated tile link listed on the tilesets resource.
     def get_tiles_service(self, baseurl=None, servicepath=None, dirpath=None, tile_type=None):
         url = servicepath if servicepath.startswith(("http://", "https://")) else url_join(baseurl, servicepath)
-        self._service_url = url
         return {"links": [{
             "type": self.mimetype,
             "rel": "item",
@@ -138,7 +129,7 @@ class TiTilerTileProvider(BaseTileProvider):
             "templated": True,
         }]}
 
-    # -- tiles -------------------------------------------------------------
+    # Validates tileset id and indices against the tileset limits; 404 before any network call. Used by get_tiles.
     def _check_tile(self, tileset, z, y, x) -> tuple[int, int, int]:
         if tileset not in self.schemes:
             raise ProviderTilesetIdNotFoundError()
@@ -156,6 +147,16 @@ class TiTilerTileProvider(BaseTileProvider):
             raise ProviderTileNotFoundError("Tile outside the tileMatrixSetLimits of this tileset")
         return z, y, x
 
+    # GET against the internal TiTiler; network failure -> TileRendererError. Used by _rescale and get_tiles.
+    def _request(self, path: str, params: dict | None = None):
+        try:
+            return requests.get(self.internal_url + path, params=params, timeout=(3, 30))
+        except requests.RequestException as err:
+            LOGGER.error("tile renderer unreachable: %s", err.__class__.__name__)
+            raise TileRendererError()
+
+    # "lo,hi" colour range: configured rescale, else min(0, min)..max from TiTiler statistics (cached).
+    # Used by get_tiles and style.
     def _rescale(self) -> str:
         if self.rescale:
             lo, hi = self.rescale
@@ -166,8 +167,14 @@ class TiTilerTileProvider(BaseTileProvider):
         if hit and hit[0] > now:
             lo, hi = hit[1]
         else:
-            stats = self._get_json(f"/datasets/{self.dataset_id}/statistics")
-            band = next(iter(stats.values()))
+            resp = self._request(f"/datasets/{self.dataset_id}/statistics")
+            if resp.status_code == 404:
+                # Dataset withdrawn from the catalog or its asset refused by TiTiler.
+                raise ProviderTileNotFoundError("Dataset tiles are not available")
+            if resp.status_code != 200:
+                LOGGER.error("tile renderer statistics -> HTTP %s", resp.status_code)
+                raise TileRendererError()
+            band = next(iter(resp.json().values()))
             lo, hi = min(0.0, float(band["min"])), float(band["max"])
             if hi <= lo:
                 hi = lo + 1.0
@@ -175,35 +182,19 @@ class TiTilerTileProvider(BaseTileProvider):
                 _stats_cache[self.dataset_id] = (now + STATS_TTL_SECONDS, (lo, hi))
         return f"{lo:g},{hi:g}"
 
-    def _get_json(self, path: str) -> dict:
-        try:
-            resp = requests.get(self.internal_url + path, timeout=(3, 30))
-        except requests.RequestException as err:
-            LOGGER.error("tile renderer unreachable: %s", err.__class__.__name__)
-            raise TileRendererError()
-        if resp.status_code == 404:
-            # Dataset withdrawn from the catalog or its asset refused by TiTiler.
-            raise ProviderTileNotFoundError("Dataset tiles are not available")
-        if resp.status_code != 200:
-            LOGGER.error("tile renderer %s -> HTTP %s", path, resp.status_code)
-            raise TileRendererError()
-        return resp.json()
-
+    # pygeoapi hook: one PNG tile; blank PNG for in-range tiles without pixels, 404 for refused datasets.
     def get_tiles(self, layer=None, tileset=None, z=None, y=None, x=None, format_=None):
         z, y, x = self._check_tile(tileset, z, y, x)
         params = {"colormap_name": self.colormap_name, "rescale": self._rescale()}
-        url = f"{self.internal_url}/datasets/{self.dataset_id}/tiles/{tileset}/{z}/{x}/{y}.png"
-        try:
-            resp = requests.get(url, params=params, timeout=(3, 30))
-        except requests.RequestException as err:
-            LOGGER.error("tile renderer unreachable: %s", err.__class__.__name__)
-            raise TileRendererError()
+        resp = self._request(f"/datasets/{self.dataset_id}/tiles/{tileset}/{z}/{x}/{y}.png", params)
         if resp.status_code == 200 and resp.headers.get("content-type", "").startswith("image/png"):
             return resp.content
-        code = _error_code(resp)
+        try:
+            code = resp.json()["error"]["code"]
+        except (ValueError, KeyError, TypeError):
+            code = None
         if resp.status_code == 404 and code == "TileOutsideBounds":
-            # In range of the advertised limits but no pixels (edge rounding):
-            # /req/core/tc-error B allows a blank 200 response.
+            # In range of the advertised limits but no pixels (edge rounding): /req/core/tc-error B allows blank 200.
             return blank_png()
         if resp.status_code == 404:
             # Dataset withdrawn from the catalog or its asset refused by TiTiler.
@@ -211,7 +202,8 @@ class TiTilerTileProvider(BaseTileProvider):
         LOGGER.error("tile renderer returned HTTP %s (%s) for %s", resp.status_code, code, self.dataset_id)
         raise TileRendererError()
 
-    # -- tileset metadata --------------------------------------------------
+    # Links of a tileset metadata document (self, alternates, tiling scheme, tile template, collection).
+    # Used by tileset_metadata.
     def _links(self, server_url: str, dataset: str, tileset: str) -> list[dict]:
         tileset_url = url_join(server_url, f"collections/{dataset}/tiles/{tileset}")
         links = [
@@ -236,6 +228,7 @@ class TiTilerTileProvider(BaseTileProvider):
              "href": url_join(server_url, "conformance") + "?f=json"},
         ]
 
+    # OGC API - Tiles TileSetMetadata (TMS 2.0 JSON model, /req/tileset). Used by get_metadata.
     def tileset_metadata(self, server_url, dataset, tileset, title=None, description=None, keywords=None) -> dict:
         crs, tms_uri, _ = TILE_MATRIX_SETS[tileset]
         west, south, east, north = self.bbox
@@ -254,8 +247,8 @@ class TiTilerTileProvider(BaseTileProvider):
         }
         return {k: v for k, v in metadata.items() if v is not None}
 
+    # The single portrayal rule applied to every tile (/req/png/content D). Used by tileset_metadata.
     def style(self) -> dict:
-        """The single portrayal rule applied to every tile (/req/png/content D)."""
         lo, hi = self._rescale().split(",")
         if self.render_profile:
             p = self.render_profile
@@ -275,6 +268,7 @@ class TiTilerTileProvider(BaseTileProvider):
                             "Display only: tiles never alter data values."),
         }
 
+    # TileJSON 3.0 rendering of the WebMercatorQuad tileset. Used by get_metadata (f=tilejson).
     def tilejson(self, server_url, dataset, tileset, title=None, description=None) -> dict:
         west, south, east, north = self.bbox
         template = url_join(server_url, f"collections/{dataset}/tiles/{tileset}/{{z}}/{{y}}/{{x}}") + "?f=png"
@@ -290,6 +284,7 @@ class TiTilerTileProvider(BaseTileProvider):
             "center": [(west + east) / 2, (south + north) / 2, max(self.min_zoom, self.max_zoom - 2)],
         }
 
+    # pygeoapi hook: tileset metadata as JSON (default), HTML template data or TileJSON (WebMercatorQuad only).
     def get_metadata(self, dataset, server_url, layer=None, tileset=None, metadata_format=None,
                      title=None, description=None, keywords=None, **kwargs):
         if tileset not in self.schemes:

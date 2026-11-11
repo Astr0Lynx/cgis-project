@@ -1,11 +1,6 @@
-"""Catalog-backed, path-safe resolution of raster dataset IDs to local COG files.
-
-This is the only way the tile service turns a request into a file path. Clients
-never supply a path or URL: they supply a catalog ``dataset_id``, which is looked
-up in ``catalog.current_datasets`` (ready rasters only). The stored ``asset_path``
-is then confined to the asset root after symlink resolution, and the file must
-open with the GeoTIFF driver.
-"""
+# Catalog-backed, path-safe resolution of raster dataset_ids to local COG files: the only way the tile
+# service turns a request into a path. The catalog asset_path is confined to the asset root after
+# symlink resolution and must open with the GeoTIFF driver. Used by main.
 
 from __future__ import annotations
 
@@ -19,46 +14,41 @@ from typing import Callable
 
 LOGGER = logging.getLogger(__name__)
 
-# Collection/dataset slugs appear in URLs; anything else is rejected before any
-# database or filesystem access.
-DATASET_ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
-DATASET_ID_RE = re.compile(DATASET_ID_PATTERN)
+# Dataset ids appear in URLs; anything else is rejected before any database or filesystem access.
+DATASET_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 ALLOWED_SUFFIXES = frozenset({".tif", ".tiff"})
 ALLOWED_DRIVERS = frozenset({"GTiff", "COG"})
 
 
+# Base error with a stable code and HTTP status; rendered as {"error": {...}} by main._asset_error.
 class AssetError(Exception):
-    """Base error with a stable code and HTTP status for API responses."""
-
     status_code = 404
     code = "dataset_not_found"
 
+    # Keeps the public message for the response body.
     def __init__(self, message: str):
         super().__init__(message)
         self.message = message
 
 
+# Unknown, malformed or non-ready dataset_id.
 class DatasetNotFound(AssetError):
-    status_code = 404
-    code = "dataset_not_found"
+    pass
 
 
+# The catalog row exists but its asset cannot be served safely (generic public message; reason is logged).
 class AssetUnavailable(AssetError):
-    """The catalog row exists but its asset cannot be served safely.
-
-    The public message is deliberately generic; the reason is logged.
-    """
-
-    status_code = 404
     code = "asset_unavailable"
 
 
+# The catalog database cannot be queried. Raised by catalog.Catalog.
 class CatalogUnavailable(AssetError):
     status_code = 503
     code = "catalog_unavailable"
 
 
+# A ready raster row of catalog.current_datasets. Built by catalog.Catalog.
 @dataclass(frozen=True)
 class RasterRecord:
     dataset_id: str
@@ -70,26 +60,23 @@ class RasterRecord:
     units: str | None
     year: int | None
     bbox: tuple[float, float, float, float] | None
-    # Public, non-path metadata for discovery (completion: Agent 3 grouping, Agent 6 request 3).
+    # Public, non-path discovery metadata (served by main.list_datasets / describe_dataset).
     product_level: str | None = None
     resolution: tuple[float, float] | None = None
     public: dict | None = None      # group_id, synthetic, license, citation from provenance
-    render: dict | None = None      # shared display scale (catalog.render_profiles) or None
+    render: dict | None = None      # shared display scale (catalog.render_profile_for) or None
 
 
+# Rejects ids that do not match DATASET_ID_RE. Used by AssetResolver.resolve and the unit tests.
 def validate_dataset_id(dataset_id: str) -> str:
     if not isinstance(dataset_id, str) or not DATASET_ID_RE.match(dataset_id):
         raise DatasetNotFound("Unknown dataset")
     return dataset_id
 
 
+# Maps a catalog asset_path (relative, or absolute but inside the root) to a real .tif file inside
+# asset_root; ValueError with an internal reason otherwise. Used by AssetResolver.resolve and the unit tests.
 def confine_asset_path(asset_root: Path, asset_path: str | None) -> Path:
-    """Map a catalog ``asset_path`` to a real file inside ``asset_root``.
-
-    The contract stores paths relative to the asset root; an absolute path is
-    tolerated only if it already lies inside the root. Raises ``ValueError`` with
-    an internal reason on any violation.
-    """
     if not asset_path or not isinstance(asset_path, str):
         raise ValueError("empty asset_path")
     if "\x00" in asset_path or "\\" in asset_path:
@@ -116,9 +103,9 @@ def confine_asset_path(asset_root: Path, asset_path: str | None) -> Path:
     return real
 
 
+# Refuses files GDAL would not open as GeoTIFF/COG (e.g. a VRT disguised as .tif that references other
+# files or URLs). Default driver check of AssetResolver; also used by the unit tests.
 def check_driver(path: Path) -> None:
-    """Refuse anything that GDAL would not open as a GeoTIFF (e.g. a VRT
-    disguised with a .tif suffix, which could reference other files/URLs)."""
     import rasterio
 
     with rasterio.open(path) as src:
@@ -126,9 +113,10 @@ def check_driver(path: Path) -> None:
             raise ValueError(f"driver {src.driver!r} not allowed")
 
 
+# dataset_id -> (catalog record, confined local file path), with a short TTL cache. Used by main.
 class AssetResolver:
-    """dataset_id -> confined local file path, with a short TTL cache."""
 
+    # lookup is the catalog query (catalog.Catalog.lookup_raster in main); driver_check is overridable for tests.
     def __init__(
         self,
         asset_root: Path,
@@ -143,6 +131,8 @@ class AssetResolver:
         self._cache: dict[str, tuple[float, RasterRecord, Path]] = {}
         self._lock = threading.Lock()
 
+    # Validates, looks up and confines a dataset; raises DatasetNotFound / AssetUnavailable.
+    # Used by main.dataset_path and main.describe_dataset.
     def resolve(self, dataset_id: str) -> tuple[RasterRecord, Path]:
         validate_dataset_id(dataset_id)
         now = time.monotonic()
@@ -165,6 +155,7 @@ class AssetResolver:
             self._cache[dataset_id] = (now + self._ttl, record, path)
         return record, path
 
+    # Empties the cache. Used by the unit tests.
     def clear(self) -> None:
         with self._lock:
             self._cache.clear()

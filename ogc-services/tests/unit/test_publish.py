@@ -1,4 +1,4 @@
-"""Catalog -> pygeoapi configuration generation (no database needed)."""
+# Unit tests: catalog -> pygeoapi configuration generation (cgis_ogc.publish); no database needed.
 
 from pathlib import Path
 
@@ -20,10 +20,12 @@ COLUMNS = ["unit_id", "name", "level", "geom"]
 BBOX = (10.0, 20.0, 11.0, 21.0)
 
 
+# Ready vector CatalogDataset with a bbox.
 def vector(dataset_id="any-vector", **kw):
     return CatalogDataset(dataset_id=dataset_id, version=1, title=f"{dataset_id} title", kind="vector", bbox=BBOX, **kw)
 
 
+# Ready raster CatalogDataset with asset_path, CRS and resolution.
 def raster(dataset_id="any-raster", **kw):
     kw.setdefault("asset_path", f"{dataset_id}/v1/data.tif")
     kw.setdefault("crs", "EPSG:4326")
@@ -32,11 +34,13 @@ def raster(dataset_id="any-raster", **kw):
     return CatalogDataset(dataset_id=dataset_id, version=2, title=f"{dataset_id} title", kind="raster", bbox=BBOX, **kw)
 
 
+# PublishSettings with a test TILES_PUBLIC_URL.
 @pytest.fixture
 def settings():
     return PublishSettings(env={"TILES_PUBLIC_URL": "http://gw/tiles/"})
 
 
+# Collections are exactly the catalog ids, with the right provider per kind.
 def test_resources_follow_catalog_not_hardcoded_ids(settings):
     datasets = [vector("zz-boundaries"), raster("aa-elevation"), raster("mm-landcover", year=2015)]
     resources = build_config(BASE, datasets, COLUMNS, settings)["resources"]
@@ -45,12 +49,14 @@ def test_resources_follow_catalog_not_hardcoded_ids(settings):
     assert resources["aa-elevation"]["providers"][0]["name"] == TILE_PROVIDER
 
 
+# A new catalog row adds exactly one collection.
 def test_adding_a_catalog_row_adds_a_collection(settings):
     before = build_config(BASE, [vector("a")], COLUMNS, settings)["resources"]
     after = build_config(BASE, [vector("a"), raster("b")], COLUMNS, settings)["resources"]
     assert set(after) - set(before) == {"b"}
 
 
+# Vector resource: extent, table/id, CRS list, read-only, password as env ref, keywords.
 def test_vector_resource(settings):
     res = build_config(BASE, [vector("v", source="deterministic-fixture")], COLUMNS, settings)["resources"]["v"]
     provider = res["providers"][0]
@@ -64,6 +70,7 @@ def test_vector_resource(settings):
     assert "deterministic-fixture" in res["keywords"]
 
 
+# Raster resource: id as data, PNG, schemes, zoom, temporal extent, description, vendor link.
 def test_raster_resource(settings):
     res = build_config(BASE, [raster("r", year=2011, units="people_per_cell", nodata=-9999)], COLUMNS, settings)["resources"]["r"]
     provider = res["providers"][0]
@@ -86,36 +93,42 @@ def test_raster_resource(settings):
     raster("no-asset", asset_path=None),
     CatalogDataset(dataset_id="weird", version=1, title="t", kind="mesh", bbox=BBOX),
 ])
+# Staged, unsafe-id, no-bbox, no-asset and unknown-kind rows are skipped.
 def test_unpublishable_rows_are_skipped(settings, dataset):
     assert build_config(BASE, [dataset], COLUMNS, settings)["resources"] == {}
 
 
+# Vectors are skipped when the vector table does not exist.
 def test_vector_skipped_when_table_missing(settings):
     assert build_config(BASE, [vector("v")], [], settings)["resources"] == {}
 
 
+# A dataset_id column wins over the provenance filter hint.
 def test_static_filter_prefers_dataset_id_column():
     ds = vector("v", provenance={"ogc_publication": {"filter": {"level": "x"}}})
     assert vector_static_filter(ds, COLUMNS + ["dataset_id"]) == {"dataset_id": "v"}
 
 
+# A dataset_version column scopes the collection to its current catalog version.
 def test_static_filter_scopes_to_the_current_dataset_version():
-    """database core/0007 keeps every version's units: the collection serves its catalog version only."""
     ds = CatalogDataset(dataset_id="v", version=3, title="t", kind="vector", bbox=BBOX)
     assert vector_static_filter(ds, COLUMNS + ["dataset_id", "dataset_version"]) == {
         "dataset_id": "v", "dataset_version": 3}
 
 
+# Only valid columns/scalar values of the filter hint are kept.
 def test_static_filter_from_provenance_hint():
     ds = vector("v", provenance={"ogc_publication": {"filter": {"level": "synthetic_town", "nope": 1, "name": ["x"]}}})
     assert vector_static_filter(ds, COLUMNS) == {"level": "synthetic_town"}
 
 
+# No or malformed hint -> no static filter.
 @pytest.mark.parametrize("provenance", [{}, {"ogc_publication": {"filter": "level = 1"}}, {"ogc_publication": None}])
 def test_static_filter_absent(provenance):
     assert vector_static_filter(vector("v", provenance=provenance), COLUMNS) == {}
 
 
+# Dumped YAML keeps unquoted ${VAR} refs and has the generated header.
 def test_dump_has_no_secrets_and_keeps_env_refs(settings):
     text = dump_config(build_config(BASE, [vector("v"), raster("r")], COLUMNS, settings))
     assert text.startswith("# GENERATED")
@@ -131,12 +144,14 @@ def test_dump_has_no_secrets_and_keeps_env_refs(settings):
     ({"rescale": [0, True]}, None),
     ({}, None),
 ])
+# Only a valid [lo, hi] render.rescale hint is published.
 def test_raster_rescale_hint(settings, render, expected):
     ds = raster("r", provenance={"ogc_publication": {"render": render}})
     options = build_config(BASE, [ds], COLUMNS, settings)["resources"]["r"]["providers"][0]["options"]
     assert options.get("rescale") == expected
 
 
+# Unknown OGC_TILE_SCHEMES entries raise ValueError.
 def test_unknown_tile_scheme_rejected():
     with pytest.raises(ValueError):
         PublishSettings(env={"OGC_TILE_SCHEMES": "WebMercatorQuad,NoSuchQuad"})
@@ -147,6 +162,7 @@ LEVEL1_RENDER = {"profile_id": "level1-people-per-cell", "units": "people_per_ce
                  "description": "Shared fixed scale", "legend": {}}
 
 
+# A render profile gives every year the same scale (over a dataset hint) and is named in the description.
 def test_render_profile_sets_shared_scale_for_every_year(settings):
     years = [raster(f"india-l1-pop-{y}", year=y, units="people_per_cell", render=LEVEL1_RENDER,
                     provenance={"ogc_publication": {"render": {"rescale": [0, 2]}}}) for y in (2001, 2011)]
@@ -158,11 +174,13 @@ def test_render_profile_sets_shared_scale_for_every_year(settings):
     assert "display scale level1-people-per-cell 0..50" in desc
 
 
+# Without a profile or hint, neither rescale nor render_profile is published (autoscale).
 def test_without_profile_the_hint_or_autoscale_applies(settings):
     plain = build_config(BASE, [raster("r")], COLUMNS, settings)["resources"]["r"]["providers"][0]["options"]
     assert "rescale" not in plain and "render_profile" not in plain
 
 
+# group_id becomes a description fact (before source) and rasters get a vendor describedby link.
 def test_group_id_and_metadata_link_are_published(settings):
     ds = raster("india-l2-pop-2011-warangal", year=2011, units="people_per_cell", source="cgis-level2",
                 provenance={"group_id": "india-level2-2011"})
@@ -176,6 +194,7 @@ def test_group_id_and_metadata_link_are_published(settings):
     assert res["keywords"] == ["raster", "cgis-level2", "people_per_cell", "2011"]
 
 
+# A group_id that is not a safe id is not published.
 def test_unsafe_group_id_is_not_published(settings):
     ds = raster("r", provenance={"group_id": "../../x"})
     assert "group" not in build_config(BASE, [ds], COLUMNS, settings)["resources"]["r"]["description"]

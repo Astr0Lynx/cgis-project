@@ -1,13 +1,12 @@
-"""Agent 5 CR R5: datasets marked admins-only in cgis_app.dataset_access are not published by OGC.
-
-Runs against the integrated database. If the application API schema is absent, the test creates a
-minimal stand-in table (and removes it afterwards); the read grant mirrors Compose's ``app-grants``.
-"""
+# Integration tests: datasets marked admins-only in cgis_app.dataset_access are not published by OGC.
+# If the application API schema is absent, a minimal stand-in table is created (and removed afterwards);
+# the read grant mirrors Compose's app-grants service.
 
 import pytest
 from conftest import collection_ids, wait_for
 
 
+# Ensures cgis_app.dataset_access exists and is readable by cgis_reader (skips without the migrations' role).
 @pytest.fixture
 def access_table(db):
     with db.cursor() as cur:
@@ -28,6 +27,7 @@ def access_table(db):
             cur.execute("DROP SCHEMA IF EXISTS cgis_app")
 
 
+# An admins-only dataset is withheld from /ogc/collections and published once its access is relaxed.
 def test_admins_only_dataset_is_withheld_from_ogc(http, db, temp_dataset, access_table):
     hidden = temp_dataset("vector", status="ready")
     with db.cursor() as cur:

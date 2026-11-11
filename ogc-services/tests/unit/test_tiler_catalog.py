@@ -1,4 +1,4 @@
-"""Tile-service catalog rows -> public discovery metadata (no database, no TiTiler import)."""
+# Unit tests: tile-service catalog rows -> public discovery metadata (cgis_tiler.catalog); no database.
 
 from cgis_tiler.catalog import _row_to_record
 
@@ -9,6 +9,7 @@ RENDER = ("level2-people-per-cell", "people_per_cell", "viridis", 0.0, 2.76125,
           "Population per ~23.5 m cell", "Shared fixed scale")
 
 
+# A full row yields product level, resolution, public provenance facts and the render profile.
 def test_record_carries_public_metadata_and_render_profile():
     rec = _row_to_record(BASE_ROW + RENDER, with_render=True)
     assert rec.product_level == "level2" and rec.resolution == (23.5, 23.5)
@@ -19,11 +20,13 @@ def test_record_carries_public_metadata_and_render_profile():
     assert all("rasters/" not in str(v) for v in rec.public.values())
 
 
+# No matching profile, or no render support, gives render None.
 def test_record_without_profile_or_render_support():
     assert _row_to_record(BASE_ROW + (None,) * 7, with_render=True).render is None
     assert _row_to_record(BASE_ROW, with_render=False).render is None
 
 
+# Blank strings and a non-boolean synthetic flag become None.
 def test_non_boolean_synthetic_and_blank_strings_are_dropped():
     row = list(BASE_ROW)
     row[15], row[16], row[17] = "  ", "yes", ""

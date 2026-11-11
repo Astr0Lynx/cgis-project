@@ -1,7 +1,5 @@
-"""OGC API - Tiles 1.0 publication (map tilesets, PNG) over HTTP.
-
-Requirement references are to OGC 20-057 (OGC API - Tiles - Part 1: Core).
-"""
+# Integration tests: OGC API - Tiles 1.0 publication (map tilesets, PNG) over HTTP.
+# Requirement references are to OGC 20-057 (OGC API - Tiles - Part 1: Core).
 
 import pytest
 from conftest import OGC, RASTER_BBOX, RASTERS, REL, get_json, link, png_image, tile_pixel
@@ -18,10 +16,12 @@ NODATA_ROW = (78.030, 17.998)   # first 4 rows are NoData
 ZOOM = 13
 
 
+# URL of a collection's OGC tilesets resource.
 def tiles_url(collection):
     return f"{OGC}/collections/{collection}/tiles"
 
 
+# Raster collections link to map tilesets and the labelled vendor TileJSON.
 @pytest.mark.parametrize("collection", RASTERS)
 def test_collection_links_to_map_tilesets(http, collection):
     doc = get_json(http, f"{OGC}/collections/{collection}?f=json")
@@ -31,9 +31,9 @@ def test_collection_links_to_map_tilesets(http, collection):
     assert "vendor-specific" in vendor["title"] and "/tiles/datasets/" in vendor["href"]
 
 
+# Tilesets list has both TMSs with map dataType and links (/req/tilesets-list, Req 10).
 @pytest.mark.parametrize("collection", RASTERS)
 def test_tilesets_list(http, collection):
-    """/req/tilesets-list/tileset-links (Req 10)."""
     doc = get_json(http, f"{tiles_url(collection)}?f=json")
     assert {ts["tileMatrixSetURI"] for ts in doc["tilesets"]} == {uri for _, uri in TMS.values()}
     for tileset in doc["tilesets"]:
@@ -42,10 +42,10 @@ def test_tilesets_list(http, collection):
         assert link(tileset, f"{REL}tiling-scheme")
 
 
+# Tileset metadata members per /req/tileset/description (Req 8 A-G).
 @pytest.mark.parametrize("collection", RASTERS)
 @pytest.mark.parametrize("tms_id", TMS)
 def test_tileset_metadata(http, collection, tms_id):
-    """/req/tileset/description (Req 8 A-G)."""
     resp = http.get(f"{tiles_url(collection)}/{tms_id}", headers={"Accept": "application/json"})
     assert resp.status_code == 200 and resp.headers["content-type"].startswith("application/json")
     md = resp.json()
@@ -61,6 +61,7 @@ def test_tileset_metadata(http, collection, tms_id):
     assert limits[0]["tileMatrix"] == "0" and all(l["minTileRow"] <= l["maxTileRow"] for l in limits)
 
 
+# The tiling-scheme link resolves to the TMS definition.
 @pytest.mark.parametrize("tms_id", TMS)
 def test_tiling_scheme_link_resolves_to_tms_definition(http, tms_id):
     md = get_json(http, f"{tiles_url('synthetic-worldpop-2001')}/{tms_id}?f=json")
@@ -69,11 +70,13 @@ def test_tiling_scheme_link_resolves_to_tms_definition(http, tms_id):
     assert len(tms["tileMatrices"]) > 13
 
 
+# /TileMatrixSets lists both TMSs.
 def test_tilematrixsets_listing(http):
     listing = get_json(http, f"{OGC}/TileMatrixSets?f=json")
     assert {"WebMercatorQuad", "WorldCRS84Quad"} <= {t["id"] for t in listing["tileMatrixSets"]}
 
 
+# Fetches the tile containing lon/lat via the tileset's item template; returns (response, pixel).
 def fetch_tile(http, collection, tms_id, lon, lat, zoom=ZOOM, **kw):
     tile, pixel = tile_pixel(tms_id, lon, lat, zoom)
     md = get_json(http, f"{tiles_url(collection)}/{tms_id}?f=json")
@@ -82,10 +85,10 @@ def fetch_tile(http, collection, tms_id, lon, lat, zoom=ZOOM, **kw):
     return http.get(href, **kw), pixel
 
 
+# Tiles render valid cells opaque and NoData transparent (Req 5, Req 26).
 @pytest.mark.parametrize("collection", RASTERS)
 @pytest.mark.parametrize("tms_id", TMS)
 def test_tile_image_renders_valid_cells_and_masks_nodata(http, collection, tms_id):
-    """/req/core/tc-success (Req 5 A-C) and /req/png/content (Req 26)."""
     resp, pixel = fetch_tile(http, collection, tms_id, *VALID)
     image = png_image(resp)
     assert image.size == (256, 256)
@@ -95,8 +98,8 @@ def test_tile_image_renders_valid_cells_and_masks_nodata(http, collection, tms_i
         assert png_image(resp).getpixel(pixel)[3] == 0
 
 
+# Adjacent tiles use the same colours (/req/png/content D).
 def test_same_portrayal_rule_across_tiles(http):
-    """/req/png/content D: adjacent tiles of one tileset use the same colours."""
     colours = set()
     for lon in (78.010, 78.050):  # two different z13 tile columns
         resp, pixel = fetch_tile(http, "synthetic-worldpop-2001", "WebMercatorQuad", lon, 17.970)
@@ -104,6 +107,7 @@ def test_same_portrayal_rule_across_tiles(http):
     assert len(colours) == 1
 
 
+# Accept: image/png gives PNG; image/jpeg is 406; f=jpeg is 400.
 def test_tile_selected_by_content_negotiation(http):
     tile, _ = tile_pixel("WebMercatorQuad", *VALID, ZOOM)
     url = f"{tiles_url('synthetic-worldpop-2011')}/WebMercatorQuad/{tile.z}/{tile.y}/{tile.x}"
@@ -121,23 +125,26 @@ def test_tile_selected_by_content_negotiation(http):
     "WorldCRS84Quad/0/5/5",
     "NoSuchTMS/11/919/1467",
 ])
+# Out-of-range tiles return a JSON OGC exception (/req/core/tc-error A, Req 6).
 def test_out_of_range_tiles_are_404(http, path):
-    """/req/core/tc-error A (Req 6)."""
     resp = http.get(f"{tiles_url('synthetic-worldpop-2001')}/{path}", params={"f": "png"})
     assert resp.status_code in (400, 404)
     assert resp.headers["content-type"].startswith("application/json")
     assert resp.json()["code"]
 
 
+# Unknown tileset or collection returns 404.
 def test_unknown_tileset_and_collection(http):
     assert http.get(f"{tiles_url('synthetic-worldpop-2001')}/NoSuchTMS", params={"f": "json"}).status_code == 404
     assert http.get(tiles_url("no-such-collection"), params={"f": "json"}).status_code == 404
 
 
+# Vector collections have no tiles resource.
 def test_vector_collection_has_no_tiles(http):
     assert http.get(tiles_url("synthetic-towns"), params={"f": "json"}).status_code in (400, 404)
 
 
+# f=tilejson works for WebMercatorQuad only.
 def test_tilejson_alternate_for_webmercator_only(http):
     tj = get_json(http, f"{tiles_url('synthetic-worldpop-2001')}/WebMercatorQuad?f=tilejson")
     assert tj["tilejson"] == "3.0.0" and tj["bounds"] == RASTER_BBOX
@@ -145,6 +152,7 @@ def test_tilejson_alternate_for_webmercator_only(http):
     assert http.get(f"{tiles_url('synthetic-worldpop-2001')}/WorldCRS84Quad", params={"f": "tilejson"}).status_code == 400
 
 
+# The HTML tiles viewer renders map tiles.
 def test_html_tiles_viewer_renders_map_tiles(http):
     resp = http.get(tiles_url("synthetic-worldpop-2001"), params={"f": "html"})
     assert resp.status_code == 200 and "L.TileLayer" in resp.text

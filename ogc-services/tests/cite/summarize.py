@@ -1,9 +1,11 @@
-"""Summarise TEAM Engine TestNG XML results: python summarize.py results.xml [...]"""
+# Summarises TEAM Engine TestNG XML results; exits 1 on any failure.
+# Usage: python summarize.py results.xml [...]   (called by run_cite.sh)
 
 import sys
 import xml.etree.ElementTree as ET
 
 
+# Prints totals and non-passing tests of one result file; returns the failure count.
 def summarize(path: str) -> int:
     root = ET.parse(path).getroot()
     attrs = root.attrib

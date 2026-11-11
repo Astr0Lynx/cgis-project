@@ -1,4 +1,5 @@
-"""WSGI entry point: pygeoapi's Flask app with the conformance adapter applied."""
+# WSGI entry point (gunicorn cgis_ogc.wsgi:APP, see docker/entrypoint.sh): pygeoapi's Flask app,
+# imported only after the conformance adapter has patched pygeoapi.
 
 from cgis_ogc import conformance
 

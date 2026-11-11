@@ -1,11 +1,10 @@
-"""Unit tests that need pygeoapi itself; run inside the ogc image:
-
-    docker run --rm -v "$PWD/tests:/cgis/tests:ro" --entrypoint /venv/bin/python cgis-ogc:dev \
-        -m pytest -q -p no:cacheprovider /cgis/tests/unit_pygeoapi
-"""
+# Unit tests that need pygeoapi itself (conformance adapter and providers); run inside the ogc image:
+#   docker run --rm -v "$PWD/ogc-services/tests:/cgis/tests:ro" --entrypoint /venv/bin/python cgis-ogc:local \
+#       -m pytest -q -p no:cacheprovider /cgis/tests/unit_pygeoapi
 
 import struct
 import zlib
+from types import SimpleNamespace
 
 import pytest
 
@@ -18,6 +17,7 @@ FEATURE_PROVIDER = conformance.FEATURE_PROVIDER
 BBOX = [78.0, 17.936, 78.064, 18.0]
 
 
+# Valid tile provider definition with overrides.
 def tile_def(**overrides):
     provider = {
         "type": "tile", "name": TILE_PROVIDER, "data": "synthetic-worldpop-2001",
@@ -28,12 +28,14 @@ def tile_def(**overrides):
     return provider
 
 
+# Minimal config with one collection using the given providers.
 def config(*providers):
     return {"resources": {"c": {"type": "collection", "providers": list(providers)}}}
 
 
 # -- configuration invariants -------------------------------------------------
 
+# A config with our tile and feature providers passes validation.
 def test_valid_config_accepted():
     conformance.validate_config(config(tile_def(), {"type": "feature", "name": FEATURE_PROVIDER}))
 
@@ -46,11 +48,13 @@ def test_valid_config_accepted():
     config({"type": "coverage", "name": "rasterio"}),
     {"resources": {"p": {"type": "process", "processor": {"name": "HelloWorld"}}}},
 ])
+# Editable, foreign, non-PNG, coverage and process configs are refused.
 def test_configs_that_would_falsify_conformance_are_refused(cfg):
     with pytest.raises(conformance.UnsupportedConfiguration):
         conformance.validate_config(cfg)
 
 
+# After apply, PNG is declared and no withdrawn class remains.
 def test_conformance_lists_corrected():
     conformance.apply(config(tile_def()))
     from pygeoapi.api import itemtypes, tiles
@@ -65,6 +69,7 @@ def test_conformance_lists_corrected():
     ("text/html,application/xhtml+xml,*/*;q=0.8", True), ("image/jpeg", False),
     ("image/png;q=0", False), ("application/json", False),
 ])
+# Accept header parsing, including q=0 and wildcards.
 def test_accepts_png(accept, expected):
     assert conformance.accepts_png(accept) is expected
 
@@ -74,23 +79,27 @@ def test_accepts_png(accept, expected):
     ("2001-01-01/..", True), ("../2001-01-01T00:00:00Z", True), ("/2001-01-01", True), ("../..", True),
     ("notadate", False), ("2001-13-01", False), ("a/b", False), ("2001/2002/2003", False),
 ])
+# datetime instants/intervals are validated per 17-069r4 Req 26.
 def test_datetime_syntax(value, ok):
     assert is_datetime_param(value) is ok
 
 
 # -- tile provider ------------------------------------------------------------
 
+# The tile provider refuses paths/URLs as data.
 def test_provider_rejects_paths_and_urls_as_data():
     for data in ("/data/assets/x.tif", "http://evil/x.tif", "../x", ""):
         with pytest.raises(Exception):
             TiTilerTileProvider(tile_def(data=data))
 
 
+# The tile provider refuses non-PNG formats.
 def test_provider_rejects_non_png():
     with pytest.raises(RuntimeError):
         TiTilerTileProvider(tile_def(format={"name": "jpeg", "mimetype": "image/jpeg"}))
 
 
+# Tileset metadata has dataType, style, CRS, TMS URI, links and per-zoom limits.
 def test_tileset_metadata_members():
     options = dict(tile_def()["options"], rescale=[0, 2])
     p = TiTilerTileProvider(tile_def(options=options))
@@ -107,27 +116,31 @@ def test_tileset_metadata_members():
     assert [limit["tileMatrix"] for limit in md["tileMatrixSetLimits"]] == [str(z) for z in range(14)]
 
 
+# The tileset style names the shared render profile and keeps the format parsed by the viewer legend.
 def test_style_names_the_shared_render_profile():
     profile = {"profile_id": "level1-people-per-cell", "title": "Population per ~100 m cell",
                "units": "people_per_cell", "description": "Shared fixed scale for all Level 1 years."}
     options = dict(tile_def()["options"], rescale=[0, 50], render_profile=profile)
     md = TiTilerTileProvider(tile_def(options=options)).get_metadata(
         dataset="c", server_url="http://gw/ogc", tileset="WebMercatorQuad", metadata_format="json")
-    # the title format and the "configured shared range" marker are parsed by demo-client/js/legend.js
+    # the title format and the "configured shared range" marker are parsed by the webapp legend
     assert md["style"]["title"] == "viridis linear 0..50"
     desc = md["style"]["description"]
     assert "configured shared range" in desc and "level1-people-per-cell" in desc and "people_per_cell" in desc
     assert "transparent" in desc
 
 
+# Without a configured range the autoscale style is labelled diagnostic and not comparable.
 def test_autoscale_style_is_labelled_diagnostic(monkeypatch):
     p = TiTilerTileProvider(tile_def())
-    monkeypatch.setattr(p, "_get_json", lambda path: {"b1": {"min": 0.5, "max": 7.0}})
+    stats = SimpleNamespace(status_code=200, json=lambda: {"b1": {"min": 0.5, "max": 7.0}})
+    monkeypatch.setattr(p, "_request", lambda path, params=None: stats)
     desc = p.style()["description"]
     assert p.style()["title"] == "viridis linear 0..7"
     assert "diagnostic" in desc and "not comparable" in desc and "configured shared range" not in desc
 
 
+# TileJSON is offered for WebMercatorQuad only.
 def test_tilejson_only_for_webmercator():
     p = TiTilerTileProvider(tile_def())
     tj = p.get_metadata(dataset="c", server_url="http://gw/ogc", tileset="WebMercatorQuad", metadata_format="tilejson")
@@ -141,6 +154,7 @@ def test_tilejson_only_for_webmercator():
     ("NoSuchTMS", 11, 919, 1467), ("WebMercatorQuad", 14, 0, 0), ("WebMercatorQuad", -1, 0, 0),
     ("WebMercatorQuad", 11, 0, 0), ("WebMercatorQuad", 11, 2048, 1467), ("WebMercatorQuad", "a", 1, 1),
 ])
+# Out-of-range tiles raise 404 without contacting TiTiler.
 def test_out_of_range_tiles_raise_before_any_network_call(tileset, z, y, x, monkeypatch):
     import requests
 
@@ -153,15 +167,18 @@ def test_out_of_range_tiles_raise_before_any_network_call(tileset, z, y, x, monk
 @pytest.mark.parametrize("value,expected", [
     ("0,2", [0.0, 2.0]), ([1, 5], [1.0, 5.0]), (None, None), ("", None), ("2,1", None), ("a,b", None), ("1", None),
 ])
+# parse_rescale accepts 'lo,hi' or [lo, hi] with hi > lo.
 def test_parse_rescale(value, expected):
     assert parse_rescale(value) == expected
 
 
+# OGC_TILE_RESCALE is used when no rescale option is configured.
 def test_env_rescale_applies_when_no_option(monkeypatch):
     monkeypatch.setenv("OGC_TILE_RESCALE", "0,2")
     assert TiTilerTileProvider(tile_def()).rescale == [0.0, 2.0]
 
 
+# blank_png is a valid, fully transparent RGBA PNG.
 def test_blank_png_is_valid_transparent_rgba():
     data = blank_png(4, 2)
     assert data.startswith(b"\x89PNG\r\n\x1a\n")

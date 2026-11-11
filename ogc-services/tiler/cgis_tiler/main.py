@@ -1,15 +1,6 @@
-"""Restricted TiTiler application for catalog-registered COG assets.
-
-VENDOR-SPECIFIC API. These routes are TiTiler's own interface (TileJSON, /info,
-/point, ...). They are NOT an OGC API: there is no landing page, conformance
-declaration or collections resource here, and nothing below is claimed as OGC
-API - Tiles conformance. The standards-based interface is the OGC API - Tiles
-publication in pygeoapi under ``/ogc/collections/{id}/tiles``.
-
-Unlike the stock ``titiler.application`` there is no ``url=`` parameter and no
-``/cog`` / ``/stac`` / ``/mosaic`` endpoints: a dataset can only be addressed by
-its catalog ``dataset_id``, resolved server-side by :mod:`cgis_tiler.assets`.
-"""
+# Restricted TiTiler app for catalog-registered COGs (VENDOR-SPECIFIC routes, not an OGC API; the OGC API -
+# Tiles interface is pygeoapi's /ogc/collections/{id}/tiles). No url= parameter and no /cog, /stac or
+# /mosaic endpoints: a raster is addressed only by its catalog dataset_id. Served by uvicorn (Dockerfile CMD).
 
 from __future__ import annotations
 
@@ -43,14 +34,15 @@ resolver = AssetResolver(ASSET_ROOT, catalog.lookup_raster, ttl_seconds=CACHE_TT
 supported_tms = TileMatrixSets({tms_id: default_tms.get(tms_id) for tms_id in SUPPORTED_TMS_IDS})
 
 
+# TiTiler path dependency: catalog dataset_id -> confined local file path. Used by the TilerFactory below.
 def dataset_path(
     dataset_id: Annotated[str, Path(description="Catalog dataset_id of a ready raster dataset")],
 ) -> str:
-    """titiler path dependency: catalog dataset_id -> confined local file path."""
     _, path = resolver.resolve(dataset_id)
     return str(path)
 
 
+# Contract error body {"error": {"code", "message"}}. Used by readyz and the exception handlers.
 def error_body(code: str, message: str) -> dict:
     return {"error": {"code": code, "message": message}}
 
@@ -81,8 +73,8 @@ tms_factory = TMSFactory(supported_tms=supported_tms)
 app.include_router(tms_factory.router, tags=["Tiling schemes (vendor-specific)"])
 
 
+# How OGC API - Tiles portrays this dataset (display only; never changes values). Used by _dataset_summary.
 def _render_summary(record) -> dict:
-    """How OGC API - Tiles portrays this dataset (display only; never changes values)."""
     if record.render:
         lo, hi = record.render["rescale"]
         return {
@@ -107,6 +99,7 @@ def _render_summary(record) -> dict:
     }
 
 
+# Discovery document for one raster with vendor links. Used by list_datasets and describe_dataset.
 def _dataset_summary(request: Request, record) -> dict:
     base = str(request.base_url).rstrip("/") + f"/datasets/{record.dataset_id}"
     public = record.public or {}
@@ -138,6 +131,7 @@ def _dataset_summary(request: Request, record) -> dict:
     }
 
 
+# GET /datasets: ready rasters servable by this service.
 @app.get("/datasets", tags=["Datasets (vendor-specific)"], summary="List servable raster datasets")
 def list_datasets(request: Request):
     return {
@@ -146,17 +140,20 @@ def list_datasets(request: Request):
     }
 
 
+# GET /datasets/{dataset_id}: one ready raster (404 if unknown or refused).
 @app.get("/datasets/{dataset_id}", tags=["Datasets (vendor-specific)"], summary="Describe one raster dataset")
 def describe_dataset(request: Request, dataset_id: str):
     record, _ = resolver.resolve(dataset_id)
     return _dataset_summary(request, record)
 
 
+# GET /healthz: liveness.
 @app.get("/healthz", tags=["Health"], summary="Liveness")
 def healthz():
     return {"status": "ok"}
 
 
+# GET /readyz: catalog reachable and asset volume mounted (Dockerfile healthcheck).
 @app.get("/readyz", tags=["Health"], summary="Readiness: catalog reachable and asset root mounted")
 def readyz():
     if not ASSET_ROOT.is_dir():
@@ -165,17 +162,20 @@ def readyz():
     return {"status": "ready"}
 
 
+# AssetError -> its code/status in the contract error body.
 @app.exception_handler(AssetError)
 def _asset_error(request: Request, exc: AssetError):
     return JSONResponse(error_body(exc.code, exc.message), status_code=exc.status_code)
 
 
+# HTTP errors (e.g. unknown routes) -> contract error body.
 @app.exception_handler(StarletteHTTPException)
 def _http_error(request: Request, exc: StarletteHTTPException):
     code = "not_found" if exc.status_code == 404 else f"http_{exc.status_code}"
     return JSONResponse(error_body(code, str(exc.detail)), status_code=exc.status_code)
 
 
+# Invalid parameters -> 422 naming the fields only.
 @app.exception_handler(RequestValidationError)
 def _validation_error(request: Request, exc: RequestValidationError):
     fields = sorted({".".join(str(p) for p in e.get("loc", ())) for e in exc.errors()})
@@ -185,12 +185,14 @@ def _validation_error(request: Request, exc: RequestValidationError):
     )
 
 
+# Maps TiTiler/rio-tiler exceptions to contract error bodies; 5xx details are logged, not returned.
 def _register_rio_tiler_handlers() -> None:
     for exc_class, status_code in DEFAULT_STATUS_CODES.items():
         if exc_class is Exception:
             continue
         code = exc_class.__name__
 
+        # Handler for one exception class (status/code bound as defaults).
         def handler(request: Request, exc: Exception, status_code=status_code, code=code):
             if status_code >= 500:
                 LOGGER.exception("tile service error", exc_info=exc)
@@ -203,6 +205,7 @@ def _register_rio_tiler_handlers() -> None:
 _register_rio_tiler_handlers()
 
 
+# Anything else -> generic 500.
 @app.exception_handler(Exception)
 def _unhandled(request: Request, exc: Exception):
     LOGGER.exception("unhandled error", exc_info=exc)

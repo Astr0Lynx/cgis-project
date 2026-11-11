@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
-# Run the OGC CITE executable test suites (TEAM Engine) against the test stack.
-#
-#   docker compose -f ogc-services/tests/stack/compose.yaml up -d --build --wait
-#   ogc-services/tests/cite/run_cite.sh [output-dir]
-#
-# Features: ets-ogcapi-features10 1.8 (Part 1 Core + Part 2 CRS).
-# Tiles:    ets-ogcapi-tiles10 1.1 (Core, tileset, tilesets-list, geodata-tilesets checks).
-# Tile test inputs are read from the server's own tileset metadata, not hand-picked.
+# Runs the OGC CITE executable test suites (TEAM Engine) against a running stack and prints a summary:
+# ets-ogcapi-features10 1.8 (Part 1 Core + Part 2 CRS) and ets-ogcapi-tiles10 1.1 (Core, tileset,
+# tilesets-list, geodata-tilesets). Tile test inputs come from the server's own tileset metadata.
+#   CGIS_TEST_NETWORK=<stack network> CGIS_CITE_IUT=http://gateway:8080/ogc/ tests/cite/run_cite.sh [output-dir]
+# Run by tests/run.sh modules --cite; needs the cgis-ogc-tests:dev image (tests/Dockerfile).
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="${1:-$HERE/results}"
-NETWORK="${CGIS_TEST_NETWORK:-cgis-ogc-test_default}"
+NETWORK="${CGIS_TEST_NETWORK:-cgis-modtest_default}"
 IUT="${CGIS_CITE_IUT:-http://gateway:8080/ogc/}"
 COLLECTION="${CGIS_CITE_RASTER:-synthetic-worldpop-2001}"
 FEATURES_IMAGE="ogccite/ets-ogcapi-features10:1.8-teamengine-5.7@sha256:d884de89ac8dae6ea153766886c706f9ddf6ce172de0c4bd4bdd591d28bdaffe"
@@ -19,12 +16,14 @@ TILES_IMAGE="ogccite/ets-ogcapi-tiles10:1.1-teamengine-5.7@sha256:ceab021daa7a10
 RUNNER_IMAGE="${CGIS_TEST_IMAGE:-cgis-ogc-tests:dev}"
 mkdir -p "$OUT"
 
+# Removes the TEAM Engine containers.
 cleanup() { docker rm -f cgis-cite-features cgis-cite-tiles >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 cleanup
 docker run -d --name cgis-cite-features --network "$NETWORK" "$FEATURES_IMAGE" >/dev/null
 docker run -d --name cgis-cite-tiles --network "$NETWORK" "$TILES_IMAGE" >/dev/null
 
+# Waits until TEAM Engine in container $1 answers.
 wait_ready() {
   for _ in $(seq 1 100); do
     if docker exec "$1" curl -sf -o /dev/null -u ogctest:ogctest http://localhost:8080/teamengine/rest/suites; then return 0; fi
@@ -33,7 +32,8 @@ wait_ready() {
   echo "TEAM Engine in $1 did not start" >&2; return 1
 }
 
-run_suite() {  # container suite query outfile
+# Runs one suite: run_suite <container> <suite> <query> <outfile>
+run_suite() {
   docker exec "$1" curl -sf -u ogctest:ogctest -H "Accept: application/xml" \
     "http://localhost:8080/teamengine/rest/suites/$2/run?$3" > "$4"
 }

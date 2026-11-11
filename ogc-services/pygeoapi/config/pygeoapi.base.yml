@@ -1,5 +1,5 @@
-# Static part of the pygeoapi configuration. `resources` is generated from
-# catalog.current_datasets by `python -m cgis_ogc.publish`; never list datasets here.
+# Static part of the pygeoapi configuration (copied into the image at /cgis/config). `resources` is
+# generated from catalog.current_datasets by `python -m cgis_ogc.publish`; never list datasets here.
 server:
   bind:
     host: 0.0.0.0
@@ -13,9 +13,8 @@ server:
     - en-US
   cors: true
   pretty_print: true
-  # A request for more than max_items is throttled to max_items and the response carries
-  # numberMatched plus a rel=next link, so clients page through national boundary sets; nothing
-  # is truncated silently (pygeoapi on_exceed: throttle).
+  # limit > max_items is throttled to max_items; numberMatched and a rel=next link let clients page
+  # through national boundary sets, so nothing is truncated silently.
   limits:
     default_items: 10
     max_items: 1000

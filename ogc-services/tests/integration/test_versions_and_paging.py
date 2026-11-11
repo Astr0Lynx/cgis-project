@@ -1,8 +1,6 @@
-"""Completion P1: version-scoped OGC Features collections, collection-scoped item links, full paging.
-
-Needs the version-aware geo.admin_units of database core/0007 (identity on dataset_id,
-dataset_version, unit_id); skipped against the frozen-v1 stub catalog.
-"""
+# Integration tests: version-scoped OGC Features collections, collection-scoped item links, full paging.
+# Need the version-aware geo.admin_units of migration core/0007 (identity on dataset_id, dataset_version,
+# unit_id); skipped when that migration is not applied.
 
 import uuid
 
@@ -12,6 +10,7 @@ from conftest import OGC, collection_ids, get_json, insert_dataset, link, wait_f
 GRID_SIDE = 50   # 2 500 features: more than pygeoapi's max_items (1 000) -> at least 3 pages
 
 
+# Skips the module unless geo.admin_units has the version-aware identity constraint.
 @pytest.fixture(scope="module")
 def versioned(db):
     with db.cursor() as cur:
@@ -20,11 +19,12 @@ def versioned(db):
             pytest.skip("geo.admin_units has no version-aware identity (database core/0007 not applied)")
 
 
+# Factory for vector datasets with units; removes units then catalog rows afterwards.
 @pytest.fixture
 def boundary_sets(db, versioned):
-    """Factory for vector datasets with units; removes units then catalog rows afterwards."""
     created = []
 
+    # Inserts one staged dataset version with the given unit ids, then marks it ready; returns its id.
     def make(units, *, dataset_id=None, version=1, title=None, x0=78.0):
         dataset_id = dataset_id or f"itest-bnd-{uuid.uuid4().hex[:8]}"
         n = max(1, len(units))
@@ -48,11 +48,14 @@ def boundary_sets(db, versioned):
             cur.execute("DELETE FROM catalog.datasets WHERE dataset_id = %s", (dataset_id,))
 
 
+# GET a collection's items as JSON with extra query params.
 def items(http, dataset_id, **params):
     return get_json(http, f"{OGC}/collections/{dataset_id}/items", params={"f": "json", **params})
 
 
+# Waits until the collection is published and its metadata satisfies predicate.
 def published(http, dataset_id, predicate=lambda c: True):
+    # One poll: published and matching.
     def check():
         if dataset_id not in collection_ids(http):
             return False
@@ -60,6 +63,7 @@ def published(http, dataset_id, predicate=lambda c: True):
     return wait_for(check)
 
 
+# A collection serves only its current version; withdrawing v2 republishes v1.
 def test_collection_serves_only_the_current_version(http, db, boundary_sets):
     ds = boundary_sets(["u1", "u2"], title="TEST boundaries v1")
     assert published(http, ds)
@@ -83,6 +87,7 @@ def test_collection_serves_only_the_current_version(http, db, boundary_sets):
     assert sorted(f["id"] for f in items(http, ds)["features"]) == ["u1", "u2"]
 
 
+# Item lookup and prev/next links never leave the collection; no self-links at the ends.
 def test_item_lookup_and_neighbours_stay_in_the_collection(http, boundary_sets):
     a = boundary_sets(["k-1", "k-3", "k-5"])
     b = boundary_sets(["k-1", "k-2", "k-4", "k-6"], x0=80.0)
@@ -99,6 +104,7 @@ def test_item_lookup_and_neighbours_stay_in_the_collection(http, boundary_sets):
     assert http.get(f"{OGC}/collections/{a}/items/k-2", params={"f": "json"}).status_code == 404
 
 
+# limit above max_items is throttled and next links page through every feature exactly once.
 def test_paging_covers_every_feature_without_truncation(http, boundary_sets):
     ids = [f"p-{i:05d}" for i in range(GRID_SIDE * GRID_SIDE)]
     ds = boundary_sets(ids, x0=70.0)
@@ -119,6 +125,7 @@ def test_paging_covers_every_feature_without_truncation(http, boundary_sets):
     assert pages == 3 and seen == sorted(ids) and len(set(seen)) == len(ids)
 
 
+# bbox filtering combines with paging (numberMatched and next page).
 def test_bbox_filter_with_paging(http, boundary_sets):
     ids = [f"b-{i:04d}" for i in range(300)]
     ds = boundary_sets(ids, x0=60.0)

@@ -1,1 +1,1 @@
-"""pygeoapi provider plugins used by the generated configuration."""
+# pygeoapi provider plugins referenced by name from the generated configuration.
