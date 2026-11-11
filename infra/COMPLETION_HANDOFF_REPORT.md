@@ -170,4 +170,10 @@ views, rollback), `spatial-processing/docs/API.md` (async jobs), `ogc-services/d
 
 ## 12. Final verification on the tip commit
 
-See `infra/docs/evidence/final-run/` (module suites + CITE + QGIS, e2e) — filled by the final run before push.
+Run on commit `56cb68a` (all code of this branch; the following commit only adds this section and the
+evidence files). Evidence: `infra/docs/evidence/final-run/`.
+
+| Command | Result |
+|---|---|
+| `sh tests/e2e/run_module_suites.sh --cite --qgis` | **PASS**: database 153; ingestion 88; OGC HTTP+unit 228 (incl. admins-only filter and version/paging tests); pygeoapi unit 49; processing test stage + PostGIS 7; QGIS OK; CITE Features 173/179 passed, **0 failed**, 6 skipped; CITE Tiles 15/16 passed, **0 failed**, 1 skipped |
+| `sh tests/e2e/run_e2e.sh --qgis` | main **101 passed, 1 failed** (CR-A4-7.1 allow-list only); persistence **5 passed**; every other step PASS (seed ×2 idempotent, 6 negative imports refused, gdalinfo, QGIS GeoTIFF, restart, no secret leaks, 0 server errors) |

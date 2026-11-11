@@ -1,0 +1,10 @@
+stack_up 0
+seed 0
+agent2_database 0
+agent3_ingestion 0
+agent4_ogc_http 0
+agent4_ogc_pygeoapi_unit 0
+agent5_processing_test_stage 0
+agent5_processing_postgis 0
+qgis_headless 0
+ogc_cite 0

@@ -1,0 +1,1 @@
+stub rasters written under /data/assets
