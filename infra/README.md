@@ -1,7 +1,10 @@
 # Infrastructure: Docker Compose stack, gateway and task commands
 
-Owner: Agent 1. Everything here runs locally with Docker Compose. No cloud services, Kubernetes or
-paid accounts are involved, and all data is **synthetic** until Phase 1 outputs exist.
+Owner: Agent 4 (completion programme; originally Agent 1). Everything here runs locally with Docker
+Compose. No cloud services, Kubernetes or paid accounts are involved. Datasets are labelled
+individually: SYNTHETIC fixtures for tests, real national products once imported from authorised
+manifests (never committed). Completion handoff, budgets and evidence:
+[`COMPLETION_HANDOFF_REPORT.md`](COMPLETION_HANDOFF_REPORT.md).
 
 ## Machine requirements
 
@@ -9,8 +12,8 @@ paid accounts are involved, and all data is **synthetic** until Phase 1 outputs 
 |---|---|---|
 | Docker Engine | 24+ | Docker Desktop 4.30+ on Windows/macOS. Tested with Docker Desktop (Engine 29.1.3, Compose v5.0.0) on Windows 11. |
 | Docker Compose | v2.24+ | Needs `dockerfile_inline`, `additional_contexts` and `--wait`; the mock routing test also needs `!reset`/`!override`. |
-| RAM for Docker | 4 GB | 8 GB is comfortable while images build. |
-| Disk | ~6 GB | Images plus volumes; the synthetic fixtures are tiny. |
+| RAM for Docker | 4 GB (synthetic) / 8 GB (national data) | 16 GB physical target: memory limits below; the science profile runs alone. |
+| Disk | ~6 GB + data | Images plus volumes. National data: ~1.2 GB per Level 1 year COG (13.2 GB for 11 years), plus ~2x the largest raster of free space while it is imported (intermediate + COG in staging). |
 | Host tools | `curl`, a POSIX `sh` | Needed only for the smoke and test scripts. On Windows, use Git Bash. `make` is optional. |
 
 **Windows:** Docker Desktop with the WSL 2 backend. The repository's `.gitattributes` forces LF line
@@ -31,12 +34,44 @@ in a clean tree.
 | `tiles` | `ogc-services/tiler/` (Agent 4) | Restricted TiTiler, vendor-specific raster routes. Mounts `assets` read-only. | none |
 | `ogc` | `ogc-services/pygeoapi/` (Agent 4) | pygeoapi: OGC API Features and Tiles, generated from the catalog. | none |
 | `processing` | `spatial-processing/` (Agent 5) | FastAPI clip, zonal statistics, jobs and downloads. Mounts `assets` read-only; writes `processing-outputs`. | none |
-| `viewer` | `demo-client/` (Agent 6) + `infra/viewer/default.conf` | Static diagnostic viewer. | none |
-| `gateway` | `infra/gateway/` (nginx 1.27, pinned digest) | Single entry point. | `127.0.0.1:8080` |
+| `viewer` | `demo-client/` (Agent 6) + `infra/viewer/default.conf` | The MapLibre web application. | none |
+| `gateway` | `infra/gateway/` (nginx 1.27, pinned digest) | Single entry point; upstreams resolved per request (Docker DNS). | `127.0.0.1:8080` |
+| `app-volume-init`, `app-migrate`, `app-grants` | busybox / `application-api/` / `cgis-migrate` | Profile `app`, one-shots: app volumes, `cgis_app` schema + roles + bootstrap accounts (Agent 5), read grant for the OGC role on `cgis_app.dataset_access` (Agent 4). | none |
+| `app-api` | `application-api/` (Agent 5) | Profile `app`: sessions, admin uploads/publication, exports, public catalog metadata. | none |
+| `app-ingest-worker`, `app-export-worker` | `application-api/` (Agent 5) | Profile `app`: the only app writer of `assets` (ingest worker); export jobs. | none |
+| `level1` | `science/level1/` (Agent 2) | Profile `science`: national Level 1 run, `mem_limit` 14 g; **stop the other services first**. | none |
 
 Start order is enforced with `depends_on` conditions: `volume-init` (completed) and `db` (healthy) →
 `migrate` (completed) → `tiles` (healthy) → `ogc` (healthy); `processing` and `viewer` (healthy) →
-`gateway`. A service that needs the schema never starts before migrations have finished.
+`gateway`. With the `app` profile: `migrate` → `app-migrate` → `app-grants` → `ogc`, and `app-api`
+(healthy) → `gateway` (`required: false`, so the platform starts without the profile). A service that
+needs the schema never starts before migrations have finished.
+
+### Profiles
+
+| `COMPOSE_PROFILES` / `--profile` | Adds |
+|---|---|
+| (none) | the platform: db, migrate, tiles, ogc, processing, viewer, gateway |
+| `app` | the application API (needs `application-api/`, i.e. the integrated branch) |
+| `tools` | the ingestion CLI (`docker compose run --rm ingestion ...`) |
+| `science` | the Level 1 national model (`level1`) |
+
+### Memory budget (16 GB physical target)
+
+Every long-running service has a `mem_limit` (override in `.env`). Limits are ceilings, not
+reservations; measured peaks are in `COMPLETION_HANDOFF_REPORT.md`.
+
+| Service | Limit | Sizing |
+|---|---|---|
+| db | 2 GiB | `shared_buffers=512MB`, `work_mem=32MB`, `effective_cache_size=1536MB` |
+| tiles | 1.5 GiB | 2 workers x GDAL cache 200 MB + rendering |
+| ogc | 1 GiB | 2 gunicorn workers |
+| processing | 2 GiB | 4 sync slots x <= 25 M-pixel window + 1 blockwise worker (16 MB blocks) + GDAL cache 256 MB |
+| viewer / gateway | 64 MiB / 128 MiB | static files / nginx |
+| ingestion (tool) | 3 GiB | block-wise validation and COG build, GDAL cache 512 MB |
+| app-api / ingest worker / export worker | 768 MiB / 2 GiB / 1.5 GiB | Agent 5's measurements |
+| **platform total** | **~6.7 GiB** | + 3 GiB while an import runs; + 4.3 GiB with `app` |
+| level1 (science) | 14 GiB | runs alone: `docker compose stop` first |
 
 Health checks test readiness, not just that a process is running:
 
@@ -55,7 +90,12 @@ Health checks test readiness, not just that a process is running:
 | `/viewer/` | `viewer:8080` | GET/HEAD | Static diagnostic viewer |
 | `/ogc/` | `ogc:5000` | GET/HEAD | OGC API landing, conformance, collections, items, tiles, OpenAPI |
 | `/tiles/` | `tiles:8000` | GET/HEAD | **Vendor-specific** TiTiler routes, not an OGC API |
-| `/api/` | `processing:8000` | all | Custom processing API (`/api/docs`, `/api/openapi.json`); 1 MiB body limit |
+| `/api/` | `processing:8000` | all | Custom processing API (`/api/docs`, `/api/openapi.json`); 1 MiB body limit. `/api/ready`, `/api/health` stay anonymous |
+| `/auth/` | `app-api:8000` | all | Sessions/tokens (Agent 5); 16 KiB body limit; raw URI forwarded |
+| `/admin/datasets`, `/admin/datasets/uploads` | `app-api:8000` | all | Admin uploads streamed (no gateway buffering), 8200 MiB outer bound (service enforces `APP_MAX_UPLOAD_BYTES`) |
+| `/admin/` | `app-api:8000` | all | Other admin routes; 64 KiB body limit |
+| `/api/exports`, `/api/exports/` | `app-api:8000` | all | Export jobs; downloads streamed without gateway buffering |
+| `/api/catalog/`, `/api/app/` | `app-api:8000` | GET/HEAD | Public catalog metadata; health/OpenAPI of the application API |
 | `/healthz` | — | GET | Gateway liveness only |
 | anything else | — | — | JSON 404 |
 
@@ -72,6 +112,14 @@ Routing rules:
 - **Refused requests.** Dot-segment paths (`/../`, `%2e%2e`) get a 400. Writes to the read-only
   prefixes get a 403.
 - **Logs.** Access logs are JSON lines on stdout. They omit query strings.
+- **Upstream resolution.** Upstreams are resolved per request through Docker's DNS (`resolver
+  127.0.0.11`), so a recreated container is reached without restarting the gateway, and the gateway
+  starts without the optional `app-api`; its routes then answer `503 APP_API_UNAVAILABLE`.
+- **Read access (`GATEWAY_READ_ACCESS`).** `public` (default): `/ogc/`, `/tiles/`, `/api/` are anonymous
+  (local demo, OGC CITE). `protected`: those routes require a signed-in user or a personal access token,
+  checked by `app-api` through nginx `auth_request` (needs the `app` profile; QGIS/CITE then use a token).
+  Admin mutations are always authenticated and role-checked by the application API itself. Unknown values
+  stop the gateway (fail closed). Decision D-A5-1 (which mode a deployment uses) belongs to Agent 7/the operator.
 
 ## Environment
 
@@ -134,7 +182,8 @@ Development database port (opt-in, loopback only):
 
 | Volume | Mounted by | Contents |
 |---|---|---|
-| `pgdata` | `db` | PostgreSQL cluster (catalog, geo, ops) |
+| `pgdata` | `db` | PostgreSQL cluster (catalog, geo, ops, cgis_app) |
+| `app-staging`, `app-exports` | app services (profile `app`) | Admin uploads awaiting publication; export job outputs |
 | `assets` | `ingestion` (rw); `tiles`, `processing` (ro) | COG rasters and GeoJSON assets under `/data/assets` |
 | `processing-outputs` | `processing` | Clip/export results under `/data/outputs` |
 | `./data/fixtures` (bind) | `ingestion`, `volume-init` | Generated SYNTHETIC fixtures (git-ignored), handy for QGIS/`gdalinfo` on the host |
@@ -159,6 +208,9 @@ docker compose -p cgis-gateway-test -f compose.yaml -f infra/tests/compose.mock.
 Always pass `-p` for test stacks: `COMPOSE_PROJECT_NAME` in `.env` takes precedence over a file's
 `name:`, so without `-p` a test would reuse the real stack's volumes.
 
+National-scale benchmark (separate project `cgis-bench`, ~15 GB free disk, ~30-60 min):
+`sh infra/bench/run_national_bench.sh` (see the script header; evidence in `./data/bench/`).
+
 ## Troubleshooting
 
 | Symptom | Cause / fix |
@@ -170,5 +222,7 @@ Always pass `-p` for test stacks: `COMPOSE_PROJECT_NAME` in `.env` takes precede
 | In Git Bash, `/data/fixtures/...` arguments become `C:/Program Files/Git/data/...` | MSYS path conversion; prefix the command with `MSYS_NO_PATHCONV=1` (the scripts in `tests/e2e/` already do). |
 | `migrate` fails with `POSTGRES_USER=cgis equals a project schema name` | The owner role must not share a name with a project schema, because PostgreSQL's default `search_path` (`"$user", public`) would put unqualified objects in that schema. Use the default `cgis_admin`, then `docker compose down -v`. |
 | Port 8080 already in use | Set `GATEWAY_PORT` (and `PUBLIC_BASE_URL`) in `.env`. |
-| Gateway returns 502 after recreating one backend | nginx resolves upstream names at start-up; run `docker compose restart gateway`. |
+| `/auth/...` returns `503 APP_API_UNAVAILABLE` | The `app` profile is not running: set `COMPOSE_PROFILES=app` (integrated branch) and `docker compose up -d --wait`. |
+| Gateway returns 502 for one backend | That backend is down or unhealthy (`docker compose ps`); upstreams are re-resolved every 10 s, no gateway restart is needed. |
+| `ogc` restarts with `cgis_app.dataset_access exists but is not readable` | `app-grants` has not run (it needs the `app` profile); run `docker compose --profile app up -d --wait`. The publisher fails closed rather than publish admins-only datasets. |
 | Password changed in `.env` but `db` refuses it | The owner password is set only when `pgdata` is first created. Change it with `ALTER ROLE`, or reset the volumes. Service passwords are re-applied automatically. |

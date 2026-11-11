@@ -1,8 +1,12 @@
 """Operation orchestration: validation -> catalog -> job record -> processing -> result.
 
-Execution is synchronous inside the request (acceptable for Phase 2 fixtures), but every
-operation is recorded as a job with the same status contract a background worker would
-use, so a queue/worker can be introduced later without changing the HTTP API.
+``mode: "sync"`` (the default, unchanged Phase 2 behaviour) runs inside the request with the
+whole candidate window in memory, limited to MAX_WINDOW_PIXELS. ``mode: "async"`` (or ``"auto"``
+for large AOIs) records an ``execution = 'async'`` job and returns 202; a background worker
+(:mod:`spatial_processing.worker`) claims it from ``ops.jobs`` and runs the bounded-memory
+blockwise implementation (:mod:`spatial_processing.blockwise`) with heartbeat, progress,
+cancellation, a time limit and bounded retries. This API is project-specific; it is NOT
+OGC API - Processes.
 
 Error/job policy:
 * Malformed input (bad dataset ID, CRS, AOI, format, operations), unknown/not-ready
@@ -14,7 +18,9 @@ Error/job policy:
 from __future__ import annotations
 
 import logging
+import os
 import platform
+import socket
 import threading
 import time
 import uuid
@@ -28,11 +34,12 @@ from pyproj import CRS
 from shapely.geometry import mapping
 
 from . import __version__, errors
+from .blockwise import clip_blockwise, window_pixels, zonal_blockwise
 from .catalog import Catalog, DatasetRecord, validate_dataset_id
 from .config import Settings
 from .errors import ApiError
 from .geometry import crs_label, parse_aoi, parse_crs, transform_geometry
-from .jobs import COMPLETED, FAILED, RUNNING, Job, JobStore
+from .jobs import ASYNC, CANCELLED_ERROR, COMPLETED, FAILED, QUEUED, RUNNING, InvalidTransition, Job, JobStore
 from .models import ClipRequest, ZonalStatisticsRequest
 from .outputs import RESULT_FILE, OutputManager
 from .paths import resolve_asset_path, safe_filename_component
@@ -57,11 +64,18 @@ MEDIA_TYPES = {
     "COG": "image/tiff; application=geotiff; profile=cloud-optimized",
 }
 
-Work = Callable[[uuid.UUID, Path, Callable[[str], None]], tuple[dict[str, Any], Path]]
+Work = Callable[[uuid.UUID, Path, Callable[..., None]], tuple[dict[str, Any], Path]]
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+class _Cancelled(Exception):
+    pass
+
+
+Accepted = tuple[int, dict[str, Any]]  # (HTTP status, body): 200 for sync results, 202 for queued jobs
 
 
 class ProcessingService:
@@ -73,6 +87,62 @@ class ProcessingService:
         self._slots = threading.BoundedSemaphore(settings.max_concurrent_jobs)
         self._active: set[uuid.UUID] = set()
         self._active_lock = threading.Lock()
+        self.wake = threading.Event()  # set when an async job is queued (wakes idle workers)
+        self.worker_id = f"{socket.gethostname()}:{os.getpid()}"
+
+    # ------------------------------------------------------------------ async helpers
+    @property
+    def async_enabled(self) -> bool:
+        return self.settings.async_workers > 0 and bool(getattr(self.jobs, "supports_async", False))
+
+    def _window_pixels(self, record: DatasetRecord, aoi_crs: CRS, geom) -> int:
+        path = resolve_asset_path(self.settings.asset_root, record.asset_path)
+        with gdal_env(self.settings.gdal_cachemax_mb), open_raster(path) as src:
+            native = transform_geometry(geom, aoi_crs, CRS.from_user_input(src.crs))
+            return window_pixels(src, native)
+
+    def _too_large(self, pixels: int) -> ApiError:
+        return ApiError(
+            413, errors.AOI_TOO_LARGE,
+            f"the AOI covers {pixels} raster pixels, more than this server processes "
+            f"({self.settings.async_max_window_pixels} even as a background job)",
+            {"pixels": pixels, "limit": self.settings.max_window_pixels,
+             "async_limit": self.settings.async_max_window_pixels})
+
+    def _route(self, mode: str, record: DatasetRecord, aoi_crs: CRS, geom) -> int | None:
+        """None -> run synchronously; otherwise the candidate-window size of a job to queue."""
+        if mode == "sync":
+            return None
+        pixels = self._window_pixels(record, aoi_crs, geom)
+        if mode == "auto" and pixels <= self.settings.max_window_pixels:
+            return None
+        if pixels > self.settings.async_max_window_pixels:
+            raise self._too_large(pixels)
+        if not self.async_enabled:
+            raise ApiError(503, errors.ASYNC_UNAVAILABLE,
+                           "background jobs are not enabled on this server (ASYNC_WORKERS=0 or the job store "
+                           "lacks database migration core/0009)")
+        return pixels
+
+    def _enqueue(self, kind: str, job_input: dict[str, Any], pixels: int) -> Accepted:
+        try:
+            job = self.jobs.create(kind, {**job_input, "candidate_window_pixels": pixels}, execution=ASYNC,
+                                   max_attempts=self.settings.async_max_attempts)
+        except Exception as exc:
+            log.exception("job store unavailable")
+            raise ApiError(503, errors.JOB_STORE_UNAVAILABLE, "job store is unavailable") from exc
+        self.wake.set()
+        log.info("job %s kind=%s dataset=%s queued (async, %d candidate pixels)",
+                 job.job_id, kind, job_input.get("dataset_id"), pixels)
+        return 202, self.job_view(job)
+
+    def _sync_hint(self, exc: ApiError) -> None:
+        """Tell sync clients that an oversized AOI can still be processed as a background job."""
+        if exc.code == errors.AOI_TOO_LARGE and self.async_enabled:
+            pixels = exc.details.get("pixels") or 0
+            if pixels <= self.settings.async_max_window_pixels:
+                exc.details = {**exc.details, "async_limit": self.settings.async_max_window_pixels,
+                               "hint": 'resubmit with "mode": "async" (or "auto") to run it as a background job'}
 
     # ------------------------------------------------------------------ validation
     def _validate_common(self, req) -> tuple[DatasetRecord, CRS, Any]:
@@ -183,7 +253,7 @@ class ProcessingService:
                 log.exception("could not remove partial outputs for job %s", job.job_id)
 
     # ------------------------------------------------------------------ operations
-    def zonal_statistics(self, req: ZonalStatisticsRequest) -> dict[str, Any]:
+    def zonal_statistics(self, req: ZonalStatisticsRequest) -> Accepted:
         operations = self._normalize_operations(req.operations)
         record, aoi_crs, geom = self._validate_common(req)
         semantics = classify_units(record.units)
@@ -202,39 +272,60 @@ class ProcessingService:
             "aoi_crs": crs_label(aoi_crs),
             "operations": operations,
         }
+        pixels = self._route(req.mode, record, aoi_crs, geom)
+        if pixels is not None:
+            return self._enqueue("zonal-statistics", job_input, pixels)
+        try:
+            job, result = self._run("zonal-statistics", job_input,
+                                    self._zonal_work(record, aoi_crs, geom, operations))
+        except ApiError as exc:
+            self._sync_hint(exc)
+            raise
+        return 200, {"job_id": str(job.job_id), "status": job.status, **result}
 
-        def work(job_id: uuid.UUID, job_dir: Path, deadline) -> tuple[dict[str, Any], Path]:
+    def _zonal_result(self, record, aoi_crs, raster_crs, operations, stats, nodata) -> dict[str, Any]:
+        return {
+            "dataset_id": record.dataset_id,
+            "dataset_version": record.version,
+            **stats,
+            "units": record.units,
+            "nodata_value": nodata,
+            "aoi_crs": crs_label(aoi_crs),
+            "raster_crs": crs_label(raster_crs),
+            "pixel_selection": PIXEL_SELECTION,
+            "operations": operations,
+            "dataset": record.public_metadata(),
+            "computed_at": _now(),
+        }
+
+    def _zonal_work(self, record, aoi_crs, geom, operations, *, blockwise: bool = False) -> Work:
+        semantics = classify_units(record.units)
+
+        def work(job_id: uuid.UUID, job_dir: Path, step) -> tuple[dict[str, Any], Path]:
             path = resolve_asset_path(self.settings.asset_root, record.asset_path)
             with gdal_env(self.settings.gdal_cachemax_mb), open_raster(path) as src:
                 raster_crs = CRS.from_user_input(src.crs)
                 native = transform_geometry(geom, aoi_crs, raster_crs)
-                sel = select_pixels(
-                    src,
-                    native,
-                    max_window_pixels=self.settings.max_window_pixels,
-                    catalog_nodata=record.nodata,
-                    deadline=deadline,
-                )
-                stats = zonal_statistics(sel, semantics, operations)
-            result = {
-                "dataset_id": record.dataset_id,
-                "dataset_version": record.version,
-                **stats,
-                "units": record.units,
-                "nodata_value": sel.nodata,
-                "aoi_crs": crs_label(aoi_crs),
-                "raster_crs": crs_label(raster_crs),
-                "pixel_selection": PIXEL_SELECTION,
-                "operations": operations,
-                "dataset": record.public_metadata(),
-                "computed_at": _now(),
-            }
-            return result, job_dir / RESULT_FILE
+                if blockwise:
+                    stats = zonal_blockwise(src, native, semantics=semantics, operations=operations,
+                                            catalog_nodata=record.nodata, block=self.settings.block_size,
+                                            progress=step)
+                    nodata = src.nodata if src.nodata is not None else record.nodata
+                else:
+                    sel = select_pixels(
+                        src,
+                        native,
+                        max_window_pixels=self.settings.max_window_pixels,
+                        catalog_nodata=record.nodata,
+                        deadline=step,
+                    )
+                    stats = zonal_statistics(sel, semantics, operations)
+                    nodata = sel.nodata
+            return self._zonal_result(record, aoi_crs, raster_crs, operations, stats, nodata), job_dir / RESULT_FILE
 
-        job, result = self._run("zonal-statistics", job_input, work)
-        return {"job_id": str(job.job_id), "status": job.status, **result}
+        return work
 
-    def clip(self, req: ClipRequest) -> dict[str, Any]:
+    def clip(self, req: ClipRequest) -> Accepted:
         fmt = self._normalize_format(req.format)
         output_crs = parse_crs(req.output_crs, "output_crs") if req.output_crs is not None else None
         record, aoi_crs, geom = self._validate_common(req)
@@ -246,49 +337,64 @@ class ProcessingService:
             "output_crs": crs_label(output_crs) if output_crs else None,
             "format": fmt,
         }
+        pixels = self._route(req.mode, record, aoi_crs, geom)
+        if pixels is not None:
+            return self._enqueue("clip", job_input, pixels)
+        try:
+            job, _ = self._run("clip", job_input, self._clip_work(record, aoi_crs, geom, output_crs, fmt))
+        except ApiError as exc:
+            self._sync_hint(exc)
+            raise
+        return 200, self.job_view(job)
 
-        def work(job_id: uuid.UUID, job_dir: Path, deadline) -> tuple[dict[str, Any], Path]:
+    def _clip_work(self, record, aoi_crs, geom, output_crs, fmt, *, blockwise: bool = False) -> Work:
+        def work(job_id: uuid.UUID, job_dir: Path, step) -> tuple[dict[str, Any], Path]:
             path = resolve_asset_path(self.settings.asset_root, record.asset_path)
+            stem = f"clip_{safe_filename_component(record.dataset_id)}_v{record.version}_{job_id.hex[:12]}"
+            out_path = job_dir / f"{stem}.tif"
+            tags = {
+                "DATASET_ID": record.dataset_id,
+                "DATASET_VERSION": str(record.version),
+                "UNITS": record.units or "",
+                "PIXEL_SELECTION": "pixel_center (all_touched=false)",
+                "SOURCE": record.source or "",
+                "PROCESSING": f"cgis-spatial-processing {__version__} clip job {job_id}",
+            }
             with gdal_env(self.settings.gdal_cachemax_mb), open_raster(path) as src:
                 raster_crs = CRS.from_user_input(src.crs)
                 native = transform_geometry(geom, aoi_crs, raster_crs)
-                sel = select_pixels(
-                    src,
-                    native,
-                    max_window_pixels=self.settings.max_window_pixels,
-                    catalog_nodata=record.nodata,
-                    deadline=deadline,
-                )
-                if estimate_bytes(sel) > self.settings.max_output_bytes:
-                    raise ApiError(
-                        413,
-                        errors.OUTPUT_TOO_LARGE,
-                        f"the clipped output would exceed {self.settings.max_output_bytes} bytes",
+                if blockwise:
+                    done = clip_blockwise(src, native, out_path, fmt=fmt, output_crs=output_crs, tags=tags,
+                                          units=record.units, catalog_nodata=record.nodata,
+                                          block=self.settings.block_size,
+                                          max_output_bytes=self.settings.async_max_output_bytes, progress=step)
+                    output, count_valid, pixels_in_aoi = done["output"], done["count_valid"], done["pixels_in_aoi"]
+                else:
+                    sel = select_pixels(
+                        src,
+                        native,
+                        max_window_pixels=self.settings.max_window_pixels,
+                        catalog_nodata=record.nodata,
+                        deadline=step,
                     )
-                stem = (
-                    f"clip_{safe_filename_component(record.dataset_id)}_v{record.version}_{job_id.hex[:12]}"
-                )
-                out_path = job_dir / f"{stem}.tif"
-                tags = {
-                    "DATASET_ID": record.dataset_id,
-                    "DATASET_VERSION": str(record.version),
-                    "UNITS": record.units or "",
-                    "PIXEL_SELECTION": "pixel_center (all_touched=false)",
-                    "SOURCE": record.source or "",
-                    "PROCESSING": f"cgis-spatial-processing {__version__} clip job {job_id}",
-                }
-                output = write_clip(
-                    src,
-                    sel,
-                    out_path,
-                    fmt=fmt,
-                    output_crs=output_crs,
-                    tags=tags,
-                    units=record.units,
-                    deadline=deadline,
-                )
-                count_valid = int(sel.valid.sum())
-                pixels_in_aoi = int(sel.inside.sum())
+                    if estimate_bytes(sel) > self.settings.max_output_bytes:
+                        raise ApiError(
+                            413,
+                            errors.OUTPUT_TOO_LARGE,
+                            f"the clipped output would exceed {self.settings.max_output_bytes} bytes",
+                        )
+                    output = write_clip(
+                        src,
+                        sel,
+                        out_path,
+                        fmt=fmt,
+                        output_crs=output_crs,
+                        tags=tags,
+                        units=record.units,
+                        deadline=step,
+                    )
+                    count_valid = int(sel.valid.sum())
+                    pixels_in_aoi = int(sel.inside.sum())
             prefix = self.settings.root_path.rstrip("/")
             result = {
                 "dataset_id": record.dataset_id,
@@ -308,6 +414,8 @@ class ProcessingService:
                 "metadata_url": f"{prefix}/downloads/{job_id}/metadata",
                 "completed_at": _now(),
             }
+            if blockwise:
+                result["processing"] = {"path": "blockwise", "block_size": self.settings.block_size}
             sidecar = {
                 **result,
                 "job_id": str(job_id),
@@ -324,7 +432,103 @@ class ProcessingService:
             self.outputs.write_json(job_dir, f"{stem}.metadata.json", sidecar)
             return result, out_path
 
-        job, _ = self._run("clip", job_input, work)
+        return work
+
+    # ------------------------------------------------------------------ async execution (worker side)
+    def execute_async(self, job: Job) -> Job:
+        """Run one claimed async job to a terminal state. Never raises (errors are recorded)."""
+        settings = self.settings
+        state = {"fraction": 0.0, "message": "started"}
+        cancel = threading.Event()
+        stop_beat = threading.Event()
+        end = time.monotonic() + settings.async_max_job_seconds
+
+        def beat() -> None:
+            while not stop_beat.wait(settings.worker_heartbeat_seconds):
+                try:
+                    if self.jobs.heartbeat(job.job_id, state["fraction"], state["message"]):
+                        cancel.set()
+                except Exception:  # transient DB error: the next beat retries
+                    log.warning("heartbeat failed for job %s", job.job_id)
+
+        def step(fraction=None, message: str = "") -> None:
+            # Accepts both the sync deadline call style step("stage") and progress(fraction, message).
+            if isinstance(fraction, (int, float)):
+                state["fraction"] = max(0.0, min(1.0, float(fraction)))
+                state["message"] = message or state["message"]
+            if cancel.is_set():
+                raise _Cancelled()
+            if time.monotonic() > end:
+                raise ApiError(504, errors.JOB_TIMEOUT,
+                               f"the background job exceeded its {settings.async_max_job_seconds:g}s time limit")
+
+        beater = threading.Thread(target=beat, name=f"heartbeat-{job.job_id}", daemon=True)
+        with self._active_lock:
+            self._active.add(job.job_id)
+        beater.start()
+        try:
+            if job.cancel_requested or self.jobs.heartbeat(job.job_id, 0.0, "started"):
+                raise _Cancelled()
+            work = self._async_work(job)
+            job_dir = self.outputs.job_dir(job.job_id)
+            if job_dir.is_dir():  # left by an earlier attempt that died
+                self.outputs.remove_job_dir(job_dir)
+            job_dir = self.outputs.create_job_dir(job.job_id)
+            result, primary = work(job.job_id, job_dir, step)
+            step(1.0, "done")
+            self.outputs.write_json(job_dir, RESULT_FILE, result)
+            done = self.jobs.transition(job.job_id, COMPLETED, result_path=self.outputs.relative(primary))
+            log.info("async job %s kind=%s completed (attempt %d)", job.job_id, job.kind, job.attempts)
+            return done
+        except _Cancelled:
+            self._fail(job, dict(CANCELLED_ERROR))
+            log.info("async job %s cancelled", job.job_id)
+        except ApiError as exc:
+            self._fail(job, {"code": exc.code, "message": exc.message})
+            log.info("async job %s failed: %s", job.job_id, exc.code)
+        except Exception:
+            log.exception("async job %s failed unexpectedly", job.job_id)
+            self._fail(job, {"code": errors.INTERNAL_ERROR, "message": "internal processing error"})
+        finally:
+            stop_beat.set()
+            beater.join(timeout=5)
+            with self._active_lock:
+                self._active.discard(job.job_id)
+        return self.jobs.get(job.job_id) or job
+
+    def _async_work(self, job: Job) -> Work:
+        """Rebuild the work of a queued job from its recorded input (re-validated, never trusted)."""
+        inp = job.input
+        record = self.catalog.get_ready(inp["dataset_id"])
+        if record.version != inp.get("dataset_version"):
+            raise ApiError(409, errors.DATASET_VERSION_CHANGED,
+                           f"dataset '{record.dataset_id}' moved from version {inp.get('dataset_version')} to "
+                           f"{record.version} while the job was queued; resubmit it")
+        aoi_crs = parse_crs(inp["aoi_crs"], "aoi_crs")
+        geom = parse_aoi(inp["aoi"], aoi_crs, self.settings)
+        if job.kind == "zonal-statistics":
+            return self._zonal_work(record, aoi_crs, geom, self._normalize_operations(inp.get("operations")),
+                                    blockwise=True)
+        if job.kind == "clip":
+            output_crs = parse_crs(inp["output_crs"], "output_crs") if inp.get("output_crs") else None
+            return self._clip_work(record, aoi_crs, geom, output_crs, self._normalize_format(inp["format"]),
+                                   blockwise=True)
+        raise ApiError(422, errors.UNSUPPORTED_OPERATION, f"unknown job kind {job.kind!r}")
+
+    def cancel_job(self, job_id: uuid.UUID) -> dict[str, Any]:
+        job = self._get(job_id)
+        if job.execution != ASYNC:
+            raise ApiError(409, errors.JOB_NOT_CANCELLABLE,
+                           f"job {job_id} ran synchronously inside its request and cannot be cancelled")
+        if job.status in (COMPLETED, FAILED):
+            raise ApiError(409, errors.JOB_NOT_CANCELLABLE, f"job {job_id} is already {job.status}",
+                           {"status": job.status})
+        job = self.jobs.request_cancel(job_id) or job
+        if job.status == QUEUED:
+            try:
+                job = self.jobs.transition(job_id, FAILED, error=dict(CANCELLED_ERROR))
+            except InvalidTransition:
+                job = self.jobs.get(job_id) or job  # a worker claimed it meanwhile: it stops at a checkpoint
         return self.job_view(job)
 
     # ------------------------------------------------------------------ job access
@@ -340,6 +544,8 @@ class ProcessingService:
         if job.kind == "clip" and job.status == COMPLETED:
             links["download"] = f"{prefix}/downloads/{job.job_id}"
             links["metadata"] = f"{prefix}/downloads/{job.job_id}/metadata"
+        if job.execution == ASYNC and job.status in (QUEUED, RUNNING):
+            links["cancel"] = f"{prefix}/operations/{job.job_id}/cancel"
         result = None
         if job.status == COMPLETED:
             result = self.outputs.read_result(job.job_id) or {"expired": True}
@@ -353,6 +559,12 @@ class ProcessingService:
             "result": result,
             "error": job.error,
             "links": links,
+            "execution": job.execution,
+            "progress": job.progress,
+            "progress_message": job.progress_message,
+            "attempts": job.attempts,
+            "max_attempts": job.max_attempts,
+            "cancel_requested": job.cancel_requested,
         }
 
     def get_job(self, job_id: uuid.UUID) -> dict[str, Any]:

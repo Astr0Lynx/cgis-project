@@ -103,7 +103,15 @@ def _keywords(ds: CatalogDataset) -> list[str]:
     return [w for w in words if w]
 
 
+def group_id(ds: CatalogDataset) -> str | None:
+    """Optional logical group (``provenance.group_id``, e.g. ``india-level2-2011``; Agent 3 C3)."""
+    value = (ds.provenance or {}).get("group_id")
+    return value if isinstance(value, str) and COLLECTION_ID_RE.match(value) else None
+
+
 def _description(ds: CatalogDataset) -> str:
+    # Fact order is a parsing contract of the viewer (demo-client/js/catalog.js): unknown facts are
+    # ignored, "source" stays last because source labels may contain any text.
     facts = [f"catalog version {ds.version}"]
     if ds.crs:
         facts.append(f"native CRS {ds.crs}")
@@ -111,6 +119,11 @@ def _description(ds: CatalogDataset) -> str:
         facts.append(f"units {ds.units}")
     if ds.nodata is not None:
         facts.append(f"NoData {ds.nodata:g}")
+    if group_id(ds):
+        facts.append(f"group {group_id(ds)}")
+    if ds.render:
+        lo, hi = ds.render["rescale"]
+        facts.append(f"display scale {ds.render['profile_id']} {lo:g}..{hi:g}")
     if ds.source:
         facts.append(f"source {ds.source}")
     base = (ds.description or ds.title).strip()
@@ -125,6 +138,10 @@ def vector_static_filter(ds: CatalogDataset, table_columns: list[str]) -> dict:
     ``{"ogc_publication": {"filter": {<column>: <value>}}}``, else no filter.
     """
     if "dataset_id" in table_columns:
+        if "dataset_version" in table_columns:
+            # database core/0007: units are stored per dataset VERSION; the collection serves the
+            # current ready version only (the catalog row this resource was built from).
+            return {"dataset_id": ds.dataset_id, "dataset_version": ds.version}
         return {"dataset_id": ds.dataset_id}
     hint = (ds.provenance or {}).get(PUBLICATION_HINT_KEY) or {}
     wanted = hint.get("filter") or {}
@@ -182,9 +199,16 @@ def raster_resource(ds: CatalogDataset, settings: PublishSettings) -> dict:
         "bbox": list(ds.bbox),
         "colormap_name": settings.tile_colormap,
     }
-    rescale = raster_rescale_hint(ds)
-    if rescale:
-        options["rescale"] = rescale
+    # Portrayal precedence (P3): shared render profile (catalog.render_profiles, units must match)
+    # > dataset's own provenance hint > per-dataset automatic range (diagnostic, not comparable).
+    if ds.render:
+        options["rescale"] = list(ds.render["rescale"])
+        options["colormap_name"] = ds.render["colormap"]
+        options["render_profile"] = {k: ds.render[k] for k in ("profile_id", "title", "units", "description")}
+    else:
+        rescale = raster_rescale_hint(ds)
+        if rescale:
+            options["rescale"] = rescale
     return {
         "type": "collection",
         "title": ds.title,
@@ -195,6 +219,12 @@ def raster_resource(ds: CatalogDataset, settings: PublishSettings) -> dict:
             "rel": "alternate",
             "title": "TiTiler TileJSON (vendor-specific, not an OGC API resource)",
             "href": tilejson,
+        }, {
+            "type": "application/json",
+            "rel": "describedby",
+            "title": ("Dataset metadata: units, NoData, resolution, logical group, shared display scale "
+                      "(vendor-specific TiTiler route, not an OGC API resource)"),
+            "href": f"{settings.tiles_public_url}/datasets/{ds.dataset_id}",
         }],
         "extents": _extents(ds),
         "providers": [{

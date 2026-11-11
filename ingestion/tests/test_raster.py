@@ -172,3 +172,48 @@ def test_input_cog_is_detected(fixture_dir, tmp_path):
     out = tmp_path / "already_cog.tif"
     write_cog(s, inspect_raster(s), out, {})
     assert inspect_raster(_spec(out, units="people_per_cell")).source_is_cog is True
+
+
+def test_single_strip_source_is_read_in_bounded_row_bands(tmp_path, monkeypatch):
+    """National rasters may arrive as one huge strip; reads must stay bounded (completion P2 audit)."""
+    from ingestion import raster as raster_mod
+
+    data = np.arange(300 * 200, dtype=np.float32).reshape(300, 200)
+    data[:5, :] = -9999
+    p = write_raster(tmp_path / "strip.tif", data, nodata=-9999.0, tiled=False, blockysize=300, compress="deflate")
+    with rasterio.open(p) as src:
+        assert src.block_shapes[0] == (300, 200), "fixture must be a single strip"
+        wins = list(raster_mod.iter_windows(src, 1, max_pixels=200 * 32))
+    assert all(w.width * w.height <= 200 * 32 for w in wins)
+    assert sum(int(w.height) for w in wins) == 300 and len(wins) == 10
+
+    sizes = []
+    real_read = rasterio.io.DatasetReader.read
+
+    def spy(self, *args, **kwargs):
+        out = real_read(self, *args, **kwargs)
+        sizes.append(out.size)
+        return out
+
+    monkeypatch.setattr(raster_mod, "MAX_WINDOW_PIXELS", 200 * 32)
+    monkeypatch.setattr(raster_mod.iter_windows, "__defaults__", (200 * 32,))
+    monkeypatch.setattr(rasterio.io.DatasetReader, "read", spy)
+    info = inspect_raster(_spec(p))
+    assert max(sizes) <= 200 * 32
+    valid = data[data != -9999]
+    assert info.stats["valid_count"] == valid.size and info.stats["sum"] == pytest.approx(float(valid.sum()))
+
+
+def test_mollweide_source_is_rejected_not_guessed(tmp_path):
+    """GHSL native grids use World Mollweide (ESRI:54009), which has no EPSG code. The importer must
+    refuse it with a clear code (Agent 1 reprojects/harmonises first) instead of mislabelling it."""
+    moll = rasterio.crs.CRS.from_wkt(
+        'PROJCS["World_Mollweide",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],'
+        'PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Mollweide"],'
+        'PARAMETER["central_meridian",0],PARAMETER["false_easting",0],PARAMETER["false_northing",0],'
+        'UNIT["metre",1]]')
+    p = write_raster(tmp_path / "ghsl_moll.tif", np.ones((8, 8), np.float32), crs=moll,
+                     transform=from_origin(6_500_000, 2_800_000, 100, 100), nodata=-200.0)
+    with pytest.raises(ValidationError) as ei:
+        inspect_raster(_spec(p))
+    assert ei.value.code == "unsupported_crs" and "EPSG" in ei.value.message

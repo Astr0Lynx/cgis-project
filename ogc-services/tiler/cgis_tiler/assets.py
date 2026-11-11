@@ -70,6 +70,11 @@ class RasterRecord:
     units: str | None
     year: int | None
     bbox: tuple[float, float, float, float] | None
+    # Public, non-path metadata for discovery (completion: Agent 3 grouping, Agent 6 request 3).
+    product_level: str | None = None
+    resolution: tuple[float, float] | None = None
+    public: dict | None = None      # group_id, synthetic, license, citation from provenance
+    render: dict | None = None      # shared display scale (catalog.render_profiles) or None
 
 
 def validate_dataset_id(dataset_id: str) -> str:

@@ -13,9 +13,13 @@ server:
     - en-US
   cors: true
   pretty_print: true
+  # A request for more than max_items is throttled to max_items and the response carries
+  # numberMatched plus a rel=next link, so clients page through national boundary sets; nothing
+  # is truncated silently (pygeoapi on_exceed: throttle).
   limits:
     default_items: 10
     max_items: 1000
+    on_exceed: throttle
   templates:
     path: /cgis/templates
   map:
@@ -29,12 +33,13 @@ logging:
 metadata:
   identification:
     title:
-      en: CyberGIS Phase 2 OGC API (SYNTHETIC development data)
+      en: CyberGIS OGC API (India population platform)
     description:
       en: >-
         OGC API - Features and OGC API - Tiles publication of datasets registered in the
-        CyberGIS PostGIS catalog. Phase 2 runs on deterministic SYNTHETIC fixtures; values
-        are not real population data.
+        CyberGIS PostGIS catalog. Each collection is labelled individually: titles marked
+        SYNTHETIC are deterministic test fixtures whose values are not real population data.
+        Raster tiles use the shared display scale named in each tileset's style.
     keywords:
       en:
         - cybergis

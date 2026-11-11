@@ -1,9 +1,14 @@
-"""Read-only access to ``catalog.current_datasets`` (frozen v1 contract)."""
+"""Read-only access to ``catalog.current_datasets`` (frozen v1 contract).
+
+Optional, additive surfaces are detected at run time so the service keeps working on older schemas
+(and the OGC test stack's stub catalog): ``catalog.render_profile_for`` (database core/0008).
+"""
 
 from __future__ import annotations
 
 import logging
 import os
+import time
 
 import psycopg
 
@@ -12,22 +17,25 @@ from .assets import CatalogUnavailable, RasterRecord
 LOGGER = logging.getLogger(__name__)
 
 _COLUMNS = """
-    dataset_id, version, title, asset_path, crs, nodata, units, year,
-    ST_XMin(bbox), ST_YMin(bbox), ST_XMax(bbox), ST_YMax(bbox)
+    c.dataset_id, c.version, c.title, c.asset_path, c.crs, c.nodata, c.units, c.year,
+    ST_XMin(c.bbox), ST_YMin(c.bbox), ST_XMax(c.bbox), ST_YMax(c.bbox),
+    c.product_level, c.resolution_x, c.resolution_y,
+    c.provenance -> 'group_id', c.provenance -> 'synthetic', c.provenance -> 'license',
+    c.provenance -> 'citation'
 """
 
-_LOOKUP_SQL = f"""
-SELECT {_COLUMNS}
-FROM catalog.current_datasets
-WHERE dataset_id = %s AND kind = 'raster' AND status = 'ready'
+_RENDER_COLUMNS = """,
+    r.profile_id, r.units, r.colormap, r.rescale_min, r.rescale_max, r.title, r.description
 """
 
-_LIST_SQL = f"""
-SELECT {_COLUMNS}
-FROM catalog.current_datasets
-WHERE kind = 'raster' AND status = 'ready'
-ORDER BY dataset_id
-"""
+_FROM = "FROM catalog.current_datasets c"
+_RENDER_JOIN = " LEFT JOIN LATERAL catalog.render_profile_for(c.dataset_id, c.version) r ON true"
+_LOOKUP_WHERE = " WHERE c.dataset_id = %s AND c.kind = 'raster' AND c.status = 'ready'"
+_LIST_WHERE = " WHERE c.kind = 'raster' AND c.status = 'ready' ORDER BY c.dataset_id"
+
+_HAS_RENDER_SQL = ("SELECT to_regprocedure('catalog.render_profile_for(text,integer)') IS NOT NULL "
+                   "AND has_function_privilege('catalog.render_profile_for(text,integer)', 'EXECUTE')")
+_RENDER_PROBE_TTL = 60.0
 
 
 def conninfo_from_env(env: dict | None = None) -> str:
@@ -43,8 +51,28 @@ def conninfo_from_env(env: dict | None = None) -> str:
     )
 
 
-def _row_to_record(row) -> RasterRecord:
+def _text(value):
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def _row_to_record(row, with_render: bool) -> RasterRecord:
     bbox = None if row[8] is None else (row[8], row[9], row[10], row[11])
+    resolution = None
+    if row[13] is not None and row[14] is not None:
+        resolution = (abs(float(row[13])), abs(float(row[14])))
+    synthetic = row[16] if isinstance(row[16], bool) else None
+    public = {
+        "group_id": _text(row[15]),
+        "synthetic": synthetic,
+        "license": _text(row[17]),
+        "citation": _text(row[18]),
+    }
+    render = None
+    if with_render and row[19] is not None:
+        render = {
+            "profile_id": row[19], "units": row[20], "colormap": row[21],
+            "rescale": [float(row[22]), float(row[23])], "title": row[24], "description": row[25],
+        }
     return RasterRecord(
         dataset_id=row[0],
         version=row[1],
@@ -55,12 +83,18 @@ def _row_to_record(row) -> RasterRecord:
         units=row[6],
         year=row[7],
         bbox=bbox,
+        product_level=row[12],
+        resolution=resolution,
+        public=public,
+        render=render,
     )
 
 
 class Catalog:
     def __init__(self, conninfo: str):
         self._conninfo = conninfo
+        self._render_checked_at = 0.0
+        self._has_render = False
 
     def _query(self, sql: str, params: tuple = ()) -> list:
         try:
@@ -73,12 +107,26 @@ class Catalog:
             LOGGER.error("catalog query failed: %s", err.__class__.__name__)
             raise CatalogUnavailable("Dataset catalog is unavailable") from err
 
+    def _render_available(self) -> bool:
+        now = time.monotonic()
+        if now - self._render_checked_at > _RENDER_PROBE_TTL:
+            self._has_render = bool(self._query(_HAS_RENDER_SQL)[0][0])
+            self._render_checked_at = now
+        return self._has_render
+
+    def _select(self, where: str, params: tuple) -> tuple[list, bool]:
+        with_render = self._render_available()
+        sql = ("SELECT " + _COLUMNS + (_RENDER_COLUMNS if with_render else "") + " " + _FROM
+               + (_RENDER_JOIN if with_render else "") + where)
+        return self._query(sql, params), with_render
+
     def lookup_raster(self, dataset_id: str) -> RasterRecord | None:
-        rows = self._query(_LOOKUP_SQL, (dataset_id,))
-        return _row_to_record(rows[0]) if rows else None
+        rows, with_render = self._select(_LOOKUP_WHERE, (dataset_id,))
+        return _row_to_record(rows[0], with_render) if rows else None
 
     def list_rasters(self) -> list[RasterRecord]:
-        return [_row_to_record(r) for r in self._query(_LIST_SQL)]
+        rows, with_render = self._select(_LIST_WHERE, ())
+        return [_row_to_record(r, with_render) for r in rows]
 
     def ping(self) -> bool:
         self._query("SELECT 1 FROM catalog.current_datasets LIMIT 1")

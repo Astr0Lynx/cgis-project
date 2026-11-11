@@ -107,6 +107,27 @@ def test_tileset_metadata_members():
     assert [limit["tileMatrix"] for limit in md["tileMatrixSetLimits"]] == [str(z) for z in range(14)]
 
 
+def test_style_names_the_shared_render_profile():
+    profile = {"profile_id": "level1-people-per-cell", "title": "Population per ~100 m cell",
+               "units": "people_per_cell", "description": "Shared fixed scale for all Level 1 years."}
+    options = dict(tile_def()["options"], rescale=[0, 50], render_profile=profile)
+    md = TiTilerTileProvider(tile_def(options=options)).get_metadata(
+        dataset="c", server_url="http://gw/ogc", tileset="WebMercatorQuad", metadata_format="json")
+    # the title format and the "configured shared range" marker are parsed by demo-client/js/legend.js
+    assert md["style"]["title"] == "viridis linear 0..50"
+    desc = md["style"]["description"]
+    assert "configured shared range" in desc and "level1-people-per-cell" in desc and "people_per_cell" in desc
+    assert "transparent" in desc
+
+
+def test_autoscale_style_is_labelled_diagnostic(monkeypatch):
+    p = TiTilerTileProvider(tile_def())
+    monkeypatch.setattr(p, "_get_json", lambda path: {"b1": {"min": 0.5, "max": 7.0}})
+    desc = p.style()["description"]
+    assert p.style()["title"] == "viridis linear 0..7"
+    assert "diagnostic" in desc and "not comparable" in desc and "configured shared range" not in desc
+
+
 def test_tilejson_only_for_webmercator():
     p = TiTilerTileProvider(tile_def())
     tj = p.get_metadata(dataset="c", server_url="http://gw/ogc", tileset="WebMercatorQuad", metadata_format="tilejson")

@@ -99,6 +99,13 @@ def test_static_filter_prefers_dataset_id_column():
     assert vector_static_filter(ds, COLUMNS + ["dataset_id"]) == {"dataset_id": "v"}
 
 
+def test_static_filter_scopes_to_the_current_dataset_version():
+    """database core/0007 keeps every version's units: the collection serves its catalog version only."""
+    ds = CatalogDataset(dataset_id="v", version=3, title="t", kind="vector", bbox=BBOX)
+    assert vector_static_filter(ds, COLUMNS + ["dataset_id", "dataset_version"]) == {
+        "dataset_id": "v", "dataset_version": 3}
+
+
 def test_static_filter_from_provenance_hint():
     ds = vector("v", provenance={"ogc_publication": {"filter": {"level": "synthetic_town", "nope": 1, "name": ["x"]}}})
     assert vector_static_filter(ds, COLUMNS) == {"level": "synthetic_town"}
@@ -133,3 +140,42 @@ def test_raster_rescale_hint(settings, render, expected):
 def test_unknown_tile_scheme_rejected():
     with pytest.raises(ValueError):
         PublishSettings(env={"OGC_TILE_SCHEMES": "WebMercatorQuad,NoSuchQuad"})
+
+
+LEVEL1_RENDER = {"profile_id": "level1-people-per-cell", "units": "people_per_cell", "colormap": "viridis",
+                 "rescale": [0.0, 50.0], "title": "Population per ~100 m cell (shared Level 1 scale)",
+                 "description": "Shared fixed scale", "legend": {}}
+
+
+def test_render_profile_sets_shared_scale_for_every_year(settings):
+    years = [raster(f"india-l1-pop-{y}", year=y, units="people_per_cell", render=LEVEL1_RENDER,
+                    provenance={"ogc_publication": {"render": {"rescale": [0, 2]}}}) for y in (2001, 2011)]
+    resources = build_config(BASE, years, COLUMNS, settings)["resources"]
+    opts = [resources[f"india-l1-pop-{y}"]["providers"][0]["options"] for y in (2001, 2011)]
+    assert opts[0]["rescale"] == opts[1]["rescale"] == [0.0, 50.0], "profile wins over a dataset hint"
+    assert opts[0]["render_profile"]["profile_id"] == "level1-people-per-cell"
+    desc = resources["india-l1-pop-2001"]["description"]
+    assert "display scale level1-people-per-cell 0..50" in desc
+
+
+def test_without_profile_the_hint_or_autoscale_applies(settings):
+    plain = build_config(BASE, [raster("r")], COLUMNS, settings)["resources"]["r"]["providers"][0]["options"]
+    assert "rescale" not in plain and "render_profile" not in plain
+
+
+def test_group_id_and_metadata_link_are_published(settings):
+    ds = raster("india-l2-pop-2011-warangal", year=2011, units="people_per_cell", source="cgis-level2",
+                provenance={"group_id": "india-level2-2011"})
+    res = build_config(BASE, [ds], COLUMNS, settings)["resources"]["india-l2-pop-2011-warangal"]
+    assert "group india-level2-2011" in res["description"]
+    assert res["description"].endswith("source cgis-level2)"), "source must stay the last fact"
+    described = [link for link in res["links"] if link["rel"] == "describedby"]
+    assert described[0]["href"] == "http://gw/tiles/datasets/india-l2-pop-2011-warangal"
+    assert "vendor-specific" in described[0]["title"]
+    # keywords are unchanged (the viewer parses them positionally)
+    assert res["keywords"] == ["raster", "cgis-level2", "people_per_cell", "2011"]
+
+
+def test_unsafe_group_id_is_not_published(settings):
+    ds = raster("r", provenance={"group_id": "../../x"})
+    assert "group" not in build_config(BASE, [ds], COLUMNS, settings)["resources"]["r"]["description"]

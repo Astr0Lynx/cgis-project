@@ -173,3 +173,62 @@ def test_api_with_postgis_backends(db, asset_root, tmp_path):
         )
         failed = client.get(f"/operations/{bad.json()['error']['details']['job_id']}").json()
         assert failed["status"] == "failed" and failed["error"]["code"] == "AOI_OUTSIDE_RASTER"
+
+
+# ---------------------------------------------------------------------------- async queue (core/0009)
+@pytest.fixture()
+def async_store():
+    store = PostgresJobStore(DSN)
+    if not store.supports_async:
+        pytest.skip("ops.jobs lacks the async columns of database migration core/0009")
+    created: list[uuid.UUID] = []
+    yield store, created
+    with psycopg.connect(DSN, autocommit=True) as conn:
+        for job_id in created:
+            conn.execute("DELETE FROM ops.jobs WHERE job_id = %s", (job_id,))
+
+
+def test_postgres_async_claim_heartbeat_cancel_and_recovery(async_store):
+    from spatial_processing.jobs import FAILED, QUEUED
+
+    store, created = async_store
+    kind = "zonal-statistics"
+    a = store.create(kind, {"dataset_id": "x", "t": "a"}, execution="async", max_attempts=2)
+    b = store.create(kind, {"dataset_id": "x", "t": "b"}, execution="async", max_attempts=1)
+    created += [a.job_id, b.job_id]
+    assert a.status == QUEUED and a.execution == "async"
+
+    # two workers never get the same job (FOR UPDATE SKIP LOCKED), oldest first
+    claimed = [store.claim("w1", (kind,)), store.claim("w2", (kind,))]
+    mine = {j.job_id for j in claimed if j is not None and j.job_id in (a.job_id, b.job_id)}
+    assert a.job_id in mine
+    assert all(j.attempts == 1 and j.status == RUNNING for j in claimed if j is not None and j.job_id in mine)
+
+    assert store.heartbeat(a.job_id, 0.5, "half") is False
+    assert store.get(a.job_id).progress == 0.5
+    store.request_cancel(a.job_id)
+    assert store.heartbeat(a.job_id, 0.6, None) is True, "worker learns about the cancellation"
+
+    # a worker that stops heart-beating: a is re-queued? no - cancel requested -> failed; b (1 attempt) -> failed
+    with psycopg.connect(DSN, autocommit=True) as conn:
+        conn.execute("UPDATE ops.jobs SET heartbeat_at = now() - interval '10 minutes' WHERE job_id = ANY(%s)",
+                     ([a.job_id, b.job_id],))
+    store.recover_stale(60)
+    assert store.get(a.job_id).status == FAILED
+    if store.get(b.job_id).status != QUEUED:  # b was claimed above unless another test's job was older
+        assert store.get(b.job_id).error["code"] == "WORKER_LOST"
+
+
+def test_postgres_stale_job_is_requeued_for_retry(async_store):
+    from spatial_processing.jobs import QUEUED
+
+    store, created = async_store
+    kind = "clip"
+    job = store.create(kind, {"dataset_id": "y"}, execution="async", max_attempts=3)
+    created.append(job.job_id)
+    with psycopg.connect(DSN, autocommit=True) as conn:  # isolate: claim exactly this job
+        conn.execute("UPDATE ops.jobs SET status = 'running', attempts = 1, heartbeat_at = now() - interval '1 hour'"
+                     " WHERE job_id = %s", (job.job_id,))
+    out = store.recover_stale(60)
+    assert out["requeued"] >= 1 and store.get(job.job_id).status == QUEUED
+    assert store.get(job.job_id).attempts == 1

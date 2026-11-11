@@ -1,4 +1,4 @@
-# CyberGIS Phase 2 task commands (owner: Agent 1). Each target is a thin wrapper around
+# CyberGIS task commands (owner: Agent 4; originally Agent 1). Each target is a thin wrapper around
 # `docker compose`; the equivalent raw commands are listed in infra/README.md for hosts without make.
 
 COMPOSE ?= docker compose
@@ -7,7 +7,7 @@ MODULES := database/pyproject.toml ingestion/Dockerfile ogc-services/tiler/Docke
            ogc-services/pygeoapi/Dockerfile spatial-processing/Dockerfile
 
 .DEFAULT_GOAL := help
-.PHONY: help env check-modules config build up down ps logs migrate fixtures import seed smoke restart reset e2e test-modules
+.PHONY: help env check-modules config build up down ps logs migrate fixtures import seed smoke restart reset e2e test-modules bench
 
 help: ## List targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -67,3 +67,6 @@ test-modules: check-modules ## Module owners' suites on a separate integrated st
 reset: ## DESTROY all volumes (database, assets, outputs); requires CONFIRM=1
 	@[ "$(CONFIRM)" = "1" ] || { echo "refusing: this deletes all data volumes; run: make reset CONFIRM=1"; exit 1; }
 	$(COMPOSE) down -v
+
+bench: ## National-scale benchmark on a separate project cgis-bench (~15 GB disk; evidence in data/bench/)
+	sh infra/bench/run_national_bench.sh

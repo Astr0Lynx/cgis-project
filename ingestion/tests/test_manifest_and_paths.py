@@ -90,3 +90,21 @@ def test_asset_layout_and_path_safety(tmp_path):
     (tmp_path / "link").symlink_to("/etc")
     with pytest.raises(AssetError):
         resolve_under(tmp_path, "link/passwd")
+
+
+def test_fsync_file_opens_a_writable_handle(tmp_path, monkeypatch):
+    """os.fsync needs a writable descriptor on Windows (Agent 2 CR, section 4)."""
+    from ingestion import importer as imp
+
+    p = tmp_path / "asset.bin"
+    p.write_bytes(b"abc")
+    modes = []
+    real_open = open
+
+    def spy(path, mode="r", *a, **k):
+        modes.append(mode)
+        return real_open(path, mode, *a, **k)
+
+    monkeypatch.setattr(imp, "open", spy, raising=False)
+    imp._fsync_file(p)
+    assert modes == ["r+b"] and p.read_bytes() == b"abc"

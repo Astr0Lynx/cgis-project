@@ -29,7 +29,7 @@ ROLE_NAME = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
 PLACEHOLDER = re.compile(r"change[-_]?me", re.IGNORECASE)
 # Schemas created by database/migrations. A role with one of these names would get that schema
 # first in the default search_path ("$user", public), so unqualified CREATEs would land in it.
-PROJECT_SCHEMAS = {"cgis", "catalog", "geo", "ops", "cgis_meta", "raster_demo"}
+PROJECT_SCHEMAS = {"cgis", "catalog", "geo", "ops", "cgis_meta", "raster_demo", "cgis_app"}
 
 
 def fail(message: str) -> None:
@@ -59,7 +59,25 @@ def read_config() -> list[tuple[str, str, str, bool]]:
     return roles
 
 
+def app_grants() -> None:
+    """``--app-grants``: read access for the OGC publisher to the application API's per-dataset access
+    levels (Agent 5 CR R5), so admins-only datasets are never published by OGC/Tiles. Column-level and
+    read-only. Run after the application API's own migration (Compose service ``app-grants``)."""
+    with psycopg.connect("", application_name="cgis_provision_roles", autocommit=True) as conn:
+        if conn.execute("SELECT to_regclass('cgis_app.dataset_access') IS NULL").fetchone()[0]:
+            print("provision_roles: cgis_app.dataset_access not present; nothing to grant")
+            return
+        if conn.execute("SELECT 1 FROM pg_roles WHERE rolname = 'cgis_reader'").fetchone() is None:
+            fail("group role cgis_reader does not exist; run the database migrations first")
+        conn.execute("GRANT USAGE ON SCHEMA cgis_app TO cgis_reader")
+        conn.execute("GRANT SELECT (dataset_id, access) ON cgis_app.dataset_access TO cgis_reader")
+    print("provision_roles: cgis_reader may read cgis_app.dataset_access(dataset_id, access)")
+
+
 def main() -> None:
+    if "--app-grants" in sys.argv[1:]:
+        app_grants()
+        return
     roles = read_config()
     with psycopg.connect("", application_name="cgis_provision_roles", autocommit=True) as conn:
         missing = [g for g in sorted(GROUP_ROLES)

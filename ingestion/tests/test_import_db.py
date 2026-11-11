@@ -132,6 +132,31 @@ def test_higher_version_becomes_current_and_old_is_kept(importer, db, fresh_fixt
     assert (assets_dir / str(asset_relpath("raster", "synthetic-worldpop-2001", 1))).is_file()
 
 
+def test_vector_new_version_keeps_old_version_units(importer, db, fresh_fixtures, assets_dir):
+    """Completion P1: importing boundary v2 must not overwrite v1's geometry (database core/0007)."""
+    if not importer.catalog.versioned_units:
+        pytest.skip("schema without version-aware geo.admin_units identity (pre core/0007 stand-in)")
+    _import_all(importer, fresh_fixtures)
+    doc = json.loads((fresh_fixtures / "synthetic_towns.geojson").read_text())
+    for f in doc["features"]:
+        f["geometry"]["coordinates"] = [[[x + 0.5, y] for x, y in ring] for ring in f["geometry"]["coordinates"]]
+    v2 = fresh_fixtures / "towns_v2.geojson"
+    v2.write_text(json.dumps(doc))
+    res = importer.import_dataset(spec(fresh_fixtures, "synthetic-towns", version=2, file=str(v2), expect=None))
+    assert res.outcome == "imported"
+    rows = db.execute("SELECT unit_id, dataset_version, ST_XMin(geom) AS x FROM geo.admin_units "
+                      "WHERE dataset_id='synthetic-towns' ORDER BY dataset_version, unit_id").fetchall()
+    assert [(r["unit_id"], r["dataset_version"]) for r in rows] == [
+        ("town-a", 1), ("town-b", 1), ("town-a", 2), ("town-b", 2)]
+    assert rows[2]["x"] == pytest.approx(rows[0]["x"] + 0.5)
+    current = db.execute("SELECT unit_id, dataset_version FROM geo.current_admin_units "
+                         "WHERE dataset_id='synthetic-towns' ORDER BY unit_id").fetchall()
+    assert [(r["unit_id"], r["dataset_version"]) for r in current] == [("town-a", 2), ("town-b", 2)]
+    # importing v1 again is still a no-op and leaves both versions intact
+    assert importer.import_dataset(spec(fresh_fixtures, "synthetic-towns")).outcome == "unchanged"
+    assert db.execute("SELECT count(*) AS n FROM geo.admin_units").fetchone()["n"] == 4
+
+
 def test_failure_after_staging_leaves_no_ready_row_or_asset(importer, db, fresh_fixtures, assets_dir, monkeypatch):
     from ingestion import importer as imp_mod
 
@@ -250,11 +275,18 @@ def test_optional_admin_unit_columns_are_populated(db_conn, importer, db, fresh_
                          "WHERE unit_id='town-a'").fetchone()
         assert row["dataset_id"] == "synthetic-towns" and row["dataset_version"] == 1
         assert row["properties"]["source"] == "deterministic-fixture"
-        # a different dataset may not hijack the same unit ids
         other = entry(fresh_fixtures, "synthetic-towns", dataset_id="synthetic-towns-copy")
-        with pytest.raises(ConflictError) as ei:
-            importer.import_dataset(parse_entry(other, fresh_fixtures))
-        assert ei.value.code == "unit_id_conflict"
+        if importer.catalog.versioned_units:
+            # database core/0007: identity is (dataset_id, dataset_version, unit_id), so another dataset
+            # reusing the same source ids gets its own rows and never touches the first dataset's
+            assert importer.import_dataset(parse_entry(other, fresh_fixtures)).outcome == "imported"
+            assert db.execute("SELECT count(*) AS n FROM geo.admin_units WHERE dataset_id='synthetic-towns-copy'"
+                              ).fetchone()["n"] == 2
+        else:
+            # legacy global unit_id key: a different dataset may not hijack the same unit ids
+            with pytest.raises(ConflictError) as ei:
+                importer.import_dataset(parse_entry(other, fresh_fixtures))
+            assert ei.value.code == "unit_id_conflict"
         assert db.execute("SELECT count(*) AS n FROM geo.admin_units WHERE dataset_id='synthetic-towns'"
                           ).fetchone()["n"] == 2
     finally:

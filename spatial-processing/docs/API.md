@@ -13,7 +13,8 @@ These are project-specific routes. They are **not** OGC API Processes/Coverages 
 |---|---|---|
 | POST | `/operations/clip` | Clip a catalogued raster to an AOI; export GeoTIFF or COG |
 | POST | `/operations/zonal-statistics` | `sum`, `mean`, `count` of valid pixels in an AOI |
-| GET | `/operations/{job_id}` | Job status, input, result, error |
+| GET | `/operations/{job_id}` | Job status, input, result, error, progress (async) |
+| POST | `/operations/{job_id}/cancel` | Cancel a queued or running background (async) job |
 | GET | `/downloads/{job_id}` | Download the clipped GeoTIFF/COG of a completed clip job |
 | GET | `/downloads/{job_id}/metadata` | JSON metadata sidecar of that export (extension) |
 | GET | `/health` | Liveness (process up) |
@@ -111,9 +112,50 @@ Integer rasters return an integer `sum`; float rasters return a float. When ever
 
 ## Jobs
 
-Status: `queued → running → completed | failed` (no other transitions). Operations execute synchronously
-inside the request, so the POST already returns `completed`. Clients should still read `status`, which
-lets a future worker return `queued`/`running` without an API change.
+Status: `queued → running → completed | failed`. By default (`"mode": "sync"`) operations execute inside
+the request, so the POST already returns `completed`.
+
+### Large AOIs: `mode` and background jobs (completion P2/P3)
+
+The synchronous path reads the whole AOI window into memory and is limited to `MAX_WINDOW_PIXELS`
+(25 M pixels, e.g. ~ a 1.3° × 1.3° square at 3 arc-seconds). A national India raster has 1.21 × 10⁹
+pixels, so district-sized AOIs run synchronously while state- or country-sized AOIs need a background job.
+
+| `mode` | Behaviour |
+|---|---|
+| `sync` (default) | unchanged Phase 2 behaviour. Above the limit: `413 AOI_TOO_LARGE`, and `details.hint` says to resubmit with `"mode": "async"` (when the AOI is within `ASYNC_MAX_WINDOW_PIXELS`) |
+| `async` | always queue: **202 Accepted**, `Location: /api/operations/{job_id}`, body = the job (`execution: "async"`, `status: "queued"`) |
+| `auto` | synchronous (200) when the AOI is within `MAX_WINDOW_PIXELS`, otherwise queued (202) |
+
+Background jobs are claimed from `ops.jobs` by worker threads inside the processing service
+(`ASYNC_WORKERS`, `FOR UPDATE SKIP LOCKED`; no Redis or cloud service) and processed **block by block**:
+`BLOCK_SIZE`² pixels at a time, blocks outside the AOI skipped, sums combined with `math.fsum`. Peak memory
+does not grow with the AOI. The rules are the same as the synchronous path (pixel centre inside, NoData
+excluded, native grid/CRS), and results agree to floating-point rounding. One caveat: when an AOI edge
+passes *exactly* through a pixel centre, the two paths may break that measure-zero tie differently by one
+boundary pixel (tests use off-lattice polygons). Clips are written block by block to a tiled GeoTIFF, then
+converted to COG or reprojected (GDAL `WarpedVRT`, nearest, 256 MB warp memory) without loading the window.
+
+Poll `GET /operations/{job_id}`: `status`, `progress` (0..1), `progress_message`, `attempts`/`max_attempts`,
+`cancel_requested`, `links.cancel`. When completed, `result` has the same shape as the synchronous answer
+plus `processing: {"path": "blockwise", ...}`, and clip jobs have `links.download`/`links.metadata`.
+
+| Situation | Outcome |
+|---|---|
+| `POST /operations/{id}/cancel` on a queued job | `failed` immediately, `error.code = CANCELLED` |
+| ... on a running job | `cancel_requested: true`; the worker stops at its next block, the job becomes `failed`/`CANCELLED` and partial outputs are deleted |
+| ... on a sync or finished job | `409 JOB_NOT_CANCELLABLE` |
+| worker process killed or restarted | its jobs stop heart-beating; after `WORKER_STALE_SECONDS` they are re-queued (`attempts < ASYNC_MAX_ATTEMPTS`) and re-run from scratch by any worker, else `failed`/`WORKER_LOST` |
+| queued longer than `ASYNC_QUEUE_TTL_SECONDS` | `failed`/`JOB_EXPIRED` |
+| running longer than `ASYNC_MAX_JOB_SECONDS` | `failed`/`JOB_TIMEOUT` |
+| dataset got a newer ready version while queued | `failed`/`DATASET_VERSION_CHANGED` (resubmit) |
+| clip larger than `ASYNC_MAX_OUTPUT_BYTES` | `failed`/`OUTPUT_TOO_LARGE` |
+| AOI window above `ASYNC_MAX_WINDOW_PIXELS` | `413 AOI_TOO_LARGE` at submission (no job) |
+| no workers / job store without migration `core/0009` | `503 ASYNC_UNAVAILABLE` at submission |
+
+`/ready` reports `async: {enabled, workers_alive, workers_configured}` and fails if a worker thread died.
+The full-resolution national *full-raster* export (no AOI) belongs to the application API's `/api/exports`
+(Agent 5), which streams the stored COG.
 
 * Malformed input, unknown or not-ready datasets, and `BUSY` are rejected **before** a job is created.
 * After acceptance, failures mark the job `failed` with `{code, message}`, remove partial outputs, and
@@ -140,12 +182,13 @@ server paths, SQL or stack traces.
 |---|---|
 | 404 | `DATASET_NOT_FOUND`, `JOB_NOT_FOUND`, `NOT_FOUND` |
 | 405 | `METHOD_NOT_ALLOWED` |
-| 409 | `DATASET_NOT_READY`, `JOB_NOT_COMPLETED`, `JOB_FAILED`, `NO_DOWNLOAD` |
+| 409 | `DATASET_NOT_READY`, `JOB_NOT_COMPLETED`, `JOB_FAILED`, `NO_DOWNLOAD`, `JOB_NOT_CANCELLABLE`, `DATASET_VERSION_CHANGED` (async job error) |
 | 410 | `OUTPUT_EXPIRED` |
 | 413 | `REQUEST_TOO_LARGE`, `AOI_TOO_COMPLEX`, `AOI_TOO_LARGE`, `OUTPUT_TOO_LARGE` |
 | 422 | `INVALID_REQUEST`, `INVALID_DATASET_ID`, `INVALID_GEOMETRY`, `EMPTY_GEOMETRY`, `UNSUPPORTED_GEOMETRY_TYPE`, `NON_FINITE_COORDINATES`, `COORDINATES_OUT_OF_RANGE`, `UNSUPPORTED_CRS`, `UNSUPPORTED_FORMAT`, `UNSUPPORTED_OPERATION`, `UNIT_SEMANTICS`, `AOI_OUTSIDE_RASTER`, `NO_PIXELS_SELECTED`, `DATASET_NOT_RASTER` |
 | 500 | `ASSET_PATH_REJECTED`, `ASSET_MISSING`, `ASSET_UNREADABLE`, `INTERNAL_ERROR` |
-| 503 | `BUSY` (with `Retry-After`), `CATALOG_UNAVAILABLE`, `JOB_STORE_UNAVAILABLE` |
+| 503 | `BUSY` (with `Retry-After`), `CATALOG_UNAVAILABLE`, `JOB_STORE_UNAVAILABLE`, `ASYNC_UNAVAILABLE` |
+| (async job `error.code`) | `CANCELLED`, `WORKER_LOST`, `JOB_EXPIRED`, `JOB_TIMEOUT`, plus any code above |
 | 504 | `JOB_TIMEOUT` |
 
 ## Guardrails (environment variables)
@@ -162,6 +205,14 @@ server paths, SQL or stack traces.
 | `OUTPUT_TTL_SECONDS` | 86400 | Age after which job output directories are deleted |
 | `CLEANUP_INTERVAL_SECONDS` | 600 | Minimum interval between cleanup sweeps (also runs at startup) |
 | `GDAL_CACHEMAX_MB` | 256 | GDAL block cache |
+| `BLOCK_SIZE` | 2048 | Block edge (pixels) of background jobs: ~16 MB of float32 per block |
+| `ASYNC_WORKERS` | 1 | Background worker threads per process (0 disables `mode: async`) |
+| `ASYNC_MAX_WINDOW_PIXELS` | 2000000000 | Largest AOI window a background job accepts (whole India: 1.21e9) |
+| `ASYNC_MAX_OUTPUT_BYTES` | 2147483648 | Uncompressed size limit of a background clip |
+| `ASYNC_MAX_JOB_SECONDS` | 3600 | Time limit of one background attempt |
+| `ASYNC_MAX_ATTEMPTS` | 2 | Automatic retries after a lost worker (1..10) |
+| `ASYNC_QUEUE_TTL_SECONDS` | 21600 | Queued jobs older than this fail with `JOB_EXPIRED` |
+| `WORKER_HEARTBEAT_SECONDS` / `WORKER_STALE_SECONDS` / `WORKER_POLL_SECONDS` | 5 / 60 / 2 | Heartbeat period, stale-worker threshold, idle poll |
 
 ## Security model
 

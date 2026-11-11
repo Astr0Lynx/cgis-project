@@ -56,6 +56,20 @@ class Settings:
     cleanup_interval_seconds: int = 600
     gdal_cachemax_mb: int = 256
 
+    # Large AOIs (completion P2/P3). AOIs whose candidate window exceeds max_window_pixels are not
+    # loaded into memory: with "mode": "async" (or "auto") they run block by block in a background
+    # worker, bounded by these limits. Memory per block ~ block_size^2 x (itemsize + 2) bytes.
+    block_size: int = 2048
+    async_max_window_pixels: int = 2_000_000_000   # > one whole India 3 arc-second raster (1.21e9)
+    async_max_output_bytes: int = 2 * 1024**3
+    async_workers: int = 1
+    async_max_job_seconds: float = 3600.0
+    async_max_attempts: int = 2
+    async_queue_ttl_seconds: int = 6 * 3600
+    worker_poll_seconds: float = 2.0
+    worker_heartbeat_seconds: float = 5.0
+    worker_stale_seconds: float = 60.0
+
     @classmethod
     def from_env(cls) -> "Settings":
         static_file = os.environ.get("STATIC_CATALOG_FILE")
@@ -78,4 +92,14 @@ class Settings:
             output_ttl_seconds=_int("OUTPUT_TTL_SECONDS", cls.output_ttl_seconds),
             cleanup_interval_seconds=_int("CLEANUP_INTERVAL_SECONDS", cls.cleanup_interval_seconds),
             gdal_cachemax_mb=_int("GDAL_CACHEMAX_MB", cls.gdal_cachemax_mb),
+            block_size=max(256, _int("BLOCK_SIZE", cls.block_size)),
+            async_max_window_pixels=_int("ASYNC_MAX_WINDOW_PIXELS", cls.async_max_window_pixels),
+            async_max_output_bytes=_int("ASYNC_MAX_OUTPUT_BYTES", cls.async_max_output_bytes),
+            async_workers=_int("ASYNC_WORKERS", cls.async_workers),
+            async_max_job_seconds=_float("ASYNC_MAX_JOB_SECONDS", cls.async_max_job_seconds),
+            async_max_attempts=min(10, max(1, _int("ASYNC_MAX_ATTEMPTS", cls.async_max_attempts))),
+            async_queue_ttl_seconds=_int("ASYNC_QUEUE_TTL_SECONDS", cls.async_queue_ttl_seconds),
+            worker_poll_seconds=_float("WORKER_POLL_SECONDS", cls.worker_poll_seconds),
+            worker_heartbeat_seconds=_float("WORKER_HEARTBEAT_SECONDS", cls.worker_heartbeat_seconds),
+            worker_stale_seconds=_float("WORKER_STALE_SECONDS", cls.worker_stale_seconds),
         )

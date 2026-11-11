@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,6 +26,26 @@ FROM information_schema.columns
 WHERE table_schema = %s AND table_name = %s
 ORDER BY ordinal_position
 """
+
+# Optional surfaces, detected at run time so the publisher keeps working on older schemas
+# (and on the OGC test stack's stub catalog):
+#   catalog.render_profile_for()  database core/0008: shared display scales (P3)
+#   cgis_app.dataset_access       application-api (Agent 5): per-dataset access level
+CAPABILITIES_SQL = """
+SELECT to_regprocedure('catalog.render_profile_for(text,integer)') IS NOT NULL
+         AND has_function_privilege('catalog.render_profile_for(text,integer)', 'EXECUTE'),
+       to_regclass('cgis_app.dataset_access') IS NOT NULL
+"""
+
+RENDER_SQL = """
+SELECT c.dataset_id, r.profile_id, r.units, r.colormap, r.rescale_min, r.rescale_max,
+       r.title, r.description, r.legend
+FROM catalog.current_datasets c
+CROSS JOIN LATERAL catalog.render_profile_for(c.dataset_id, c.version) r
+WHERE c.kind = 'raster' AND c.status = 'ready'
+"""
+
+RESTRICTED_SQL = "SELECT dataset_id FROM cgis_app.dataset_access WHERE access = 'admins'"
 
 
 @dataclass(frozen=True)
@@ -47,6 +67,8 @@ class CatalogDataset:
     source: str | None = None
     provenance: dict = field(default_factory=dict)
     status: str = "ready"
+    # Shared display scale (catalog.render_profiles, database core/0008) or None.
+    render: dict | None = None
 
 
 def db_params_from_env(env: dict | None = None) -> dict:
@@ -103,7 +125,14 @@ class CatalogReader:
                 time.sleep(2)
 
     def read(self, vector_schema: str, vector_table: str) -> tuple[list[CatalogDataset], list[str]]:
-        """Return ready datasets and the column names of the vector table."""
+        """Return ready, publishable datasets and the column names of the vector table.
+
+        Datasets marked ``admins``-only in ``cgis_app.dataset_access`` are not published (Agent 5
+        CR R5). Raises ``RestrictedListUnavailable`` if that table exists but cannot be read, so a
+        refresh keeps the previous configuration instead of publishing restricted datasets.
+        """
+        import psycopg2
+
         conn = self._connect()
         try:
             with conn.cursor() as cur:
@@ -111,6 +140,43 @@ class CatalogReader:
                 datasets = [_row_to_dataset(r) for r in cur.fetchall()]
                 cur.execute(COLUMNS_SQL, (vector_schema, vector_table))
                 columns = [r[0] for r in cur.fetchall()]
+                cur.execute(CAPABILITIES_SQL)
+                has_render, has_access = cur.fetchone()
+                renders: dict[str, dict] = {}
+                if has_render:
+                    cur.execute(RENDER_SQL)
+                    renders = {r[0]: _row_to_render(r) for r in cur.fetchall()}
+                restricted: set[str] = set()
+                if has_access:
+                    try:
+                        cur.execute(RESTRICTED_SQL)
+                        restricted = {r[0] for r in cur.fetchall()}
+                    except psycopg2.errors.InsufficientPrivilege as err:
+                        raise RestrictedListUnavailable(
+                            "cgis_app.dataset_access exists but is not readable by the OGC role; grant "
+                            "SELECT on it to cgis_reader (see infra/COMPLETION_HANDOFF_REPORT.md)") from err
         finally:
             conn.close()
+        if restricted:
+            LOGGER.info("not publishing %d admins-only dataset(s)", len(restricted & {d.dataset_id for d in datasets}))
+        datasets = [replace(d, render=renders.get(d.dataset_id)) for d in datasets
+                    if d.dataset_id not in restricted]
         return datasets, columns
+
+
+class RestrictedListUnavailable(RuntimeError):
+    """The per-dataset access table exists but this role cannot read it (fail closed)."""
+
+
+def _row_to_render(row) -> dict:
+    legend = row[8]
+    if isinstance(legend, str):
+        try:
+            legend = json.loads(legend)
+        except ValueError:
+            legend = {}
+    return {
+        "profile_id": row[1], "units": row[2], "colormap": row[3],
+        "rescale": [float(row[4]), float(row[5])], "title": row[6], "description": row[7],
+        "legend": legend if isinstance(legend, dict) else {},
+    }
