@@ -1,0 +1,235 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CyberGIS application API — PROVISIONAL consumer pin (Agent 6)",
+    "version": "0.1.0-provisional",
+    "description": "Pinned by Agent 6 because Agent 5 had not published its OpenAPI at the frozen base c4dac59. This is the shape the viewer's js/auth.js, js/admin.js and js/exports.js consume and the mock gateway serves. It is NOT authoritative: Agent 5's published OpenAPI wins, and every difference is listed for reconciliation in demo-client/CHANGE_REQUEST_FOR_AGENT5.md. Paths are as seen through the gateway."
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Start a browser session (sets an HttpOnly session cookie)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LoginRequest"}}}},
+        "responses": {
+          "200": {"description": "Signed in", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Session"}}}},
+          "401": {"$ref": "#/components/responses/Error", "description": "INVALID_CREDENTIALS"},
+          "429": {"$ref": "#/components/responses/Error", "description": "RATE_LIMITED (Retry-After header)"}
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {"summary": "End the session", "responses": {"204": {"description": "Signed out (idempotent)"}}}
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Current session. Anonymous callers get 200 with authenticated=false so the browser logs no error on page load.",
+        "responses": {"200": {"description": "Session state", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Session"}}}}}
+      }
+    },
+    "/admin/datasets": {
+      "get": {
+        "summary": "List catalog datasets with version status (admin only)",
+        "parameters": [
+          {"name": "q", "in": "query", "schema": {"type": "string"}},
+          {"name": "status", "in": "query", "schema": {"$ref": "#/components/schemas/VersionStatus"}},
+          {"name": "offset", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}},
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50}}
+        ],
+        "responses": {
+          "200": {"description": "Page", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DatasetPage"}}}},
+          "401": {"$ref": "#/components/responses/Error"},
+          "403": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/admin/datasets/uploads": {
+      "post": {
+        "summary": "Upload a new dataset version into server-managed staging (admin only, job-based)",
+        "requestBody": {"required": true, "content": {"multipart/form-data": {"schema": {
+          "type": "object", "required": ["file", "metadata"],
+          "properties": {
+            "file": {"type": "string", "format": "binary", "description": "GeoTIFF/COG (raster) or GeoJSON (vector). No path or URL is ever accepted."},
+            "metadata": {"type": "string", "description": "JSON text of UploadMetadata"}
+          }}}}},
+        "responses": {
+          "202": {"description": "Upload accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AdminJob"}}}},
+          "401": {"$ref": "#/components/responses/Error"}, "403": {"$ref": "#/components/responses/Error"},
+          "409": {"$ref": "#/components/responses/Error", "description": "VERSION_EXISTS | CHECKSUM_CONFLICT"},
+          "413": {"$ref": "#/components/responses/Error", "description": "FILE_TOO_LARGE"},
+          "415": {"$ref": "#/components/responses/Error", "description": "UNSUPPORTED_MEDIA_TYPE"},
+          "422": {"$ref": "#/components/responses/Error", "description": "INVALID_METADATA"}
+        }
+      }
+    },
+    "/admin/datasets/{dataset_id}": {
+      "get": {
+        "summary": "One dataset with every version (admin only)",
+        "parameters": [{"$ref": "#/components/parameters/DatasetId"}],
+        "responses": {
+          "200": {"description": "Dataset", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DatasetDetail"}}}},
+          "401": {"$ref": "#/components/responses/Error"}, "403": {"$ref": "#/components/responses/Error"}, "404": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/admin/datasets/{dataset_id}/versions/{version}/validate": {
+      "post": {
+        "summary": "(Re)validate a staged version (admin only)",
+        "parameters": [{"$ref": "#/components/parameters/DatasetId"}, {"$ref": "#/components/parameters/Version"}],
+        "responses": {"202": {"description": "Job", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AdminJob"}}}},
+                      "401": {"$ref": "#/components/responses/Error"}, "403": {"$ref": "#/components/responses/Error"}, "409": {"$ref": "#/components/responses/Error", "description": "INVALID_STATE"}}
+      }
+    },
+    "/admin/datasets/{dataset_id}/versions/{version}/publish": {
+      "post": {
+        "summary": "Publish a validated version (makes it ready / current) (admin only)",
+        "parameters": [{"$ref": "#/components/parameters/DatasetId"}, {"$ref": "#/components/parameters/Version"}],
+        "responses": {"202": {"description": "Job", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AdminJob"}}}},
+                      "401": {"$ref": "#/components/responses/Error"}, "403": {"$ref": "#/components/responses/Error"}, "409": {"$ref": "#/components/responses/Error", "description": "INVALID_STATE"}}
+      }
+    },
+    "/admin/jobs/{job_id}": {
+      "get": {
+        "summary": "Admin job status (upload / validate / publish)",
+        "parameters": [{"$ref": "#/components/parameters/JobId"}],
+        "responses": {"200": {"description": "Job", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AdminJob"}}}},
+                      "401": {"$ref": "#/components/responses/Error"}, "403": {"$ref": "#/components/responses/Error"}, "404": {"$ref": "#/components/responses/Error"}}
+      }
+    },
+    "/api/exports/capabilities": {
+      "get": {
+        "summary": "Supported export kinds, formats per dataset kind and suggested output CRSs",
+        "responses": {"200": {"description": "Capabilities", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ExportCapabilities"}}}}}
+      }
+    },
+    "/api/exports": {
+      "post": {
+        "summary": "Create a full or clipped export job (authenticated admin or user)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ExportRequest"}}}},
+        "responses": {
+          "202": {"description": "Job accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ExportJob"}}}},
+          "401": {"$ref": "#/components/responses/Error"}, "403": {"$ref": "#/components/responses/Error"},
+          "404": {"$ref": "#/components/responses/Error", "description": "DATASET_NOT_FOUND | VERSION_NOT_FOUND"},
+          "413": {"$ref": "#/components/responses/Error", "description": "AOI_TOO_COMPLEX | OUTPUT_TOO_LARGE"},
+          "422": {"$ref": "#/components/responses/Error", "description": "UNSUPPORTED_FORMAT | UNSUPPORTED_CRS | INVALID_GEOMETRY | AOI_OUTSIDE_RASTER"}
+        }
+      }
+    },
+    "/api/exports/{job_id}": {
+      "get": {
+        "summary": "Export job status and result metadata",
+        "parameters": [{"$ref": "#/components/parameters/JobId"}],
+        "responses": {"200": {"description": "Job", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ExportJob"}}}},
+                      "401": {"$ref": "#/components/responses/Error"}, "404": {"$ref": "#/components/responses/Error"}}
+      }
+    },
+    "/api/exports/{job_id}/cancel": {
+      "post": {
+        "summary": "Cancel a queued/running export (only when links.cancel is advertised)",
+        "parameters": [{"$ref": "#/components/parameters/JobId"}],
+        "responses": {"200": {"description": "Job", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ExportJob"}}}},
+                      "409": {"$ref": "#/components/responses/Error", "description": "JOB_FINISHED"}}
+      }
+    },
+    "/api/exports/{job_id}/download": {
+      "get": {
+        "summary": "Stream the completed export",
+        "parameters": [{"$ref": "#/components/parameters/JobId"}],
+        "responses": {"200": {"description": "File with Content-Disposition attachment"},
+                      "409": {"$ref": "#/components/responses/Error"}, "410": {"$ref": "#/components/responses/Error"}}
+      }
+    },
+    "/api/catalog/datasets": {
+      "get": {
+        "summary": "OPTIONAL public read-only catalog metadata (provenance subset, never paths). Requested in CHANGE_REQUEST_FOR_AGENT5.md; the viewer degrades without it.",
+        "responses": {"200": {"description": "Datasets", "content": {"application/json": {"schema": {
+          "type": "object", "properties": {"items": {"type": "array", "items": {"$ref": "#/components/schemas/PublicDatasetMetadata"}}}}}}}}
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "DatasetId": {"name": "dataset_id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}},
+      "Version": {"name": "version", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "JobId": {"name": "job_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+    },
+    "responses": {
+      "Error": {"description": "Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+    },
+    "schemas": {
+      "Error": {"type": "object", "required": ["error"], "properties": {"error": {"type": "object", "required": ["code", "message"],
+        "properties": {"code": {"type": "string"}, "message": {"type": "string"}, "details": {"type": "object"}}}}},
+      "LoginRequest": {"type": "object", "required": ["username", "password"], "properties": {"username": {"type": "string"}, "password": {"type": "string", "format": "password"}}},
+      "Role": {"type": "string", "enum": ["admin", "user"]},
+      "Session": {"type": "object", "required": ["authenticated"], "properties": {
+        "authenticated": {"type": "boolean"},
+        "user": {"nullable": true, "type": "object", "properties": {"username": {"type": "string"}, "role": {"$ref": "#/components/schemas/Role"}}},
+        "expires_at": {"type": "string", "format": "date-time", "nullable": true},
+        "csrf_token": {"type": "string", "nullable": true, "description": "Echoed as X-CSRF-Token on mutating requests when present"}}},
+      "VersionStatus": {"type": "string", "enum": ["staged", "validating", "validated", "publishing", "ready", "failed"]},
+      "DatasetSummary": {"type": "object", "properties": {
+        "dataset_id": {"type": "string"}, "title": {"type": "string"}, "kind": {"type": "string", "enum": ["raster", "vector"]},
+        "product_level": {"type": "string"}, "year": {"type": "integer", "nullable": true}, "units": {"type": "string", "nullable": true},
+        "current_version": {"type": "integer", "nullable": true}, "latest_version": {"type": "integer"},
+        "latest_status": {"$ref": "#/components/schemas/VersionStatus"}, "versions_count": {"type": "integer"},
+        "updated_at": {"type": "string", "format": "date-time"}}},
+      "DatasetPage": {"type": "object", "properties": {"items": {"type": "array", "items": {"$ref": "#/components/schemas/DatasetSummary"}},
+        "total": {"type": "integer"}, "offset": {"type": "integer"}, "limit": {"type": "integer"}}},
+      "VersionRecord": {"type": "object", "properties": {
+        "version": {"type": "integer"}, "status": {"$ref": "#/components/schemas/VersionStatus"},
+        "checksum_sha256": {"type": "string"}, "size_bytes": {"type": "integer"}, "crs": {"type": "string"},
+        "created_at": {"type": "string", "format": "date-time"}, "updated_at": {"type": "string", "format": "date-time"},
+        "created_by": {"type": "string"}, "provenance": {"type": "object"},
+        "validation": {"type": "object", "properties": {"ok": {"type": "boolean"},
+          "errors": {"type": "array", "items": {"type": "object", "properties": {"code": {"type": "string"}, "message": {"type": "string"}}}},
+          "warnings": {"type": "array", "items": {"type": "string"}}}}}},
+      "DatasetDetail": {"allOf": [{"$ref": "#/components/schemas/DatasetSummary"},
+        {"type": "object", "properties": {"versions": {"type": "array", "items": {"$ref": "#/components/schemas/VersionRecord"}}}}]},
+      "UploadMetadata": {"type": "object", "required": ["dataset_id", "version", "title", "kind", "product_level"], "properties": {
+        "dataset_id": {"type": "string"}, "version": {"type": "integer", "minimum": 1}, "title": {"type": "string"},
+        "description": {"type": "string"}, "kind": {"type": "string", "enum": ["raster", "vector"]},
+        "product_level": {"type": "string", "enum": ["source", "level1", "level2", "other"]},
+        "year": {"type": "integer", "nullable": true}, "units": {"type": "string"}, "source": {"type": "string"},
+        "provenance": {"type": "object", "description": "license, citation, group_id, synthetic, … stored verbatim"}}},
+      "AdminJob": {"type": "object", "properties": {
+        "job_id": {"type": "string"}, "kind": {"type": "string", "enum": ["upload", "validate", "publish"]},
+        "status": {"type": "string", "enum": ["queued", "running", "completed", "failed"]},
+        "progress": {"type": "number", "nullable": true, "minimum": 0, "maximum": 1},
+        "dataset_id": {"type": "string"}, "version": {"type": "integer"},
+        "result": {"type": "object", "nullable": true}, "error": {"nullable": true, "type": "object"},
+        "links": {"type": "object", "properties": {"self": {"type": "string"}}}}},
+      "ExportCapabilities": {"type": "object", "properties": {
+        "kinds": {"type": "array", "items": {"type": "string", "enum": ["full", "clip"]}},
+        "formats": {"type": "object", "properties": {
+          "raster": {"type": "array", "items": {"$ref": "#/components/schemas/FormatOption"}},
+          "vector": {"type": "array", "items": {"$ref": "#/components/schemas/FormatOption"}}}},
+        "output_crs": {"type": "object", "properties": {"suggested": {"type": "array", "items": {"type": "object",
+          "properties": {"id": {"type": "string"}, "label": {"type": "string"}}}}, "accepts_any_epsg": {"type": "boolean"}}}}},
+      "FormatOption": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "media_type": {"type": "string"}, "extension": {"type": "string"}}},
+      "ExportRequest": {"type": "object", "required": ["dataset_id", "kind", "format"], "properties": {
+        "dataset_id": {"type": "string"}, "version": {"type": "integer", "nullable": true},
+        "kind": {"type": "string", "enum": ["full", "clip"]},
+        "aoi": {"type": "object", "nullable": true, "description": "GeoJSON Polygon/MultiPolygon; required when kind=clip"},
+        "aoi_crs": {"type": "string", "nullable": true}, "output_crs": {"type": "string", "nullable": true, "description": "EPSG:<code>; omit for native"},
+        "format": {"type": "string"}}},
+      "ExportJob": {"type": "object", "properties": {
+        "job_id": {"type": "string"}, "status": {"type": "string", "enum": ["queued", "running", "completed", "failed", "cancelled"]},
+        "progress": {"type": "number", "nullable": true}, "input": {"$ref": "#/components/schemas/ExportRequest"},
+        "result": {"nullable": true, "type": "object", "properties": {
+          "filename": {"type": "string"}, "media_type": {"type": "string"}, "size_bytes": {"type": "integer"},
+          "output": {"type": "object", "description": "crs, width, height, resampled, warnings …"},
+          "provenance": {"type": "object", "description": "dataset_id, version, title, source, license, checksum_sha256"},
+          "download_url": {"type": "string"}}},
+        "error": {"nullable": true, "type": "object"},
+        "links": {"type": "object", "properties": {"self": {"type": "string"}, "download": {"type": "string"}, "cancel": {"type": "string"}}}}},
+      "PublicDatasetMetadata": {"type": "object", "properties": {
+        "dataset_id": {"type": "string"}, "version": {"type": "integer"}, "title": {"type": "string"},
+        "kind": {"type": "string"}, "product_level": {"type": "string"}, "year": {"type": "integer", "nullable": true},
+        "units": {"type": "string"}, "crs": {"type": "string"}, "nodata": {"type": "number", "nullable": true},
+        "resolution_x": {"type": "number", "nullable": true}, "resolution_y": {"type": "number", "nullable": true},
+        "source": {"type": "string"}, "license": {"type": "string", "nullable": true}, "citation": {"type": "string", "nullable": true},
+        "synthetic": {"type": "boolean", "nullable": true}, "group_id": {"type": "string", "nullable": true},
+        "region": {"type": "string", "nullable": true},
+        "versions": {"type": "array", "items": {"type": "object", "properties": {"version": {"type": "integer"}, "status": {"type": "string"}}}}}}
+    }
+  }
+}

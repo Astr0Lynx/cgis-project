@@ -1,0 +1,11 @@
+{
+  "applicationApi": {
+    "enabled": false,
+    "auth": "/auth",
+    "admin": "/admin",
+    "exports": "/api/exports"
+  },
+  "catalogMetadata": null,
+  "studyArea": { "name": "India", "bbox": [68.1, 6.5, 97.5, 35.7] },
+  "boundaries": { "pageSize": 500, "maxFeaturesPerView": 5000 }
+}

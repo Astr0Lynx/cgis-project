@@ -1,78 +1,91 @@
-// CyberGIS Phase 2 diagnostic viewer (Agent 6). A test harness, not the Phase 4 application.
-// Everything is discovered from the OGC API; no dataset ids are hard-coded.
+// CyberGIS viewer (Agent 6): the Phase 2 diagnostic MapLibre viewer, extended into the application
+// layer of the original flowchart — layer-wise visualisation, comparisons, area analysis, downloads
+// and role-based dataset administration.
+//
+// Rules this file keeps:
+//  * Everything is discovered from the OGC API (plus vendor/optional metadata); no dataset ids are
+//    hard-coded and nothing assumes a particular city.
+//  * Statistics come from the processing service; the browser never computes population values.
+//  * OGC API - Tiles and the vendor-specific TiTiler routes are both available and always labelled.
 "use strict";
+
+import { $, toast } from "./js/dom.js";
+import { getJson, request } from "./js/http.js";
+import { createStore, parseHash, formatHash } from "./js/state.js";
+import { buildCatalog } from "./js/catalog.js";
+import { createAuth } from "./js/auth.js";
+import { createExports } from "./js/exports.js";
+import { createAdmin } from "./js/admin.js";
+import { createVectors } from "./js/vectors.js";
+import { createPanels } from "./js/panels.js";
+import { createDisplay } from "./js/display.js";
+import { createCompare } from "./js/compare.js";
+import { createInspector } from "./js/inspector.js";
+import { createAnalysis } from "./js/analysis.js";
+import { createSearch } from "./js/search.js";
 
 const OGC = "/ogc";
 const API = "/api";
 const TILES = "/tiles";
 const ORIGIN = window.location.origin;
 
-const state = {
-  rasters: [],          // OGC collections that publish tilesets
-  vectors: [],          // OGC collections that publish items
-  features: new Map(),  // "<collection>/<feature id>" -> GeoJSON feature (untiled geometry)
-  aoi: null,            // {label, geometry}
+// Custom processing API (not OGC API - Processes). Phase 2 routes, unchanged.
+const OPERATIONS = {
+  zonal: `${API}/operations/zonal-statistics`,
+  clip: `${API}/operations/clip`,
+  job: (id) => `${API}/operations/${encodeURIComponent(id)}`,
+  download: (id) => `${API}/downloads/${encodeURIComponent(id)}`,
 };
 
-const $ = (id) => document.getElementById(id);
-const out = (value) => {
-  $("output").textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+const DEFAULT_CONFIG = {
+  applicationApi: { enabled: false, auth: "/auth", admin: "/admin", exports: "/api/exports" },
+  catalogMetadata: null,
+  studyArea: { name: "India", bbox: [68.1, 6.5, 97.5, 35.7] },
+  boundaries: { pageSize: 500, maxFeaturesPerView: 5000 },
 };
 
-async function getJson(url) {
-  const resp = await fetch(url, { headers: { Accept: "application/json" } });
-  const body = await resp.json().catch(() => ({}));
-  if (!resp.ok) throw Object.assign(new Error(`${resp.status} ${url}`), { body, status: resp.status });
-  return body;
-}
+// ---------------------------------------------------------------- tile routes (both labelled)
 
-async function postJson(url, payload) {
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const body = await resp.json().catch(() => ({}));
-  return { status: resp.status, ok: resp.ok, body };
-}
-
-const hasLink = (collection, pattern) =>
-  (collection.links || []).some((l) => pattern.test(l.rel || "") || pattern.test(l.href || ""));
-
-const map = new maplibregl.Map({
-  container: "map",
-  style: {
-    version: 8,
-    sources: {},
-    layers: [{ id: "background", type: "background", paint: { "background-color": "#eef1f4" } }],
-  },
-  center: [78.032, 17.968],
-  zoom: 13,
-  attributionControl: { customAttribution: "SYNTHETIC deterministic fixtures" },
-});
-map.addControl(new maplibregl.NavigationControl(), "top-right");
-map.addControl(new maplibregl.ScaleControl(), "bottom-left");
-
-function rasterTileUrl(id, source) {
+/**
+ * Raster tile template for one dataset.
+ *  - "ogc":    OGC API - Tiles, order {tileMatrix}/{tileRow}/{tileCol} = {z}/{y}/{x}.
+ *  - "vendor": TiTiler, order {z}/{x}/{y}; vendor-specific, not an OGC standard. Takes an explicit
+ *              rescale so colours match the legend (the published OGC range or a shared range).
+ */
+export function rasterTileUrl(id, source, render = {}) {
   const enc = encodeURIComponent(id);
   if (source === "vendor") {
-    // TiTiler order is {z}/{x}/{y}; fixed rescale so 2001 (1) and 2011 (2) look different.
-    return `${ORIGIN}${TILES}/datasets/${enc}/tiles/WebMercatorQuad/{z}/{x}/{y}.png?rescale=0,2&colormap_name=viridis`;
+    const q = new URLSearchParams({ colormap_name: render.colormap || "viridis" });
+    if (render.rescale) q.set("rescale", render.rescale.map((v) => +v.toPrecision(6)).join(","));
+    return `${ORIGIN}${TILES}/datasets/${enc}/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${q}`;
   }
-  // OGC API - Tiles order is {tileMatrix}/{tileRow}/{tileCol} = {z}/{y}/{x}.
   return `${ORIGIN}${OGC}/collections/${enc}/tiles/WebMercatorQuad/{z}/{y}/{x}?f=png`;
+}
+
+const tilesetCache = new Map();
+const tilejsonCache = new Map();
+
+/** OGC tileset metadata (tileMatrixSetLimits, boundingBox, style); cached per dataset. */
+export function tilesetMeta(id) {
+  if (!tilesetCache.has(id)) {
+    const p = getJson(`${OGC}/collections/${encodeURIComponent(id)}/tiles/WebMercatorQuad?f=json`)
+      .catch((err) => { tilesetCache.delete(id); throw err; });
+    tilesetCache.set(id, p);
+  }
+  return tilesetCache.get(id);
 }
 
 // Zoom range and bounds as advertised by the server, so MapLibre over-zooms the deepest level
 // instead of requesting tiles outside the tileset limits (the server answers those with 404).
-async function rasterTileRange(id, source) {
+export async function rasterTileRange(id, source) {
   const enc = encodeURIComponent(id);
   try {
     if (source === "vendor") {
-      const tj = await getJson(`${TILES}/datasets/${enc}/WebMercatorQuad/tilejson.json`);
+      if (!tilejsonCache.has(id)) tilejsonCache.set(id, getJson(`${TILES}/datasets/${enc}/WebMercatorQuad/tilejson.json`));
+      const tj = await tilejsonCache.get(id);
       return { minzoom: tj.minzoom ?? 0, maxzoom: tj.maxzoom ?? 22, bounds: tj.bounds };
     }
-    const meta = await getJson(`${OGC}/collections/${enc}/tiles/WebMercatorQuad?f=json`);
+    const meta = await tilesetMeta(id);
     const zooms = (meta.tileMatrixSetLimits || []).map((l) => Number(l.tileMatrix));
     const bb = meta.boundingBox;
     return {
@@ -81,184 +94,287 @@ async function rasterTileRange(id, source) {
       bounds: bb ? [...bb.lowerLeft, ...bb.upperRight] : undefined,
     };
   } catch (err) {
+    tilejsonCache.delete(id);
     return {};
   }
 }
 
-let rasterRequest = 0;
+// ---------------------------------------------------------------- diagnostics log
 
-async function showRaster() {
-  const request = ++rasterRequest;
-  const id = $("raster").value;
-  const source = document.querySelector("input[name=source]:checked").value;
-  const range = id ? await rasterTileRange(id, source) : {};
-  if (request !== rasterRequest) return;           // a newer selection won
-  if (map.getLayer("raster")) map.removeLayer("raster");
-  if (map.getSource("raster")) map.removeSource("raster");
-  if (!id) return;
-  const spec = { type: "raster", tiles: [rasterTileUrl(id, source)], tileSize: 256 };
-  for (const key of ["minzoom", "maxzoom", "bounds"]) if (range[key] !== undefined) spec[key] = range[key];
-  map.addSource("raster", spec);
-  const before = map.getLayer(firstVectorLayer()) ? firstVectorLayer() : undefined;
-  map.addLayer({
-    id: "raster",
-    type: "raster",
-    source: "raster",
-    layout: { visibility: $("raster-visible").checked ? "visible" : "none" },
-    paint: { "raster-opacity": Number($("opacity").value), "raster-resampling": "nearest" },
-  }, before);
-  updateButtons();
-}
+const out = (value) => {
+  $("output").textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+};
 
-const firstVectorLayer = () => (state.vectors[0] ? `v-${state.vectors[0].id}-fill` : "");
+// ---------------------------------------------------------------- boot
 
-async function addVector(collection) {
-  const url = `${OGC}/collections/${encodeURIComponent(collection.id)}/items?f=json&limit=1000`;
-  const fc = await getJson(url);
-  for (const f of fc.features || []) {
-    f.properties = { ...(f.properties || {}), _key: `${collection.id}/${f.id}` };
-    state.features.set(f.properties._key, f);
-  }
-  const src = `v-${collection.id}`;
-  map.addSource(src, { type: "geojson", data: fc });
-  map.addLayer({ id: `${src}-fill`, type: "fill", source: src,
-                 paint: { "fill-color": "#ff7f0e", "fill-opacity": 0.12 } });
-  map.addLayer({ id: `${src}-line`, type: "line", source: src,
-                 paint: { "line-color": "#d14900", "line-width": 2 } });
-  map.addLayer({ id: `${src}-selected`, type: "line", source: src, filter: ["==", ["get", "_key"], ""],
-                 paint: { "line-color": "#1f6feb", "line-width": 4 } });
-
-  const row = document.createElement("label");
-  const box = document.createElement("input");
-  box.type = "checkbox";
-  box.checked = true;
-  box.addEventListener("change", () => {
-    for (const suffix of ["fill", "line", "selected"]) {
-      map.setLayoutProperty(`${src}-${suffix}`, "visibility", box.checked ? "visible" : "none");
-    }
-  });
-  row.append(box, ` ${collection.title || collection.id} (${(fc.features || []).length} features)`);
-  $("vectors").append(row);
-  return fc;
-}
-
-function selectAoi(label, geometry, featureKey = "") {
-  state.aoi = { label, geometry };
-  $("aoi-label").textContent = `AOI: ${label}`;
-  for (const v of state.vectors) {
-    map.setFilter(`v-${v.id}-selected`, ["==", ["get", "_key"], featureKey]);
-  }
-  updateButtons();
-}
-
-function updateButtons() {
-  const ready = Boolean(state.aoi && $("raster").value);
-  $("zonal").disabled = !ready;
-  $("clip").disabled = !ready;
-}
-
-async function runZonal() {
-  const payload = {
-    dataset_id: $("raster").value,
-    aoi: state.aoi.geometry,
-    aoi_crs: "EPSG:4326",
-    operations: ["sum", "mean", "count"],
-  };
-  out("Running zonal statistics…");
-  const { status, body } = await postJson(`${API}/operations/zonal-statistics`, payload);
-  out({ request: { ...payload, aoi: state.aoi.label }, http_status: status, response: body });
-}
-
-async function runClip() {
-  const payload = { dataset_id: $("raster").value, aoi: state.aoi.geometry, aoi_crs: "EPSG:4326", format: "GTiff" };
-  out("Clipping…");
-  $("download").textContent = "";
-  const { status, body } = await postJson(`${API}/operations/clip`, payload);
-  out({ request: { ...payload, aoi: state.aoi.label }, http_status: status, response: body });
-  if (status < 300 && body.job_id && body.status === "completed") {
-    const a = document.createElement("a");
-    a.href = `${API}/downloads/${encodeURIComponent(body.job_id)}`;
-    a.textContent = "Download clipped GeoTIFF";
-    a.setAttribute("data-testid", "download-link");
-    $("download").append(a);
-  }
-}
-
-async function showPixel(lngLat) {
-  const id = $("raster").value;
-  if (!id) return;
-  const url = `${TILES}/datasets/${encodeURIComponent(id)}/point/${lngLat.lng.toFixed(6)},${lngLat.lat.toFixed(6)}`;
+async function loadConfig() {
   try {
-    const body = await getJson(url);
-    $("pixel").textContent = `Pixel value at ${lngLat.lng.toFixed(4)}, ${lngLat.lat.toFixed(4)}: ` +
-      `${JSON.stringify(body.values ?? body)} (TiTiler /point, vendor-specific)`;
-  } catch (err) {
-    $("pixel").textContent = `Pixel value: ${err.status || ""} ${(err.body && err.body.error && err.body.error.code) || err.message}`;
-  }
+    const res = await request("config.json");
+    if (res.ok && res.body && typeof res.body === "object") {
+      return {
+        ...DEFAULT_CONFIG, ...res.body,
+        applicationApi: { ...DEFAULT_CONFIG.applicationApi, ...(res.body.applicationApi || {}) },
+        boundaries: { ...DEFAULT_CONFIG.boundaries, ...(res.body.boundaries || {}) },
+        studyArea: { ...DEFAULT_CONFIG.studyArea, ...(res.body.studyArea || {}) },
+      };
+    }
+  } catch { /* defaults */ }
+  return DEFAULT_CONFIG;
 }
 
-async function init() {
-  const { collections = [] } = await getJson(`${OGC}/collections?f=json`);
-  state.rasters = collections.filter((c) => hasLink(c, /tiles/));
-  state.vectors = collections.filter((c) => hasLink(c, /\/items/) && !state.rasters.includes(c));
+const config = await loadConfig();
+const initialHash = parseHash();
+const store = createStore({
+  view: initialHash.view,
+  tab: "layers",
+  a: initialHash.a || null,
+  b: initialHash.b || null,
+  mode: ["single", "swipe", "side"].includes(initialHash.mode) ? initialHash.mode : "single",
+  src: initialHash.src === "vendor" ? "vendor" : "ogc",
+  scale: initialHash.scale === "shared" ? "shared" : "layer",
+  opacity: 0.8,
+  visible: true,
+  overlayL2: false,
+  aoi: null,
+  session: { status: "unknown", user: null },
+  catalogStatus: "loading",
+});
 
-  for (const c of state.rasters) {
-    const opt = document.createElement("option");
-    opt.value = c.id;
-    opt.textContent = c.title || c.id;
-    $("raster").append(opt);
-  }
+const map = new maplibregl.Map({
+  container: "map",
+  style: {
+    version: 8,
+    sources: {},
+    layers: [{ id: "background", type: "background", paint: { "background-color": "#dde3e1" } }],
+  },
+  bounds: config.studyArea.bbox,
+  fitBoundsOptions: { padding: 24 },
+  attributionControl: { compact: true, customAttribution: "Data: CyberGIS catalog via OGC API · see each layer's provenance" },
+  dragRotate: false,
+  pitchWithRotate: false,
+});
+map.touchZoomRotate.disableRotation();
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
+window.map = map;   // used by browser tests and handy in the console
 
-  const extents = [];
-  for (const v of state.vectors) {
-    const fc = await addVector(v);
-    if (fc.bbox) extents.push(fc.bbox);
-  }
-  await showRaster();
+const ctx = {
+  config, store, map, out, OGC, API, TILES, ORIGIN, OPERATIONS,
+  catalog: null,
+  tileUrl: rasterTileUrl,
+  tileRange: rasterTileRange,
+  tilesetMeta,
+  getDataset: (id) => (ctx.catalog && id ? ctx.catalog.byId.get(id) : null),
+};
 
-  for (const c of collections) {
-    const b = c.extent && c.extent.spatial && c.extent.spatial.bbox && c.extent.spatial.bbox[0];
-    if (b) extents.push(b);
+const auth = createAuth({ config, store, onChange: () => { exportsUi.render(); panels.renderAccess(); } });
+ctx.auth = auth;
+const exportsUi = createExports({ config, store, auth, getCatalog: () => ctx.catalog, out });
+const admin = createAdmin({ config, store, auth, reloadCatalog: () => discover({ keepView: true }) });
+const vectors = createVectors(ctx);
+ctx.vectors = vectors;
+const display = createDisplay(ctx);
+ctx.display = display;
+const compare = createCompare(ctx);
+ctx.compare = compare;
+const panels = createPanels(ctx);
+ctx.panels = panels;
+const inspector = createInspector(ctx);
+ctx.inspector = inspector;
+const analysis = createAnalysis(ctx);
+ctx.analysis = analysis;
+createSearch(ctx);
+
+// ---------------------------------------------------------------- tabs
+
+const TABS = ["layers", "analysis", "download"];
+function setTab(name, { focus = false } = {}) {
+  for (const t of TABS) {
+    const btn = $(`tab-btn-${t}`);
+    const on = t === name;
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+    btn.tabIndex = on ? 0 : -1;
+    $(`tab-${t}`).hidden = !on;
+    if (on && focus) btn.focus();
   }
-  if (extents.length) {
-    const w = Math.min(...extents.map((b) => b[0])), s = Math.min(...extents.map((b) => b[1]));
-    const e = Math.max(...extents.map((b) => b[2])), n = Math.max(...extents.map((b) => b[3]));
-    map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 0 });
+  store.set({ tab: name });
+}
+ctx.setTab = setTab;
+for (const t of TABS) $(`tab-btn-${t}`).addEventListener("click", () => setTab(t));
+document.querySelector(".tabs").addEventListener("keydown", (e) => {
+  const i = TABS.indexOf(store.get().tab);
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+    e.preventDefault();
+    setTab(TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length], { focus: true });
+  }
+});
+
+// ---------------------------------------------------------------- views / routing
+
+function applyRoute() {
+  const route = parseHash();
+  store.set({ view: route.view });
+  $("view-map").hidden = route.view !== "map";
+  $("view-admin").hidden = route.view !== "admin";
+  $("nav-map").setAttribute("aria-current", route.view === "map" ? "page" : "false");
+  $("nav-admin").setAttribute("aria-current", route.view === "admin" ? "page" : "false");
+  if (route.view === "admin") admin.open();
+  else requestAnimationFrame(() => { map.resize(); compare.resize(); });
+}
+window.addEventListener("hashchange", applyRoute);
+
+let hashTimer = 0;
+function writeHash() {
+  clearTimeout(hashTimer);
+  hashTimer = setTimeout(() => {
+    const s = store.get();
+    if (s.view !== "map") return;
+    const c = map.getCenter();
+    const next = formatHash("map", {
+      a: s.a, b: s.mode !== "single" ? s.b : null, mode: s.mode !== "single" ? s.mode : null,
+      src: s.src !== "ogc" ? s.src : null, scale: s.scale !== "layer" ? s.scale : null,
+      c: `${c.lng.toFixed(4)},${c.lat.toFixed(4)},${map.getZoom().toFixed(2)}`,
+    });
+    if (next !== window.location.hash) history.replaceState(null, "", next);
+  }, 250);
+}
+map.on("moveend", writeHash);
+
+// ---------------------------------------------------------------- map activity indicator
+
+let busyTimer = 0;
+map.on("dataloading", () => { clearTimeout(busyTimer); $("map-progress").hidden = false; });
+map.on("idle", () => { busyTimer = setTimeout(() => { $("map-progress").hidden = true; }, 120); });
+map.on("error", (e) => {
+  // Tile failures are reported once per source in the legend rather than spamming the console.
+  const sourceId = e && e.sourceId;
+  if (sourceId) display.reportTileError(sourceId, e.error);
+});
+
+// ---------------------------------------------------------------- discovery
+
+async function discover({ keepView = false } = {}) {
+  store.set({ catalogStatus: "loading" });
+  panels.renderLoading();
+  let collections;
+  try {
+    ({ collections = [] } = await getJson(`${OGC}/collections?f=json`));
+  } catch (err) {
+    store.set({ catalogStatus: "error" });
+    panels.renderDiscoveryError(err, () => discover({ keepView }));
+    out({ error: err.message, code: err.code, status: err.status });
+    return;
+  }
+  const [vendor, metadata] = await Promise.all([
+    getJson(`${TILES}/datasets`).then((b) => b.datasets || []).catch(() => []),
+    config.catalogMetadata
+      ? getJson(config.catalogMetadata).then((b) => b.items || []).catch(() => [])
+      : Promise.resolve([]),
+  ]);
+  const catalog = buildCatalog({ collections, vendor, metadata, studyBbox: config.studyArea.bbox });
+  ctx.catalog = catalog;
+  tilesetCache.clear();
+  tilejsonCache.clear();
+
+  // Pick layer A: hash, else the latest year of the first national Level 1 series, else first raster.
+  const s = store.get();
+  let a = s.a && catalog.byId.get(s.a)?.kind === "raster" ? s.a : null;
+  if (!a) {
+    const firstSeries = catalog.series[0];
+    a = firstSeries ? firstSeries.byYear.get(firstSeries.years[0]) : catalog.rasters[0]?.id || null;
+  }
+  let b = s.b && catalog.byId.get(s.b)?.kind === "raster" ? s.b : null;
+  if (!b && a) b = display.defaultB(a);
+  store.set({ a, b, catalogStatus: catalog.datasets.length ? "ready" : "empty" });
+
+  panels.renderAll();
+  await vectors.init(catalog.vectors);
+  await display.refresh();
+  exportsUi.render();
+  analysis.refreshButtons();
+
+  if (!keepView && !initialHash.camera) {
+    // India-wide by default. Only when nothing national is published (e.g. the Phase 2 fixtures)
+    // does the camera follow the published data instead of showing an empty country.
+    const target = catalog.nationalExtent ? null : catalog.dataExtent;
+    if (target) map.fitBounds([[target[0], target[1]], [target[2], target[3]]], { padding: 30, duration: 0 });
   }
 
   out({
-    collections: collections.map((c) => ({ id: c.id, title: c.title, kind: state.rasters.includes(c) ? "raster (tiles)" : "vector (items)" })),
+    collections: collections.map((c) => ({ id: c.id, title: c.title, kind: catalog.byId.get(c.id)?.kind === "raster" ? "raster (tiles)" : "vector (items)" })),
     note: "Click a boundary to select it as the AOI, then run an operation.",
   });
 }
+ctx.discover = discover;
 
-map.on("load", () => {
-  init().catch((err) => out({ error: err.message, body: err.body }));
-});
+// ---------------------------------------------------------------- controls
 
-map.on("click", (e) => {
-  showPixel(e.lngLat);
-  const layers = state.vectors.map((v) => `v-${v.id}-fill`).filter((id) => map.getLayer(id));
-  const hit = layers.length ? map.queryRenderedFeatures(e.point, { layers })[0] : null;
-  if (hit) {
-    const feature = state.features.get(hit.properties._key);
-    if (feature) selectAoi(`${feature.properties.name || feature.id} (${hit.properties._key})`, feature.geometry, hit.properties._key);
+$("raster").addEventListener("change", (e) => store.set({ a: e.target.value || null }));
+$("raster-b").addEventListener("change", (e) => store.set({ b: e.target.value || null }));
+document.querySelectorAll("input[name=source]").forEach((r) => r.addEventListener("change", (e) => {
+  const src = e.target.value;
+  // OGC tiles cannot take a client range; leaving TiTiler drops a client-side shared range unless
+  // the published OGC styles already agree.
+  const patch = { src };
+  if (src === "ogc" && store.get().scale === "shared" && !display.ogcStylesShared()) patch.scale = "layer";
+  store.set(patch);
+}));
+document.querySelectorAll("input[name=scale]").forEach((r) => r.addEventListener("change", (e) => {
+  const scale = e.target.value;
+  const patch = { scale };
+  if (scale === "shared" && !display.ogcStylesShared()) patch.src = "vendor";
+  store.set(patch);
+}));
+document.querySelectorAll("input[name=mode]").forEach((r) => r.addEventListener("change", (e) => store.set({ mode: e.target.value })));
+$("raster-visible").addEventListener("change", (e) => store.set({ visible: e.target.checked }));
+$("opacity").addEventListener("input", (e) => store.set({ opacity: Number(e.target.value) }));
+
+// Reflect store -> controls and re-render dependent parts.
+store.subscribe((s, changed) => {
+  const has = (...keys) => keys.some((k) => changed.includes(k));
+  if (has("src")) document.querySelectorAll("input[name=source]").forEach((r) => { r.checked = r.value === s.src; });
+  if (has("scale")) document.querySelectorAll("input[name=scale]").forEach((r) => { r.checked = r.value === s.scale; });
+  if (has("mode")) document.querySelectorAll("input[name=mode]").forEach((r) => { r.checked = r.value === s.mode; });
+  if (has("opacity")) $("opacity-value").textContent = `${Math.round(s.opacity * 100)}%`;
+  if (has("a") && $("raster").value !== (s.a || "")) $("raster").value = s.a || "";
+  if (has("b") && $("raster-b").value !== (s.b || "")) $("raster-b").value = s.b || "";
+  if (!ctx.catalog) return;
+  if (has("a", "b", "mode", "src", "scale", "overlayL2")) {
+    display.refresh();
+    panels.renderCatalog();
+    panels.renderActive();
+    analysis.refreshButtons();
   }
+  if (has("mode")) compare.setMode(s.mode);
+  if (has("opacity", "visible")) display.applyPaint();
+  if (has("a", "b", "mode", "src", "scale", "opacity")) writeHash();
 });
 
-$("raster").addEventListener("change", showRaster);
-document.querySelectorAll("input[name=source]").forEach((r) => r.addEventListener("change", showRaster));
-$("raster-visible").addEventListener("change", (e) => {
-  if (map.getLayer("raster")) map.setLayoutProperty("raster", "visibility", e.target.checked ? "visible" : "none");
+// ---------------------------------------------------------------- start
+
+// Controls start from the store (which may come from a shared link), not from the HTML defaults.
+(function syncControls() {
+  const s = store.get();
+  document.querySelectorAll("input[name=source]").forEach((r) => { r.checked = r.value === s.src; });
+  document.querySelectorAll("input[name=scale]").forEach((r) => { r.checked = r.value === s.scale; });
+  document.querySelectorAll("input[name=mode]").forEach((r) => { r.checked = r.value === s.mode; });
+  $("opacity").value = String(s.opacity);
+  $("opacity-value").textContent = `${Math.round(s.opacity * 100)}%`;
+  $("raster-visible").checked = s.visible;
+})();
+applyRoute();
+auth.refresh();
+exportsUi.loadCapabilities().then(() => exportsUi.render());
+if (initialHash.camera) map.jumpTo(initialHash.camera);
+map.on("load", () => {
+  compare.setMode(store.get().mode);
+  discover().catch((err) => {
+    out({ error: err.message, body: err.body });
+    toast(`Could not start the viewer: ${err.message}`, { kind: "error" });
+  });
 });
-$("opacity").addEventListener("input", (e) => {
-  if (map.getLayer("raster")) map.setPaintProperty("raster", "raster-opacity", Number(e.target.value));
+map.on("click", (e) => {
+  if (analysis.isDrawing() || e.drawConsumed) return;
+  inspector.query(e.lngLat);
+  analysis.clickSelect(e.point);
 });
-$("aoi-view").addEventListener("click", () => {
-  const b = map.getBounds();
-  const ring = [[b.getWest(), b.getSouth()], [b.getEast(), b.getSouth()], [b.getEast(), b.getNorth()],
-                [b.getWest(), b.getNorth()], [b.getWest(), b.getSouth()]];
-  selectAoi("current map view", { type: "Polygon", coordinates: [ring] });
-});
-$("zonal").addEventListener("click", () => runZonal().catch((err) => out({ error: err.message })));
-$("clip").addEventListener("click", () => runClip().catch((err) => out({ error: err.message })));
