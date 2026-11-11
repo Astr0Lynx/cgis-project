@@ -1,0 +1,556 @@
+{
+ "footprint": "geoBoundaries ADM1 union (DIAGNOSTIC, claimed extent; not authoritative)",
+ "worldpop_years_present": [
+  2001,
+  2002,
+  2003,
+  2004,
+  2005,
+  2006,
+  2007,
+  2008,
+  2009,
+  2010,
+  2011
+ ],
+ "worldpop_years_missing": [],
+ "grids": {
+  "reference_year": 2011,
+  "years": {
+   "2001": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2002": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2003": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2004": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2005": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2006": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2007": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2008": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2009": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   },
+   "2010": {
+    "width": 35076,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     -1,
+     0
+    ]
+   },
+   "2011": {
+    "width": 35075,
+    "height": 34497,
+    "crs": "EPSG:4326",
+    "dtype": "float32",
+    "nodata": -99999.0,
+    "offset_cols_rows_vs_ref": [
+     0,
+     0
+    ]
+   }
+  },
+  "identical_shape": false,
+  "all_on_one_lattice": true
+ },
+ "duplicates": {
+  "checksums_recorded": 11,
+  "duplicate_year_pairs": [],
+  "missing_checksum_years": []
+ },
+ "coverage": {
+  "2001": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2002": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2003": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2004": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2005": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2006": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2007": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2008": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2009": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  },
+  "2010": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601835,
+   "nodata_in_footprint": 65627,
+   "nodata_fraction_in_footprint": 0.04096988766008983,
+   "valid_outside_footprint": 6932,
+   "populated_outside_footprint": 2652,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 14,
+     "populated": 14
+    }
+   }
+  },
+  "2011": {
+   "sample_step": 16,
+   "cells_in_footprint": 1601880,
+   "nodata_in_footprint": 65682,
+   "nodata_fraction_in_footprint": 0.04100307139111544,
+   "valid_outside_footprint": 2636,
+   "populated_outside_footprint": 2636,
+   "islands": {
+    "andaman_nicobar": {
+     "sampled_cells": 102816,
+     "valid": 3410,
+     "populated": 3410
+    },
+    "lakshadweep": {
+     "sampled_cells": 65394,
+     "valid": 17,
+     "populated": 17
+    }
+   }
+  }
+ },
+ "ghsl_tiles": {
+  "india-ghsl-built-total-2000": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-built-total-2005": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-built-total-2010": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-built-total-2015": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-built-nres-2000": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-built-nres-2005": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-built-nres-2010": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-built-nres-2015": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-pop-2000": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-pop-2005": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-pop-2010": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  },
+  "india-ghsl-pop-2015": {
+   "tiles_ok": 14,
+   "absent_404": [
+    [
+     8,
+     25
+    ],
+    [
+     9,
+     25
+    ]
+   ],
+   "not_fetched": [],
+   "problems": []
+  }
+ },
+ "elapsed_s": 650.2,
+ "peak_rss_mb": 950.0
+}

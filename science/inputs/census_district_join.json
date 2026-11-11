@@ -1,0 +1,33 @@
+{
+ "census_districts": 640,
+ "polygons": 641,
+ "matched": 640,
+ "census_only": [],
+ "polygon_only": [
+  "0"
+ ],
+ "state_code_mismatches": 0,
+ "sum_tot_p": 1210854977,
+ "official_total_matches": true,
+ "invalid_geometries": [
+  "Cuddalore"
+ ],
+ "note": "Join key = Census PCA 'District' == DataMeet 'censuscode' (national sequential). District level only.",
+ "invalid_geometry_reasons": [
+  [
+   "Cuddalore",
+   "Ring Self-intersection[79.7757112608929 11.8375730579733]"
+  ]
+ ],
+ "inputs": {
+  "india-census-2011-pca-state-district": {
+   "sha256": "7a8f70d46c43b5dd30eefe920f251752f69f6af8589594c21ac06499074646f5"
+  },
+  "india-datameet-census2011-districts": {
+   "sha256": "3636e627a519f67b4615b6a97df48c2b279e8c7b2566d3bfbc3eda1d06e33206"
+  }
+ },
+ "polygon_only_names": [
+  "Data Not Available"
+ ]
+}

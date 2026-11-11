@@ -1,0 +1,1114 @@
+{
+  "india-census-2011-pca-state-district": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-census-2011-pca-state-district/DDW_PCA0000_2011_Indiastatedist.xlsx",
+    "retrieved_utc": "2026-11-10T06:05:46Z",
+    "sha256": "7a8f70d46c43b5dd30eefe920f251752f69f6af8589594c21ac06499074646f5",
+    "size_bytes": 1376414
+  },
+  "india-datameet-census2011-districts": {
+    "access": "available",
+    "companions": {
+      "2011_Dist.dbf": {
+        "sha256": "2c7b03578fdf41a4c4e29941a564fa90bf0b0e4f865f5e54481ef7ac8494eb7d",
+        "size_bytes": 54678
+      },
+      "2011_Dist.prj": {
+        "sha256": "a02a27b1d1982c8516d83398e85a3c8b1aef1713c13ef4d84d7bde17430c07c4",
+        "size_bytes": 145
+      },
+      "2011_Dist.shx": {
+        "sha256": "12b6028dfac9e3f20686b3d0a44f9d3989acfdb3f3cda853881d1cf2d8579eab",
+        "size_bytes": 5228
+      }
+    },
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-datameet-census2011-districts/2011_Dist.shp",
+    "retrieved_utc": "2026-11-10T06:14:01Z",
+    "sha256": "3636e627a519f67b4615b6a97df48c2b279e8c7b2566d3bfbc3eda1d06e33206",
+    "size_bytes": 10220732
+  },
+  "india-geoboundaries-adm1": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-geoboundaries-adm1/geoBoundaries-IND-ADM1.geojson",
+    "retrieved_utc": "2026-11-09T13:29:16Z",
+    "sha256": "47aa0acb6f69868daee49143276f3ce323f18905ba7d38d0a86816b405028736",
+    "size_bytes": 46170854
+  },
+  "india-geoboundaries-adm2": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-geoboundaries-adm2/geoBoundaries-IND-ADM2.geojson",
+    "retrieved_utc": "2026-11-09T13:29:16Z",
+    "sha256": "8bef6929fd65432e7dc775e7c44473e84efff064ebddbfd6b834e6291546db40",
+    "size_bytes": 48317735
+  },
+  "india-ghsl-built-nres-2000": {
+    "size_bytes": 164742747,
+    "tiles": {
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "9fe9ffa855de042a75bf5bc7d70a2ae7972087b6ce53cd1087925bd4ec873df4",
+        "size_bytes": 1596456,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "f4626c891c12be0707b6edaa374bc99488fe054850feeca496d9cd87ce3d29ed",
+        "size_bytes": 1787658,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "5f1f5ac41b74fe544de400ecf409fdc7cd9b5d19e313dfed3b0290e72cfa76cc",
+        "size_bytes": 1448957,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "0e3c7d71c910fd66aa103fd83b63746d2ffa7a94fe8f07802d09dfc7b496c51b",
+        "size_bytes": 1489799,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "c5ef35ddef377a2b1687cadb9c4a21d557edb8c654df68c45655d942eeb9d669",
+        "size_bytes": 1544007,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "cc5cefc2f9f4937815fb38b7565ee214a35bba136fa457e37f438d50ab8ff19d",
+        "size_bytes": 2141944,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "cf0479332da19d18496b52f40c22a6308339549091f305b5901c89637f64c918",
+        "size_bytes": 1891794,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "f19095a0d5a2d52d13e889def1235e795d1515f633f53de179b66db4baccdcb0",
+        "size_bytes": 1665830,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "bdb30d6c66e4f5bf22f0abfa5a352a19040561d53f31690638f1aed0438c7fa3",
+        "size_bytes": 2149496,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "04bd83e21e2c3ffb8ecce26c9e28c84d1010a2fb5173dd7a899f0b5768590575",
+        "size_bytes": 1522991,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "d65ea5a6f089a33d8d4bed94600c3f81a2c68530aed9f608df003574167d8b01",
+        "size_bytes": 1597815,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "eb570bfa403e1c13c401e5db9d374673159c45a374faf6eed31fe101cc31d2d6",
+        "size_bytes": 1538810,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "08b5265cc373f4f9645dd412b9cf5ac2bcc57d636ee8734ca1c3d88a9c1cf568",
+        "size_bytes": 1505068,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "446e3c49093610fdcee7e0dbe4d4a1f03606d3a49ea8bda27221ecb889f4ae54",
+        "size_bytes": 1552136,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-built-nres-2005": {
+    "size_bytes": 169052032,
+    "tiles": {
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "e782d80500671948dbfed061512b23697e2595e7afbe98919a210435fb9beb1e",
+        "size_bytes": 1603506,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "ff34fc2d3d750955a9e44e6e45363c1d71917896136a3d068f811c19b7237797",
+        "size_bytes": 1812894,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "4e20a667278ecc68417369610ec84f083dc06fee56a224522f798a68515cb00c",
+        "size_bytes": 1451872,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "cd35361806a60e520a56f63e82145afcba456d8e281ed4cd8d8e9f5f7fd66c4a",
+        "size_bytes": 1491559,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "c759ea53472f379a6c6b8fef4a0cb369ae6d7563ff354788eb6f275f7834ba61",
+        "size_bytes": 1550049,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "a0fff14663a00bcfe0638df0ba102ced54d18546fd40f5624442e026d9dc1c79",
+        "size_bytes": 2213551,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "8bf30a9b8a42c4616e87ff0eb8208728dd419c4dd6ad4494b03690b23e105bce",
+        "size_bytes": 1935725,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "3da05f6bdbb43337a313f31480e329b48d301448855c732e3bfecc42a9545487",
+        "size_bytes": 1672870,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "d49ddfb06dd33117d282aa35af058f4a29462a8e01e6055d5bc2daad0717e38b",
+        "size_bytes": 2205703,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "de33e8e7372d72de843538c002fea3157a62980861efe807490ef4be83d8e075",
+        "size_bytes": 1527347,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "29f1ba1a061caa98f40717c91bb14e9d49855a50f9f6ca7fa1b7b0faf786c01a",
+        "size_bytes": 1606361,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "5aa4491914824c872064e6fdd95dbac0fccc344da184356d02a84d0d275f9f6b",
+        "size_bytes": 1540756,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "9a5e858122741fd803bc3e445a58b653ca72c9a05977eb89dde6bdc1c40bbe55",
+        "size_bytes": 1509470,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "1f42f9662a7733ade9558f275a26b3b6876502b1b6571f737fe042b7afdbff03",
+        "size_bytes": 1553024,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-built-nres-2010": {
+    "size_bytes": 172625104,
+    "tiles": {
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "ab021517ad5b750d5022ca10de7e517c89f1635a9af28cabf7eafa1d7972cfef",
+        "size_bytes": 1606166,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "60a49fee1f112b88f47fc8ef64444bc14b9cb421ef698fac66adf9109b152cda",
+        "size_bytes": 1832728,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "4e8272b4c8446c5e72730e51a413742ced05f3b6387c85fe07c466eaea618194",
+        "size_bytes": 1452372,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "daf5a9a0aa132cfd8c3b6e5e54e2aea210b4c7ad65d355e2e44d4c81dced5b29",
+        "size_bytes": 1493654,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "7a6e4d8c57b359017f2edb8787dd201a8435fc5b7cbef39b524be371645467d7",
+        "size_bytes": 1554507,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "e762b6329a4913e6087eedf1c87640fa6973561382fa2cd25125937bf8e44080",
+        "size_bytes": 2266265,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "7ea703c5cb8b6a1855dd28166cccf346ab063eafecbb9825a52c6f736a3a2f41",
+        "size_bytes": 1966596,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "a95645e9ad9f210f2a7b4c48e99112a415e26a2864751040567de834f589a86d",
+        "size_bytes": 1679657,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "1ddf8bf7e447da9543179d76703903b4cf4f85fb6070efa8ca0b5b57c31ea2e5",
+        "size_bytes": 2256243,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "3ec181060fab7739ab8a38bbc5564a3197f747ccbf104d118c2a77a4fbf12608",
+        "size_bytes": 1534100,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "0e59cc9781388e9f71a9fbb7ac029756c17339e9b17002d7135972d82a738c48",
+        "size_bytes": 1610706,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "18124f3c9213aac5216376b5be01957ecf9439c78e5dbe1d9c689688956f2982",
+        "size_bytes": 1544464,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "a16b802bf442298c1e0e6b04ca5b4ce44d569bd97311d76832f4a79df088f14e",
+        "size_bytes": 1512292,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "dfcc247d1c0c2c1c1cbb0e927781d4112f894a6edb0d74f88d4213cefb865d85",
+        "size_bytes": 1557246,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-built-nres-2015": {
+    "tiles": {
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "e4a24d763e7c8b1ad7ecabfbbb569a8b4b7b93a02c9ac30510647d9ad6ca563d",
+        "size_bytes": 1614136,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "c0ce0ddf1e8680eada367ecc2d5866f3e5cc268366f7631a6979e22b6f562752",
+        "size_bytes": 1860741,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "80f9650cf79aebb896e04d214acf6c9b8e643e73df1380e937c9a69bb652093d",
+        "size_bytes": 1454472,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "4838a1ec5f9ede4b56406d9bed3c3eaecd53244c610ec2f9ceb08c38f789e1cd",
+        "size_bytes": 1496849,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "9f1f192ca922725574d884cc22e5315f71dadcca3dafb9788b1f507f16a6228d",
+        "size_bytes": 1562099,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "acf8e82e3a29a4830fb905dd58906a7ab57abf8d43e31c0da10cdaa7be1dd02d",
+        "size_bytes": 2344144,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "2345658f99bfce58e4e5e32dc133e02f3baced933f579cba27f417cfa84eef23",
+        "size_bytes": 2012410,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "3eedef0d4cd8bb770385a4d4aafc57c0e8d3245365742954fc08d538e8fc8c4e",
+        "size_bytes": 1697286,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "30feedb3f10cbb9d3de2e3c0f16d2dc73098f29a4bf02d007caf92baf0634795",
+        "size_bytes": 2312889,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "4ce0d760dd211e0132063e366fd6d234d86aff1b8b94905bce2f528180eab292",
+        "size_bytes": 1542528,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "da316b8ab73663d48919dd8885de9078ea40157ad3097a5995cb0780dc24cf82",
+        "size_bytes": 1621375,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "8e3aa0eef6547a762ced2ef436023f6d3b11544b0947992334ecb15dd06e1c14",
+        "size_bytes": 1547336,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "1987c007d975ecfa447f3f658d43b007aaa510a03a95694ccb9f9e9359ce84f1",
+        "size_bytes": 1514968,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "fea5bbbec283b79ea364c367053a89d1395c8572bbe0b9bc8c9b2f05df6ef4ec",
+        "size_bytes": 1560832,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_NRES_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-built-total-2000": {
+    "size_bytes": 1631851494,
+    "tiles": {
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "06835821c9438333c5a237d961bbcc1614bd6ff90e2aab73e90a87a4c7a7b0c7",
+        "size_bytes": 8533899,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "71dbcdb392910e95c0c500366dded7d8a35b730e6779a15219b41a86b392dac4",
+        "size_bytes": 27539137,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "db1b61b1886d4be4689a5e36b2cab614a237537f580d6cdb0c7b62c0fd1d2f79",
+        "size_bytes": 2280879,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "cfa1d054d49d1a10bc0c1f17cf7dcc782bfab48e92481011a4704a6c6bcbacaf",
+        "size_bytes": 2092569,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "e0e11cfb0866b46ef361db5be00022e56c19dea0bcc0151585e9d372ed269553",
+        "size_bytes": 7566773,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "c59efe1c733e35480ed58a3d94eb611ffd073ad7957938acd4dadbec00e39a19",
+        "size_bytes": 39158313,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "0a765d60a7fb3125a45ae0e2f1bcad9e45b967e57c8567fe7cc65a345ca42e92",
+        "size_bytes": 46029999,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "5ec89d487ff3d807cadd1951ef743db280e5f505ca67dde7c89dc98c22962a9c",
+        "size_bytes": 19722290,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "55643aba2753980c01cdb9bab7cb7011f8a00b952a2860555a00cb85009c5140",
+        "size_bytes": 28015951,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "c1b8d465e6f70dd94b2cb3d8ce2c337c473c0a4b6d9c27540e9df6cb4db27758",
+        "size_bytes": 5408861,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "c0b3fd84eee763872b72bae11830f8f04968eadf32d8b4d325b72f75c88e44d6",
+        "size_bytes": 8316961,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "c22793f584ca364f42d38e814fb23a7dd2cf0a77f078ae634e5961f5587070ab",
+        "size_bytes": 3146489,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "a010b6afa262424c5afa5d9d2c218eddb41d694de684b45742074308e1fd409d",
+        "size_bytes": 3935443,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "d38d0e1c75a76e4a388311b80258c9b87c71b1937bc0914eed7a7f90c7a3efc2",
+        "size_bytes": 5587858,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-built-total-2005": {
+    "size_bytes": 1723954874,
+    "tiles": {
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "4ce983f66be72e8239bd23242e52ab0546d135e752bf7581a8238bed60e5909b",
+        "size_bytes": 8991290,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "97b53784eac0b7c2fb186a5207e220fff364fc41ac133bad5548e6fab2fa9628",
+        "size_bytes": 31364040,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "7bae98d18caf50ce58e4035b4d132de8a10523f6dae02cafc23486968f2e5ea8",
+        "size_bytes": 2390724,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "0b1152e74558156ac7f9cbe69ac70d058a200ce9fe44ae4c2c1714b198522f12",
+        "size_bytes": 2116016,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "2ca7df70a345c90e459d1a44dc82133f68125b237281968c6c29e14fc20023fb",
+        "size_bytes": 8044068,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "b7b53fbb5bf1d78cca3df17bc320107a46e8dc53d638891cb248c7a2d1b65cc7",
+        "size_bytes": 45044081,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "591eb3353571f53bf57c499db722cead6eddabbe3b98335018676e6a4ebfd01c",
+        "size_bytes": 51275151,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "3d0fb76a223e7347051009be99cf5574ce7e1e9a52da9d61a5bda0ab64d39de1",
+        "size_bytes": 21304401,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "396aa1b820f1c78324e55c1e66d20351be34065d62d393f21a725c86f08acd9f",
+        "size_bytes": 31510888,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "0b50c5f2f3f65876345ec7da11330f3cacbe6f443aad279546a74d7af2cd87d6",
+        "size_bytes": 5665633,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "95a16785d58f560e75d12811e8f6971d9f8d6721d6edd9245d8c5b2b6742e864",
+        "size_bytes": 8654012,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "0a514fbe892164054bbbf9e165b1b3f62c4c29996ac52becdcd66ef685bdf831",
+        "size_bytes": 3224536,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "81a9463ae56ea9a72957698adf8efb0db5c2bda0cda5bb09cd704b00ef8b791c",
+        "size_bytes": 4313285,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "ab0f68de5738399ad2aed72fb2e568e16b82bc9451610e1e9c202fff86c79bfd",
+        "size_bytes": 5782199,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-built-total-2010": {
+    "size_bytes": 1812507992,
+    "tiles": {
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "1fa94b5cd2a49146adec1cc18cbfa7b15334184441631809a738db9be58c60c2",
+        "size_bytes": 9378352,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "02ee7711d0566112e0b86336ef2652b3270dcb87eb67c22689bf3480073da2b4",
+        "size_bytes": 34792181,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "39e4c9d3e0ce521013deff29081e0a5e8f090e53c578bf4eab44720d5f282d06",
+        "size_bytes": 2492099,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "3c7b8c42cf7e77f6cd413075d85725efdd5c5859e0e9037462da9d11111a4460",
+        "size_bytes": 2135221,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "2faff3cdc3f8fc69215afd37c68874fe6d9fcae09ffa7e7a497101a4184bf25b",
+        "size_bytes": 8474878,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "8edfb0b375d2f0346c6625637dec2ce735c3cd4274475e2f9f528e8bfb5a0cd3",
+        "size_bytes": 50375941,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "9705b1518879ab66009c321f6c666f92814bbe2afd901523541510db7de30416",
+        "size_bytes": 55952486,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "466bd53a8fc30be9ea5c2a0314037969e45cb02d735f99b0baa14a1e11b7a40d",
+        "size_bytes": 22715352,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "12d2c30731d6b1c61efd501a4dbba9ba93256c6a1b3558af3a1963dbdd01efb4",
+        "size_bytes": 34574511,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "570961029e58a28949ee9b4d631992983ddb916f0313eca596a1a229703ffd4a",
+        "size_bytes": 5890929,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "ac62772c3a4a674125f2f3e08ae73761d9232602462ad151b3391ec7b11ada56",
+        "size_bytes": 8968563,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "cd34b05b6318605ee4f156366f8b2dfb230cc5df0fea1c961c5d55ce7ad786a9",
+        "size_bytes": 3288508,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "adb2dded9be79a98af7c87da44899bf3f78e3d293cd45a520ca5479e4e645343",
+        "size_bytes": 4642394,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "81488d19738e836f9ebb8f551b50c72e8b1f2d5123acf8f4a9120d4b9fb7f6bc",
+        "size_bytes": 5956866,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-built-total-2015": {
+    "tiles": {
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "47bcec582f436ccfb9526a556b0b4552626afbceb4990b4ec7aa34549dd7f28e",
+        "size_bytes": 9838746,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "3b7726e98b67a0e22fa4bc7fc611f4ade618a43396a0ec1104bcca03ccd2aff6",
+        "size_bytes": 39375139,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "021bd4d4ba83a5a9c609d0afd9aec1a52a0c452dadb7e1074d3f3140ff0cd95c",
+        "size_bytes": 2609068,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "d03c8661c901c4d70c2fb3a1ee2b70eb38277768cc18066fd18f3549e1f991b0",
+        "size_bytes": 2149429,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "07ff06227351b59b898ceed914549daadece2f74aba03d8a3e9b38407e00a5ed",
+        "size_bytes": 9041172,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "1cd94cf9301d632f98e6804c38b54a5b16c65df827e6cfaf16cef3568651e374",
+        "size_bytes": 57336954,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "28b4868f9552577e09313a50ac91af07110ac415878c70efe1e52949c5668eda",
+        "size_bytes": 61759346,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "6c2c8923ed43b03a5f3a6d48cb8ddea6409ca0670beb7112c1915fc49bc7d595",
+        "size_bytes": 24428333,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "425c56c621cef83344a9d9d3d8bb13f6ede2d9f693728d6ce124d77e0c0089bc",
+        "size_bytes": 38287183,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "152a1325bb8d9df7961dd83988dc6b69af472cc851124f5e3f1c7e7c40d94a2c",
+        "size_bytes": 6189467,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "98e87ab8900cacdcd2df4bc3d9a0ec91da810fd735b6e4ee1435ad5e6f17a658",
+        "size_bytes": 9384950,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "d97e9a499d44ce2e92ce8915ecc498fa09c5a0d894a04a77004a2d1647fbab03",
+        "size_bytes": 3358350,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "3ab44b84716b5011ee9fdaaf905e69ed240feb8e5c12bb727ae2a20d2658115d",
+        "size_bytes": 5132761,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "1e4f16fb39d25d8fe35d0a77027699c44542afa5fe542db9e0a08313dd999632",
+        "size_bytes": 6157424,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-pop-2000": {
+    "size_bytes": 4148651870,
+    "tiles": {
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "8a3695a02e101021d94b9bcbb87952c22205e1d26a32a58a6ca8b45d32df510e",
+        "size_bytes": 28543443,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "c6bdcb572cf65948cd6828bcdd7f202ed5659621f345bea817ad4413d352ee9b",
+        "size_bytes": 100964614,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "5b1c9443bf12f186da992b0d7f36e0f6d689b6c43d0621a4eb7be610a0019b8a",
+        "size_bytes": 7771692,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "4d1e525a43362d62ae619ed059f0ed41bf3e351998bf3ca123169006e32e2912",
+        "size_bytes": 12338547,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "a99092646ec6222a84f2e4abcea9e7a4dc8bc85fcb18095574a6d1a2183ab77f",
+        "size_bytes": 24872329,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "46c7b201b0e5497d7537554601fec4c5d2b4c688d8492bdce37873115341bd75",
+        "size_bytes": 142768062,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "b6d9d73e2d8bdad50c251660064b706bf22cf02034a5aa7e4fdffd2878a3b8a0",
+        "size_bytes": 172642435,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "7328e54d0cb5f5e870188c95d34fc5942084fde5ae30b3a3672070d7d39368ad",
+        "size_bytes": 73352859,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "b8d91139c8c9dec9cf1d98f4e9ceb35dc843eea7f5abe37ab94138bf979fcd4d",
+        "size_bytes": 101790616,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "42cc06ac4432fc88e3e5e97d568d51f559f24b1879837e030add717e9a4204e0",
+        "size_bytes": 16685899,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "2059a0e02305324a31f979e28da20b6b39f5f7ba8d0fd73255f132b244cc3805",
+        "size_bytes": 28191414,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "a2733dd49a851e4fe1e79e377cb6fb6e0b0861109bdd2e16e61b2147a1560ab6",
+        "size_bytes": 8288948,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "8a302f21f49e668dd74ea445272a8eebd65e55d487ef8e45fe646b06034c3af5",
+        "size_bytes": 11681775,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "2547732b2e5abf74446dc12ba743672612b0e93715696843a46b9830ff2b3b6b",
+        "size_bytes": 17353824,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-pop-2005": {
+    "size_bytes": 4353050644,
+    "tiles": {
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "ef43631fa5f5fe7122ca836f2548c3dc465a8712ec0dbc96ba1a7492ef3214a8",
+        "size_bytes": 30279202,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "f9df2547af15dff4ff118aac2bbe4195d43da06fa775aca5c63e0d04bfe1410e",
+        "size_bytes": 116863858,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "0b400a0f79c5146b4f10196bad65c71e34c5a4c233cc7b16962779b3c4ba819a",
+        "size_bytes": 8274921,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "90ccd1744b7776a599775aeda19caa166e19123ebf471d2d4a43b19d45faf2c7",
+        "size_bytes": 12359638,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "7012ff75ff440666c59507ea63368332aaa5b11cb1a4ac394f2c906946bb8c1e",
+        "size_bytes": 26749148,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "a5296afd22cf3d33734c164b1e97f621558d3a70f62f2a1b78149e84ee1d29a6",
+        "size_bytes": 167429120,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "96d6318d5c387a23c1fb6e3206088d2d59343cdb40d42e6126e89de160e1a86c",
+        "size_bytes": 194450728,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "7fb396453e339524844a36bdb3ddb7d51870f009a18088d333086ed7bd803e6d",
+        "size_bytes": 80047867,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "8cd5c889c1b9e27871ac5c69dcaf2afc234858a36ec6db2e30676078f2c9ba3e",
+        "size_bytes": 116118527,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "976c92be4ef9bba4c3cadf65695089cc1ac57be00d8647ac9f4473872ffb591d",
+        "size_bytes": 17612925,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "0d7db672b4d09dd77471a0bca17d9fa81c145aff890a1761be1d3c180c916a97",
+        "size_bytes": 29491765,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "53f09c6d7b6d320c763f2d0b34c6963c57f3ad85bb9889cf13102dad9213920e",
+        "size_bytes": 8550281,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "cfca33796b663dc6048b135cca7d9a0a153b9861add73acc33206f4a84d5b271",
+        "size_bytes": 13330031,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "c98f22976698a2edc3fe421cb870324ae27477cbaddaef147353c95b621eef7f",
+        "size_bytes": 18102401,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2005_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2005_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-pop-2010": {
+    "size_bytes": 4555219066,
+    "tiles": {
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "634472e86e1c24c6eb0f2c53a9b621717eb7428d3a76d7f06ffc59df01a5f00b",
+        "size_bytes": 31980486,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "2a168c90d5748715452da6f7c41d72b57f73f56c6469bcc3d3490c8592ab7af6",
+        "size_bytes": 132518866,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "5e0568859f61c5833bf603950022c2d8e205d83a30e981577abc59d5d4ce1c9a",
+        "size_bytes": 8643811,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "cad1d3778a39158279fedbf56f916ba727485c42d0f7f1c7b1097082ec701b7f",
+        "size_bytes": 12293061,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "1fa4fab0a79b6b0b26be89fc86282be2af2e4a3febbde6681f83244039de94ab",
+        "size_bytes": 28700975,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "a19073f60590faca4793b063f4c41a1aed28e9cae7f1362ebb32795772f51d4d",
+        "size_bytes": 192011747,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "8a3b18479acc0160027f3fd52915bd36eb9acfb9fd1ceb1801d43fce16dcde22",
+        "size_bytes": 215940690,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "5032d1d4f03c9566c547a0619f7969191d17c5bbb48a79ee85a76957204f6b82",
+        "size_bytes": 86485593,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "ca97448cbbffc63821015c1e5af51a238d6ce7160211f9a8378083cec0966990",
+        "size_bytes": 129913159,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "4cadc7635ccb3039a6269e03b5ce996139c457d2faf0504dd1591bd39a090b80",
+        "size_bytes": 18585003,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "240f7f0ccf127f88f323b4f0718dbd06b1a3cce8d876e5d218c2abcf208ec29f",
+        "size_bytes": 31000235,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "5458dc782c57292d8719f2fb8a4337e7b91f28db84d24f4f2aa520647be972be",
+        "size_bytes": 8807141,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "17beb1630122efb1ce706517d06fa4058ef8a6b52b3d4e2e9b40d8bb6ac79ab0",
+        "size_bytes": 14877590,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "78a4a1b10ab13b5c139310d3fb53b465aacd07bd39e581c548c716deaa614b32",
+        "size_bytes": 18898322,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2010_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2010_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-ghsl-pop-2015": {
+    "tiles": {
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip": {
+        "sha256": "4daa8cebbe216ea7ecbb046502324880b8eb4395421377037022c7ec6b3db5fa",
+        "size_bytes": 34168452,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C25.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip": {
+        "sha256": "48af11525f63bdeb9999826be800c1a21aaef9172e9eaa18564c88b8a9cd1033",
+        "size_bytes": 154831258,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C26.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip": {
+        "sha256": "7bddf71daf4fcf681c60a264a1a6b25c1acb9497490b9f77da39246e65900bc9",
+        "size_bytes": 9301337,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C27.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip": {
+        "sha256": "2ae32253a715de0327d96f50e2ff1b5b018ec245c89e4cf9f7052d0865bad164",
+        "size_bytes": 12331682,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R6_C28.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip": {
+        "sha256": "ab2b7070952624e29c0619332dab412bdf333bbebdbf84d6212071bb5f450785",
+        "size_bytes": 31547676,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C25.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip": {
+        "sha256": "e40e8b6b299acce2172805d943682f80b4641df2263dc3d2f6e6cd070144a8e7",
+        "size_bytes": 225509679,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C26.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip": {
+        "sha256": "1eaf263c44b7992159a755d8eb03778a263b7350f823f4431b52cd5d8fc30c42",
+        "size_bytes": 244686865,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C27.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip": {
+        "sha256": "6ab11ad59becd6820f1586899f413bb67eb2288d08e983ddb97c2db369dbbcef",
+        "size_bytes": 95141886,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R7_C28.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C25.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip": {
+        "sha256": "7aa5132adbe4a865993451685dee9aae92ac6f1654db786037d3ed6b3babb24d",
+        "size_bytes": 147719714,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C26.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip": {
+        "sha256": "bb07b28fe11a02eec881410254fd8e4a0ab137bbb2fc95221e127f1bf9b01df2",
+        "size_bytes": 20016035,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C27.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip": {
+        "sha256": "eb86e67d1603d95bc13682a12368f55913c6904eb8c98a96f5bc413f1bb3ccae",
+        "size_bytes": 32955722,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R8_C28.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip": {
+        "status": "absent",
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C25.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip": {
+        "sha256": "bf57a926d9fff9b26f8733b22fed0bbdf48cf42bdbabd78f1e77857fe1533094",
+        "size_bytes": 9139236,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C26.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip": {
+        "sha256": "a6826e4c09e6d4b4dbba14b46b1c965b7c02854a7a62c9bb3e5cf7c79dbce7bb",
+        "size_bytes": 17376771,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C27.zip"
+      },
+      "GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip": {
+        "sha256": "ce2a6247a4106486af38c96c4df8b206e8a2a78ed6048dad982acde1a88193c7",
+        "size_bytes": 19895556,
+        "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2015_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_POP_E2015_GLOBE_R2023A_4326_3ss_V1_0_R9_C28.zip"
+      }
+    }
+  },
+  "india-worldpop-unconstrained-2001": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2001/ind_ppp_2001.tif",
+    "retrieved_utc": "2026-11-09T13:46:53Z",
+    "sha256": "9df5687737ccdedec2924ccd59e1e197c02f89e6d1d8f32e76caac28715c37c4",
+    "size_bytes": 1838961247
+  },
+  "india-worldpop-unconstrained-2002": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2002/ind_ppp_2002.tif",
+    "retrieved_utc": "2026-11-09T13:47:23Z",
+    "sha256": "7e74d502fe1948aaabcacd541f05f76afe432d2327176e9b4c61c61e001dddc6",
+    "size_bytes": 1839076965
+  },
+  "india-worldpop-unconstrained-2003": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2003/ind_ppp_2003.tif",
+    "retrieved_utc": "2026-11-09T13:06:50Z",
+    "sha256": "9a6258db471688de4a5073c1859b2f61d4dde1b363822e774574eacf1f5fdeee",
+    "size_bytes": 1839301688
+  },
+  "india-worldpop-unconstrained-2004": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2004/ind_ppp_2004.tif",
+    "retrieved_utc": "2026-11-09T12:42:25Z",
+    "sha256": "4e78bb14a84b1d8facca0333a5d5aa2250c4447e8fe5cde7f4248033f9bb9f03",
+    "size_bytes": 1831889526
+  },
+  "india-worldpop-unconstrained-2005": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2005/ind_ppp_2005.tif",
+    "retrieved_utc": "2026-11-09T12:21:07Z",
+    "sha256": "adb011731cfa8fe512be24b240565cbcb5f3c93bd90aea2827fa58db9857b11e",
+    "size_bytes": 1840223955
+  },
+  "india-worldpop-unconstrained-2006": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2006/ind_ppp_2006.tif",
+    "retrieved_utc": "2026-11-09T11:43:37Z",
+    "sha256": "88ea6ef18ea8937691dc938c5a1aaf6b28143674fedfc82e1e29031811775247",
+    "size_bytes": 1838792857
+  },
+  "india-worldpop-unconstrained-2007": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2007/ind_ppp_2007.tif",
+    "retrieved_utc": "2026-11-09T10:56:17Z",
+    "sha256": "3d43343eff4895daa4c3f9750cc005d27a791ae2606c13b1231f172b7370d81a",
+    "size_bytes": 1835812597
+  },
+  "india-worldpop-unconstrained-2008": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2008/ind_ppp_2008.tif",
+    "retrieved_utc": "2026-11-09T08:32:25Z",
+    "sha256": "7b8ae695dfb2d0853dc8c7883360cfb7340299f2483f3ba786d9d8a6f0849310",
+    "size_bytes": 1842319542
+  },
+  "india-worldpop-unconstrained-2009": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2009/ind_ppp_2009.tif",
+    "retrieved_utc": "2026-11-09T07:52:23Z",
+    "sha256": "f52e260f049e757d31d83202f7798b3628aba069a67d49721b9aa55648159e07",
+    "size_bytes": 1844404374
+  },
+  "india-worldpop-unconstrained-2010": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2010/ind_ppp_2010.tif",
+    "retrieved_utc": "2026-11-09T07:28:41Z",
+    "sha256": "ca8d2677fc78a9b9a8dc58c33da31cf275d0bdb76a7ed646ec0f9b65383392cc",
+    "size_bytes": 1847017335
+  },
+  "india-worldpop-unconstrained-2011": {
+    "access": "available",
+    "local_path": "/home/ujjwal-gupta/Documents/Acads/CyberGIS/Project/cgis-project/data/incoming/india-worldpop-unconstrained-2011/ind_ppp_2011.tif",
+    "retrieved_utc": "2026-11-08T19:57:51Z",
+    "sha256": "ff6a2b3e57af9476523ce9ea0bbe457104cb6501cdbbf24349698e8d3ea362ef",
+    "size_bytes": 1849514894
+  }
+}

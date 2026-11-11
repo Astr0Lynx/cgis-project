@@ -1,0 +1,33 @@
+{
+  "manifest_version": 1,
+  "datasets": [
+    {
+      "dataset_id": "india-geoboundaries-adm2-hyderabad-region",
+      "version": 1,
+      "title": "geoBoundaries IND DISTRICT units intersecting sample bbox (DIAGNOSTIC; no Census codes)",
+      "description": "Generic admin polygons, not Census 2011 geocodes; unmodified geometries selected by bbox intersection.",
+      "kind": "vector",
+      "product_level": "source",
+      "year": null,
+      "source": "geoBoundaries gbOpen commit 9469f09",
+      "file": "vectors/india-geoboundaries-adm2-hyderabad-region.geojson",
+      "id_property": "unit_id",
+      "name_property": "name",
+      "level_property": "level",
+      "unit_id_prefix": "gb-adm2-",
+      "checksum_sha256": "2a98699a72688428687fb0383c6cd8579a0de3e2f1d8d5ecf0c370f2c914116a",
+      "provenance": {
+        "upstream_url": "https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/IND/ADM2/geoBoundaries-IND-ADM2.geojson",
+        "upstream_license": "ODbL 1.0 (Pathways Data / LGD)",
+        "upstream_sha256": "8bef6929fd65432e7dc775e7c44473e84efff064ebddbfd6b834e6291546db40",
+        "selection": "features intersecting bbox [77.9, 16.9, 79.1, 17.9]",
+        "n_features": 11,
+        "authoritative_for_census_join": false,
+        "processing_steps": [
+          "select by bbox intersection; geometry and CRS (CRS84) unchanged",
+          "rename shapeID/shapeName -> unit_id/name; add level"
+        ]
+      }
+    }
+  ]
+}

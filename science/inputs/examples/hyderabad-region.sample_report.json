@@ -1,0 +1,67 @@
+{
+  "sample": "hyderabad-region",
+  "bbox_wgs84": [
+    77.9,
+    16.9,
+    79.1,
+    17.9
+  ],
+  "steps": [],
+  "worldpop": {
+    "file": "india-worldpop-unconstrained-2011-hyderabad-region.tif",
+    "sum_people": 11168119.89085126,
+    "valid_cells": 1699796,
+    "nodata_cells": 30845,
+    "width": 1441,
+    "height": 1201,
+    "transform": [
+      0.0008333333300071276,
+      0.0,
+      77.89958303589309,
+      0.0,
+      -0.0008333333299997101,
+      17.900416796076122
+    ],
+    "crs": "EPSG:4326"
+  },
+  "ghsl": {
+    "india-ghsl-built-total-2000": {
+      "native_window": "india-ghsl-built-total-2000-hyderabad-region-mollweide.tif",
+      "input_sum_m2": 233547372.0,
+      "output_sum_m2": 232237199.86388057,
+      "relative_diff": -0.005609877451840586
+    },
+    "india-ghsl-built-total-2005": {
+      "native_window": "india-ghsl-built-total-2005-hyderabad-region-mollweide.tif",
+      "input_sum_m2": 264103297.0,
+      "output_sum_m2": 262613294.22866127,
+      "relative_diff": -0.005641742410124971
+    },
+    "india-ghsl-built-total-2010": {
+      "native_window": "india-ghsl-built-total-2010-hyderabad-region-mollweide.tif",
+      "input_sum_m2": 303888329.0,
+      "output_sum_m2": 302165402.46536154,
+      "relative_diff": -0.005669604161199835
+    },
+    "india-ghsl-built-nres-2000": {
+      "native_window": "india-ghsl-built-nres-2000-hyderabad-region-mollweide.tif",
+      "input_sum_m2": 9209623.0,
+      "output_sum_m2": 9155012.44106697,
+      "relative_diff": -0.005929727952276745
+    },
+    "india-ghsl-built-nres-2005": {
+      "native_window": "india-ghsl-built-nres-2005-hyderabad-region-mollweide.tif",
+      "input_sum_m2": 10667964.0,
+      "output_sum_m2": 10605281.520304274,
+      "relative_diff": -0.0058757678312118585
+    },
+    "india-ghsl-built-nres-2010": {
+      "native_window": "india-ghsl-built-nres-2010-hyderabad-region-mollweide.tif",
+      "input_sum_m2": 12642303.0,
+      "output_sum_m2": 12567769.741466247,
+      "relative_diff": -0.005895544390428979
+    }
+  },
+  "elapsed_s": 27.2,
+  "peak_rss_mb": 270.8
+}
