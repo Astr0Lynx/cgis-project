@@ -1,11 +1,7 @@
-"""National-scale platform benchmark (completion P2/P3). Runs against a stack through its gateway.
-
-    python national_bench.py --gateway http://gateway:8080 --raster <id> [--raster <id> ...]
-        [--vector <real boundary dataset id>] --out /evidence/national_bench.json
-
-Database access (PG* env, owner role) is used only to create/remove the SYNTHETIC 12 100-unit
-boundary grid and to run EXPLAIN ANALYZE. Every timing is wall-clock through the gateway.
-"""
+# National-scale HTTP/DB benchmark through the gateway; run by run_national_bench.sh. DB access (PG* env)
+# only creates/drops the SYNTHETIC 12 100-unit boundary grid and runs EXPLAIN ANALYZE.
+#   python tests/bench/national_bench.py --gateway http://gateway:8080 --raster <id> [--raster <id> ...]
+#       [--vector <real boundary dataset id>] --out data/bench/national_bench.json
 
 from __future__ import annotations
 
@@ -27,10 +23,12 @@ GRID_N = 110                      # 110 x 110 = 12 100 synthetic boundary polygo
 INDIA_BBOX = (68.2, 6.8, 97.4, 35.5)
 
 
+# Milliseconds elapsed since t0. Used by timed, page_all and processing_bench.
 def ms(t0: float) -> float:
     return round((time.monotonic() - t0) * 1000, 1)
 
 
+# Calls fn `runs` times; returns ({runs, median_ms, max_ms}, last result). Used by tile_bench and main.
 def timed(fn, runs=5):
     samples, out = [], None
     for _ in range(runs):
@@ -40,11 +38,13 @@ def timed(fn, runs=5):
     return {"runs": runs, "median_ms": statistics.median(samples), "max_ms": max(samples)}, out
 
 
+# GeoJSON Polygon for a lon/lat rectangle. Used by processing_bench.
 def rect(x0, y0, x1, y1):
     return {"type": "Polygon", "coordinates": [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]]}
 
 
 # ---------------------------------------------------------------------------------------- vectors
+# (Re)creates the SYNTHETIC GRID_N x GRID_N boundary dataset in catalog/geo tables. Used by main.
 def make_grid(conn) -> None:
     w, s, e, n = INDIA_BBOX
     dx, dy = (e - w) / GRID_N, (n - s) / GRID_N
@@ -67,12 +67,14 @@ def make_grid(conn) -> None:
     conn.execute("ANALYZE geo.admin_units")
 
 
+# Deletes the synthetic grid dataset. Used by main unless --keep-grid.
 def drop_grid(conn) -> None:
     with conn.transaction():
         conn.execute("DELETE FROM geo.admin_units WHERE dataset_id = %s", (GRID_ID,))
         conn.execute("DELETE FROM catalog.datasets WHERE dataset_id = %s", (GRID_ID,))
 
 
+# EXPLAIN ANALYZE of the key vector queries on the grid (time, index use, plan). Used by main.
 def explain(conn) -> dict:
     queries = {
         "collection page, deep offset (dataset+version scope, ORDER BY unit_id)":
@@ -96,6 +98,7 @@ def explain(conn) -> dict:
     return out
 
 
+# Polls OGC /collections until dataset_id appears (True) or timeout (False). Used by main.
 def wait_published(http, ogc, dataset_id, timeout=120):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -106,6 +109,7 @@ def wait_published(http, ogc, dataset_id, timeout=120):
     return False
 
 
+# Follows every OGC items "next" link; reports completeness and page latency. Used by main.
 def page_all(http, ogc, dataset_id, limit=1000) -> dict:
     url = f"{ogc}/collections/{dataset_id}/items?f=json&limit={limit}&skipGeometry=true"
     seen, pages, lat = [], 0, []
@@ -125,6 +129,7 @@ def page_all(http, ogc, dataset_id, limit=1000) -> dict:
 
 
 # ---------------------------------------------------------------------------------------- rasters
+# Times OGC PNG tiles over Delhi at several zooms plus one vendor tile. Used by main per --raster.
 def tile_bench(http, ogc, tiles, dataset_id) -> dict:
     tms = morecantile.tms.get("WebMercatorQuad")
     out = {}
@@ -143,6 +148,8 @@ def tile_bench(http, ogc, tiles, dataset_id) -> dict:
     return out
 
 
+# Polls a job until completed/failed or timeout; returns (job, seconds, last progress values).
+# Used by processing_bench.
 def poll(http, api, job_id, timeout=3600):
     t0 = time.monotonic()
     progress = []
@@ -154,6 +161,8 @@ def poll(http, api, job_id, timeout=3600):
         time.sleep(1)
 
 
+# Zonal stats (district sync/async, state, India), async COG clip (saved for the QGIS check) and job
+# cancellation for one raster. Used by main per --raster.
 def processing_bench(http, api, dataset_id) -> dict:
     out = {}
     district = rect(77.0, 28.4, 77.35, 28.85)          # ~ Delhi NCT extent (0.35 x 0.45 deg)
@@ -165,7 +174,6 @@ def processing_bench(http, api, dataset_id) -> dict:
     r = http.post(f"{api}/operations/zonal-statistics", json={**body, "aoi": district})
     out["zonal_district_sync"] = {"ms": ms(t0), "status": r.status_code,
                                   "sum": r.json().get("sum"), "count_valid": r.json().get("count_valid")}
-    t0 = time.monotonic()
     r = http.post(f"{api}/operations/zonal-statistics", json={**body, "aoi": district, "mode": "async"})
     job, secs, prog = poll(http, api, r.json()["job_id"])
     res = job.get("result") or {}
@@ -180,7 +188,6 @@ def processing_bench(http, api, dataset_id) -> dict:
                                "pixels": (err.get("details") or {}).get("pixels"),
                                "hint": (err.get("details") or {}).get("hint")}
     for label, aoi in (("zonal_state_async", state), ("zonal_india_async", india)):
-        t0 = time.monotonic()
         r = http.post(f"{api}/operations/zonal-statistics", json={**body, "aoi": aoi, "mode": "auto"})
         job, secs, prog = poll(http, api, r.json()["job_id"])
         res = job.get("result") or {}
@@ -210,6 +217,8 @@ def processing_bench(http, api, dataset_id) -> dict:
     return out
 
 
+# Parses args, runs the grid/vector/raster benchmarks and writes the JSON report to --out.
+# Used by run_national_bench.sh step "HTTP/DB benchmark through the gateway".
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gateway", default="http://gateway:8080")

@@ -1,13 +1,7 @@
-"""Write a SYNTHETIC raster on the exact national Level 1 grid, block by block (bounded memory).
-
-Grid (Agent 2 handoff, all eleven india-l1-pop-YYYY): EPSG:4326, 35075 x 34497 cells,
-origin (68.185416408, 35.501250059), pixel 0.00083333333 deg (3 arc-seconds), float32, NoData -99999.
-Values are a deterministic smooth field (a few "city" peaks over a low rural background) and cells
-outside a coarse India-shaped polygon are NoData. The file exists to measure platform behaviour at
-national size (ingestion RSS/time/disk, tiles, zonal/clip jobs); it is NOT population data.
-
-    python make_national_raster.py OUT.tif [--scale 1.0]
-"""
+# Writes a SYNTHETIC (not population) float32 raster on the exact national Level 1 grid (EPSG:4326,
+# 35075 x 34497, 3 arc-seconds, NoData -99999), block by block in bounded memory; cells outside a coarse
+# India outline are NoData. Run by tests/bench/run_national_bench.sh to benchmark at national size.
+#   python tests/bench/make_national_raster.py OUT.tif [--block 1024]
 
 from __future__ import annotations
 
@@ -37,6 +31,7 @@ CITIES = [(72.88, 19.08, 60.0), (77.21, 28.61, 70.0), (88.36, 22.57, 55.0), (80.
           (77.59, 12.97, 45.0), (78.47, 17.39, 40.0), (72.57, 23.02, 30.0), (73.86, 18.52, 30.0)]
 
 
+# Deterministic smooth values (rural background plus "city" peaks) for one window. Used by main.
 def block_values(win: Window) -> np.ndarray:
     rows = np.arange(int(win.row_off), int(win.row_off + win.height), dtype=np.float64)
     cols = np.arange(int(win.col_off), int(win.col_off + win.width), dtype=np.float64)
@@ -49,6 +44,8 @@ def block_values(win: Window) -> np.ndarray:
     return np.round(v, 2).astype(np.float32)   # 2 decimals: realistic DEFLATE ratio, deterministic
 
 
+# Writes the raster window by window and prints a JSON summary (cells, valid cells, sum, seconds).
+# Used by run_national_bench.sh step "generate the SYNTHETIC national-grid raster".
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("out")

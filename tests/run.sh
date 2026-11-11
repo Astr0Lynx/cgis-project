@@ -89,8 +89,8 @@ run_e2e() {
 
     if has_flag --qgis "$@"; then
         step "QGIS: open the exported clip in headless QGIS"
-        docker run --rm -e QT_QPA_PLATFORM=offscreen -v "$(pwd)/tests/e2e/qgis:/q:ro,z" -v "$(pwd)/$EV:/e2e:ro,z" \
-            "$QGIS_IMAGE" python3 /q/check_geotiff_qgis.py /e2e/clip_town_a_2001.tif </dev/null 2>&1 \
+        docker run --rm -e QT_QPA_PLATFORM=offscreen -v "$(pwd)/tests/e2e:/q:ro,z" -v "$(pwd)/$EV:/e2e:ro,z" \
+            "$QGIS_IMAGE" python3 /q/check_geotiff_qgis.py /e2e/clip_town_a_2001.tif --town-a </dev/null 2>&1 \
             | grep -E '^(PASS|FAIL|RESULT)' > "$EV/qgis-geotiff.txt"
         cat "$EV/qgis-geotiff.txt"; grep -q '^RESULT OK' "$EV/qgis-geotiff.txt"; check qgis_geotiff $?
     fi
@@ -99,7 +99,7 @@ run_e2e() {
         step "browser: drive the diagnostic viewer in headless Chromium (needs internet for the MapLibre CDN)"
         mkdir -p "$EV/browser"
         net=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' "$($C ps -q gateway)")
-        docker run --rm --network "$net" --ipc=host -v "$(pwd)/tests/e2e/browser:/check:ro,z" -v "$(pwd)/$EV/browser:/out:z" \
+        docker run --rm --network "$net" --ipc=host -v "$(pwd)/tests/e2e:/check:ro,z" -v "$(pwd)/$EV/browser:/out:z" \
             mcr.microsoft.com/playwright/python:v1.49.1-noble@sha256:42e251ec3238672c931be6c3565ff279690ae072c3e22058128d0412494f6866 \
             sh -c 'pip install -q playwright==1.49.1 >/dev/null 2>&1; python /check/check_viewer.py http://gateway:8080/viewer/ /out' \
             </dev/null > "$EV/browser/check.txt" 2>&1

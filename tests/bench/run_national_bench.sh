@@ -1,9 +1,8 @@
 #!/bin/sh
-# National-scale platform benchmark on a SEPARATE Compose project (cgis-bench): the main stack and its
-# volumes are never touched. Evidence: ./data/bench/ (git-ignored); the reviewed summary is copied to
-# infra/docs/evidence/.
+# National-scale platform benchmark (make bench) on a SEPARATE Compose project (cgis-bench): the main
+# stack and its volumes are never touched. Evidence: ./data/bench/ (git-ignored).
 #
-#   sh infra/bench/run_national_bench.sh
+#   sh tests/bench/run_national_bench.sh
 #
 # Inputs: a SYNTHETIC raster on the exact national Level 1 grid (generated here, bounded memory), a
 # SYNTHETIC 12 100-polygon boundary grid (SQL), and - when present - REAL open data that is never
@@ -26,8 +25,10 @@ EV=data/bench
 IN=data/incoming/bench
 T=cgis-ogc-tests:dev                     # python + rasterio + httpx + psycopg; runs every helper
 mkdir -p "$EV" "$IN"
+# Print a timestamped section header. Used by every step below.
 step() { printf '\n== [%s] %s\n' "$(date +%T)" "$*"; }
-inpy() { docker run --rm --network "$NET" -v "$(pwd):/repo" -w /repo "$T" python "$@"; }
+# Run a python helper in the test image on the bench network. Used by the steps below.
+inpy() { docker run --rm --network "$NET" -v "$(pwd):/repo:z" -w /repo "$T" python "$@"; }
 
 step "start the stack (project cgis-bench)"
 $C --profile tools build </dev/null > "$EV/build.log" 2>&1 && $C up -d --wait </dev/null > "$EV/up.log" 2>&1 \
@@ -43,13 +44,13 @@ SAMPLER=$!
 
 step "generate the SYNTHETIC national-grid raster (35075 x 34497 float32), 2 GiB container limit"
 if [ ! -f "$IN/synthetic_national_grid.tif" ]; then
-    docker run --rm --memory 2g -v "$(pwd):/repo" -w /repo "$T" \
-        python infra/bench/make_national_raster.py "$IN/synthetic_national_grid.tif" > "$EV/make_raster.json" 2> "$EV/make_raster.err"
+    docker run --rm --memory 2g -v "$(pwd):/repo:z" -w /repo "$T" \
+        python tests/bench/make_national_raster.py "$IN/synthetic_national_grid.tif" > "$EV/make_raster.json" 2> "$EV/make_raster.err"
 fi
 cat "$EV/make_raster.json" 2>/dev/null; ls -l "$IN/synthetic_national_grid.tif"
 
 step "write the import manifest"
-inpy infra/bench/write_manifest.py /repo
+inpy tests/bench/write_manifest.py /repo
 
 step "import with the real ingestion CLI (validate every pixel, lossless COG, verify, register)"
 start=$(date +%s)
@@ -67,8 +68,8 @@ grep -q '"dataset_id": "india-worldpop-unconstrained-2011"' "$EV/import.jsonl" &
 VECTORS=""
 grep -q '"dataset_id": "india-geoboundaries-adm2"' "$EV/import.jsonl" && VECTORS="--vector india-geoboundaries-adm2"
 docker run --rm --network "$NET" -e PGHOST=db -e PGUSER="$POSTGRES_USER" -e PGPASSWORD="$POSTGRES_PASSWORD" \
-    -e PGDATABASE="$POSTGRES_DB" -v "$(pwd):/repo" -w /repo "$T" \
-    python infra/bench/national_bench.py --gateway http://gateway:8080 $RASTERS $VECTORS --out "$EV/national_bench.json" \
+    -e PGDATABASE="$POSTGRES_DB" -v "$(pwd):/repo:z" -w /repo "$T" \
+    python tests/bench/national_bench.py --gateway http://gateway:8080 $RASTERS $VECTORS --out "$EV/national_bench.json" \
     </dev/null > "$EV/national_bench.stdout" 2>&1
 echo "bench_exit $?"; tail -3 "$EV/national_bench.stdout"
 
@@ -92,7 +93,7 @@ print({k: j.get(k) for k in ('status', 'attempts', 'max_attempts', 'error')}, (j
 step "headless QGIS opens the downloaded national async clip(s)"
 for f in "$EV"/clip_async_*.tif; do
     [ -f "$f" ] || continue
-    docker run --rm -e QT_QPA_PLATFORM=offscreen -v "$(pwd):/repo:ro"         qgis/qgis:3.44.15@sha256:9c4afddd8eb4d03275e161b732d57ea402a1a5237eb5766957427530fd38afe0         python3 /repo/infra/bench/qgis_check_tif.py "/repo/$f" EPSG:4326 </dev/null 2>&1 | grep -E '^(PASS|FAIL|INFO|RESULT)'
+    docker run --rm -e QT_QPA_PLATFORM=offscreen -v "$(pwd):/repo:ro,z"         qgis/qgis:3.44.15@sha256:9c4afddd8eb4d03275e161b732d57ea402a1a5237eb5766957427530fd38afe0         python3 /repo/tests/e2e/check_geotiff_qgis.py "/repo/$f" --crs EPSG:4326 </dev/null 2>&1 | grep -E '^(PASS|FAIL|INFO|RESULT)'
 done | tee "$EV/qgis_clip.txt"
 
 touch "$EV/.stop-sampler"; wait "$SAMPLER" 2>/dev/null

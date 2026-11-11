@@ -1,12 +1,8 @@
-"""Peak process RSS of the importer's raster stages (validate -> COG -> verify) on one file.
-
-docker stats on cgroup v2 includes active page cache, which overstates process memory when a large
-file is read repeatedly. This reports ru_maxrss (true peak RSS of the Python process) and, when
-available, the container's cgroup memory.peak (RSS + page cache), per stage.
-
-    docker run --rm --memory 3g -v "$PWD:/repo" -w /app --entrypoint python cgis-ingestion:local \
-        /repo/infra/bench/measure_import_rss.py /repo/data/incoming/real/ind_ppp_2011.tif /tmp/out.tif
-"""
+# Manual tool (not run by run_national_bench.sh): per-stage time and peak memory of the importer on one
+# file (raster: validate -> write COG -> verify; vector: parse + normalize). Reports ru_maxrss and the
+# cgroup memory.peak, since docker stats counts page cache. Run inside the ingestion image:
+#   docker run --rm --memory 3g -v "$PWD:/repo" -w /app --entrypoint python cgis-ingestion:local \
+#       /repo/tests/bench/measure_import_rss.py /repo/data/incoming/real/ind_ppp_2011.tif /tmp/out.tif
 
 import json
 import resource
@@ -19,6 +15,7 @@ from ingestion.raster import inspect_raster, verify_cog, write_cog
 from ingestion.vector import read_vector
 
 
+# Returns (process peak RSS MiB, cgroup memory.peak MiB or None). Used after each stage below.
 def peak_mib():
     rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
     try:
@@ -42,10 +39,9 @@ if src.suffix.lower() in (".geojson", ".json"):
 else:
     spec = parse_entry({"dataset_id": "measure", "version": 1, "title": "t", "kind": "raster", "product_level": "source",
                         "units": "people_per_cell", "source": "measure", "file": str(src)}, src.parent)
-    for stage, fn in (("validate", lambda: inspect_raster(spec)),):
-        t0 = time.monotonic()
-        info = fn()
-        report[stage] = {"seconds": round(time.monotonic() - t0, 1), "peak_rss_mib, cgroup_peak_mib": peak_mib()}
+    t0 = time.monotonic()
+    info = inspect_raster(spec)
+    report["validate"] = {"seconds": round(time.monotonic() - t0, 1), "peak_rss_mib, cgroup_peak_mib": peak_mib()}
     t0 = time.monotonic()
     write_cog(spec, info, out, {"MEASURE": "1"})
     report["write_cog"] = {"seconds": round(time.monotonic() - t0, 1), "cog_bytes": out.stat().st_size,

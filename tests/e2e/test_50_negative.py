@@ -133,12 +133,12 @@ def test_read_only_prefixes_refuse_writes(http, method, url):
 def test_processing_api_has_no_catalog_mutation_routes(http):
     paths = http.get(f"{API}/openapi.json").json()["paths"]
     allowed = {"/operations/clip", "/operations/zonal-statistics", "/operations/{job_id}", "/downloads/{job_id}",
-               "/downloads/{job_id}/metadata", "/health", "/ready"}
+               "/downloads/{job_id}/metadata", "/health", "/ready", "/operations/{job_id}/cancel"}
     assert set(paths) <= allowed, set(paths) - allowed
     for path, ops in paths.items():
         assert set(ops) <= {"get", "post"}, (path, ops)
         if "post" in ops:
-            assert path in ("/operations/clip", "/operations/zonal-statistics")
+            assert path in ("/operations/clip", "/operations/zonal-statistics", "/operations/{job_id}/cancel")
     for method, url in (("DELETE", f"{API}/operations/00000000-0000-4000-8000-000000000000"),
                         ("POST", f"{API}/datasets"), ("POST", f"{API}/import"), ("PUT", f"{API}/operations/clip")):
         assert http.request(method, url, content=b"{}").status_code in (404, 405)
