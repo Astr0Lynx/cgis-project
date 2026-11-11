@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# CyberGIS application API (Agent 5). Build context: the REPOSITORY ROOT, because the images reuse the
+# CyberGIS application API. Build context: the REPOSITORY ROOT, because the images reuse the
 # existing ingestion/ importer and the spatial-processing/ clip code unchanged (see Dockerfile.dockerignore).
 #
 #   docker build -f application-api/Dockerfile --target api           -t cgis-app-api:local .

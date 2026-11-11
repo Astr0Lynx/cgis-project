@@ -1,8 +1,5 @@
-"""FastAPI application factory for the CyberGIS application API.
-
-Public routes (through the gateway, without prefix stripping): ``/auth/*``, ``/admin/*``,
-``/api/exports*``, ``/api/catalog/*`` and ``/api/app/*`` (health, readiness, OpenAPI, docs).
-"""
+# FastAPI application factory. Routes (raw gateway paths, no prefix strip): /auth/*, /admin/*, /api/exports*,
+# /api/catalog/* and /api/app/* (health, readiness, OpenAPI, docs). Started by `cgis-app serve` via app_factory.
 
 from __future__ import annotations
 
@@ -33,7 +30,7 @@ SECRET_QUERY_PARAMS = {"access_token", "token", "api_key", "apikey", "password",
 STREAMING_PATHS = ("/admin/datasets/uploads", "/admin/datasets")
 
 DESCRIPTION = """
-Application API of the CyberGIS platform (Agent 5): **accounts and roles**, **admin dataset hosting**
+Application API of the CyberGIS platform: **accounts and roles**, **admin dataset hosting**
 (upload → validate → publish → version status), **catalog discovery** and **full/clipped exports**.
 This is a project API, **not** an OGC API standard; OGC API Features/Tiles stay at `/ogc/`.
 
@@ -83,6 +80,7 @@ TAGS = [
 ]
 
 
+# JSON response for an ApiError (no-store on errors). Used by the exception handlers and GuardMiddleware.
 def _error_response(exc: ApiError) -> JSONResponse:
     headers = dict(exc.headers)
     if exc.status in (401, 403) or exc.status >= 400:
@@ -90,13 +88,15 @@ def _error_response(exc: ApiError) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content=exc.to_body(), headers=headers)
 
 
+# ASGI middleware: refuse secrets in query strings and oversized JSON bodies, add security headers,
+# write a path-only access log. Installed by create_app.
 class GuardMiddleware:
-    """Refuse secrets in URLs and oversized JSON bodies; add security headers; write a path-only access log."""
-
+    # Wrap the ASGI app.
     def __init__(self, app, settings: Settings):
         self.app = app
         self.settings = settings
 
+    # Apply the guards to one HTTP request; uploads are streamed past the body cap.
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
@@ -105,6 +105,7 @@ class GuardMiddleware:
         method = scope["method"]
         path = scope.get("path", "")
 
+        # Record the status and add security/cache headers to the response start.
         async def send_wrapper(message):
             if message["type"] == "http.response.start":
                 status_holder["status"] = message["status"]
@@ -151,6 +152,7 @@ class GuardMiddleware:
                         break
                 replayed = False
 
+                # Hand the already-read body to the app once, then pass through.
                 async def replay():
                     nonlocal replayed
                     if not replayed:
@@ -166,8 +168,8 @@ class GuardMiddleware:
                             time.monotonic() - started, getattr(principal, "username", "-"))
 
 
+# Hourly thread: purge expired sessions and stale login counters. Started by the app lifespan.
 def _maintenance(app: FastAPI, stop: threading.Event) -> None:
-    """Hourly: drop long-expired sessions and stale login counters."""
     while not stop.wait(3600):
         try:
             with app.state.db.connection() as conn:
@@ -180,12 +182,15 @@ def _maintenance(app: FastAPI, stop: threading.Event) -> None:
             log.exception("session maintenance failed")
 
 
+# Build the FastAPI app: pool, middleware, error handlers, routers, health/ready, OpenAPI security.
+# Used by app_factory, `cgis-app openapi` and the tests.
 def create_app(settings: Settings | None = None, *, db: Database | None = None, start_maintenance: bool = True) -> FastAPI:
     settings = settings or Settings.from_env()
     security.configure(settings.hash_concurrency)
     database = db or Database(settings.database_url, min_size=settings.db_pool_min, max_size=settings.db_pool_max,
                               application_name="cgis-app-api")
 
+    # Start-up: staging root, pool, maintenance thread; shutdown: stop them.
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         stop = threading.Event()
@@ -217,12 +222,14 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     app.state.staging_root = settings.staging_root
     app.add_middleware(GuardMiddleware, settings=settings)
 
+    # Render ApiError (5xx are logged).
     @app.exception_handler(ApiError)
     async def _api_error(request: Request, exc: ApiError):
         if exc.status >= 500:
             log.warning("request failed: %s %s", exc.code, exc.message)
         return _error_response(exc)
 
+    # Render request validation errors as 422 INVALID_REQUEST (locations/messages only).
     @app.exception_handler(RequestValidationError)
     async def _validation_error(request: Request, exc: RequestValidationError):
         problems = [{"loc": [str(p) for p in e.get("loc", ())], "msg": e.get("msg", ""), "type": e.get("type", "")}
@@ -230,6 +237,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
         return _error_response(ApiError(422, errors.INVALID_REQUEST, "request validation failed",
                                         {"problems": problems}))
 
+    # Render Starlette HTTP errors (404/405/416...) in the error envelope.
     @app.exception_handler(StarletteHTTPException)
     async def _http_error(request: Request, exc: StarletteHTTPException):
         codes = {404: errors.NOT_FOUND, 405: errors.METHOD_NOT_ALLOWED, 416: errors.RANGE_NOT_SATISFIABLE}
@@ -237,6 +245,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
         return _error_response(ApiError(exc.status_code, codes.get(exc.status_code, f"HTTP_{exc.status_code}"),
                                         message, headers=dict(exc.headers or {})))
 
+    # Log and hide any other exception as 500 INTERNAL_ERROR.
     @app.exception_handler(Exception)
     async def _unexpected(request: Request, exc: Exception):
         log.exception("unhandled error on %s %s", request.method, request.url.path)
@@ -252,10 +261,12 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     app.include_router(catalog_router)
     app.include_router(exports_router)
 
+    # GET /api/app/health: liveness.
     @app.get("/api/app/health", tags=["service"], summary="Liveness")
     def health() -> dict[str, str]:
         return {"status": "ok", "service": SERVICE_NAME, "version": __version__}
 
+    # GET /api/app/ready: database and storage roots (503 when not ready).
     @app.get("/api/app/ready", tags=["service"], summary="Readiness: database, schema and storage roots")
     def ready():
         checks: dict[str, str] = {}
@@ -269,6 +280,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
         ok = all(v == "ok" for v in checks.values())
         return JSONResponse(status_code=200 if ok else 503, content={"ready": ok, "checks": checks})
 
+    # OpenAPI document with security schemes, per-route security and x-required-role.
     def custom_openapi() -> dict[str, Any]:
         if app.openapi_schema:
             return app.openapi_schema
@@ -310,8 +322,8 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     return app
 
 
+# `uvicorn --factory cgis_app.app:app_factory`: settings from env, logging, create_app. Used by cli serve and tests.
 def app_factory() -> FastAPI:
-    """``uvicorn --factory cgis_app.app:app_factory``."""
     settings = Settings.from_env()
     logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     return create_app(settings)

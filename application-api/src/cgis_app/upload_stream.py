@@ -1,13 +1,6 @@
-"""Streaming ``multipart/form-data`` receiver for admin uploads.
-
-The request body is parsed incrementally (python-multipart): the ``file`` part is written straight to a
-server-named file in the staging root while its SHA-256 is computed, and the ``metadata`` part is kept in
-memory up to a small cap. Nothing is spooled to /tmp, the whole file is never held in RAM, and the
-byte budget is enforced as the bytes arrive (also for chunked bodies without Content-Length).
-
-Exactly two parts are accepted: ``metadata`` (JSON text) and ``file``. Any other field, a second file,
-nested multipart, ``Content-Encoding`` or a type that is neither TIFF/BigTIFF nor a JSON object is refused.
-"""
+# Streaming multipart/form-data receiver for admin uploads (python-multipart). The 'file' part goes straight
+# to a server-named staging file while hashed; 'metadata' stays in memory under a small cap. Byte budgets are
+# enforced as bytes arrive; any other part, nested multipart or encoding is refused. Used by routes_admin.
 
 from __future__ import annotations
 
@@ -29,6 +22,7 @@ SNIFF_BYTES = 16
 FREE_SPACE_CHECK_EVERY = 256 * MIB
 
 
+# What receive_multipart hands back to routes_admin._register_upload.
 @dataclass
 class ReceivedUpload:
     metadata_raw: bytes
@@ -40,25 +34,31 @@ class ReceivedUpload:
     part_content_type: str | None
 
 
+# Internal: carries an ApiError out of the parser callbacks.
 class _Abort(Exception):
+    # Wrap the ApiError.
     def __init__(self, error: ApiError):
         super().__init__(error.message)
         self.error = error
 
 
+# Byte limit for a kind (GeoJSON has its own, smaller cap). Used by _Receiver._decide_kind.
 def _limit_for(kind: str | None, settings: Settings) -> int:
     if kind == "vector":
         return min(settings.max_vector_upload_bytes, settings.max_upload_bytes)
     return settings.max_upload_bytes
 
 
+# 413 FILE_TOO_LARGE for a limit. Used by the receiver and preflight.
 def _too_large(limit: int, kind: str | None) -> ApiError:
     what = {"raster": "raster", "vector": "GeoJSON"}.get(kind or "", "upload")
     return ApiError(413, errors.FILE_TOO_LARGE, f"the {what} file exceeds the {limit} byte limit",
                     {"limit_bytes": limit})
 
 
+# python-multipart callback target holding the per-request parse state.
 class _Receiver:
+    # Start with no parts seen and the raster byte limit.
     def __init__(self, settings: Settings, staging_root: Path, staged_stem: str):
         self.settings = settings
         self.root = staging_root
@@ -84,21 +84,26 @@ class _Receiver:
         self._written_since_check = 0
 
     # -- python-multipart callbacks (synchronous) -------------------------------------------------
+    # Parser callback: reset headers for a new part.
     def on_part_begin(self) -> None:
         self.headers = {}
         self.current = None
 
+    # Parser callback: accumulate a header name.
     def on_header_field(self, data: bytes, start: int, end: int) -> None:
         self._hname.extend(data[start:end])
 
+    # Parser callback: accumulate a header value.
     def on_header_value(self, data: bytes, start: int, end: int) -> None:
         self._hval.extend(data[start:end])
 
+    # Parser callback: store one complete header.
     def on_header_end(self) -> None:
         self.headers[bytes(self._hname).strip().lower()] = bytes(self._hval).strip()
         self._hname.clear()
         self._hval.clear()
 
+    # Parser callback: accept exactly one 'metadata' and one 'file' part, refuse anything else.
     def on_headers_finished(self) -> None:
         disposition, params = parse_options_header(self.headers.get(b"content-disposition", b""))
         if disposition != b"form-data":
@@ -128,6 +133,7 @@ class _Receiver:
                                   "unexpected form field; only 'metadata' and 'file' are accepted",
                                   {"field": name[:64]}))
 
+    # Parser callback: buffer metadata (capped) or file bytes (sniffed, counted against the limit).
     def on_part_data(self, data: bytes, start: int, end: int) -> None:
         chunk = data[start:end]
         if self.current == "metadata":
@@ -146,6 +152,7 @@ class _Receiver:
                 raise _Abort(_too_large(self.limit, self.kind))
             self.pending.extend(chunk)
 
+    # Parser callback: finish a part (decide the kind of a tiny file).
     def on_part_end(self) -> None:
         if self.current == "file":
             if self.kind is None:
@@ -153,12 +160,14 @@ class _Receiver:
             self.file_done = True
         self.current = None
 
+    # Callback dict for MultipartParser. Used by receive_multipart.
     def callbacks(self) -> dict:
         return {name: getattr(self, name) for name in (
             "on_part_begin", "on_header_field", "on_header_value", "on_header_end", "on_headers_finished",
             "on_part_data", "on_part_end")}
 
     # -- helpers ---------------------------------------------------------------------------------
+    # Check magic bytes vs extension, set the kind's limit and create the staged file.
     def _decide_kind(self) -> None:
         kind = storage.sniff_kind(bytes(self.head))
         if kind is None:
@@ -177,8 +186,8 @@ class _Receiver:
         self.staged_name = f"{self.stem}.{storage.EXT_FOR_KIND[kind]}"
         self.fd = storage.create_exclusive(self.root, self.staged_name)
 
+    # Write pending file bytes and update the hash (runs in a worker thread).
     def flush(self) -> None:
-        """Write pending bytes (runs in a worker thread)."""
         if not self.pending:
             return
         if self.fd is None:
@@ -192,6 +201,7 @@ class _Receiver:
             n = os.write(self.fd, view)
             view = view[n:]
 
+    # Re-check the free-space floor every 256 MiB written (507 STORAGE_FULL).
     def check_space(self, written_total: int) -> None:
         if written_total - self._written_since_check < FREE_SPACE_CHECK_EVERY:
             return
@@ -199,12 +209,14 @@ class _Receiver:
         if storage.free_bytes(self.root) < self.settings.min_free_bytes:
             raise _Abort(ApiError(507, errors.STORAGE_FULL, "the staging volume is almost full; upload refused"))
 
+    # fsync and close the staged file.
     def finish(self) -> None:
         if self.fd is not None:
             os.fsync(self.fd)
             os.close(self.fd)
             self.fd = None
 
+    # Close and delete a partial staged file.
     def discard(self) -> None:
         if self.fd is not None:
             try:
@@ -216,8 +228,9 @@ class _Receiver:
             storage.remove_staged(self.root, self.staged_name)
 
 
+# Refuse before reading the body when Content-Length, free space or the staging quota rule it out.
+# Used by routes_admin._handle_upload.
 def preflight(settings: Settings, staging_root: Path, content_length: int | None) -> None:
-    """Refuse before reading the body when the declared size or the staging volume make it impossible."""
     if content_length is not None and content_length > settings.max_upload_bytes + settings.max_metadata_bytes + MIB:
         raise _too_large(settings.max_upload_bytes, None)
     expected = content_length or 0
@@ -229,6 +242,8 @@ def preflight(settings: Settings, staging_root: Path, content_length: int | None
                        {"quota_bytes": settings.staging_max_total_bytes})
 
 
+# Stream the request body into staging; returns ReceivedUpload or raises ApiError (nothing left on
+# disk). Used by routes_admin._handle_upload.
 async def receive_multipart(stream: AsyncIterator[bytes], content_type: str, *, settings: Settings,
                             staging_root: Path, staged_stem: str) -> ReceivedUpload:
     ctype, params = parse_options_header(content_type or "")

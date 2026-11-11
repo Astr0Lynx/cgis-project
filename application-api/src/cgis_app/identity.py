@@ -1,9 +1,5 @@
-"""Accounts, sessions, personal access tokens and login throttling (storage layer, no HTTP).
-
-Roles: ``admin`` (upload/validate/publish/version datasets, set access policy, read/export) and
-``user`` (read/export permitted datasets only). The effective role of a request is the account role,
-reduced to ``user`` for a ``read``-scoped personal access token.
-"""
+# Accounts, sessions, personal access tokens and login throttling (storage layer, no HTTP).
+# Roles: admin and user; a read-scoped personal access token acts as user even for an admin account.
 
 from __future__ import annotations
 
@@ -23,6 +19,7 @@ log = logging.getLogger(__name__)
 ROLES = ("admin", "user")
 
 
+# One cgis_app.users row.
 @dataclass(frozen=True)
 class User:
     user_id: uuid.UUID
@@ -32,14 +29,14 @@ class User:
     password_hash: str
     password_changed_at: datetime
 
+    # Public {user_id, username, role}.
     def public(self) -> dict[str, Any]:
         return {"user_id": str(self.user_id), "username": self.username, "role": self.role}
 
 
+# The authenticated caller of one request. Built by resolve_token and routes_auth.login.
 @dataclass(frozen=True)
 class Principal:
-    """The authenticated caller of one request."""
-
     user_id: uuid.UUID
     username: str
     account_role: str
@@ -49,31 +46,38 @@ class Principal:
     expires_at: datetime
     csrf_token: str | None = None
 
+    # Effective role: account role, reduced to user for a read-scoped token.
     @property
     def role(self) -> str:
         if self.kind == "pat" and self.scope == "read":
             return "user"
         return self.account_role
 
+    # True when the effective role is admin.
     @property
     def is_admin(self) -> bool:
         return self.role == "admin"
 
+    # Public {user_id, username, role} for /auth/me and login.
     def public(self) -> dict[str, Any]:
         return {"user_id": str(self.user_id), "username": self.username, "role": self.role}
 
 
+# Account/session problem with a stable code. Mapped to HTTP by auth and routes_auth, printed by cli.
 class IdentityError(Exception):
+    # Store code and message.
     def __init__(self, code: str, message: str):
         super().__init__(message)
         self.code = code
         self.message = message
 
 
+# Current UTC time.
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+# User from a row (None stays None). Used by the get_/create_ helpers.
 def _user(row: dict | None) -> User | None:
     if row is None:
         return None
@@ -82,27 +86,32 @@ def _user(row: dict | None) -> User | None:
 
 
 # ------------------------------------------------------------------ accounts
+# User by (normalized) username. Used by login, bootstrap, cli users/fixtures.
 def get_user(conn: psycopg.Connection, username: str) -> User | None:
     return _user(conn.execute("SELECT * FROM cgis_app.users WHERE username = %s",
                               (security.normalize_username(username),)).fetchone())
 
 
+# User by id. Used by routes_auth token/password routes.
 def get_user_by_id(conn: psycopg.Connection, user_id: uuid.UUID) -> User | None:
     return _user(conn.execute("SELECT * FROM cgis_app.users WHERE user_id = %s", (user_id,)).fetchone())
 
 
+# All accounts without hashes. Used by `cgis-app users list`.
 def list_users(conn: psycopg.Connection) -> list[dict[str, Any]]:
     return conn.execute(
         "SELECT user_id, username, role, disabled, created_at, password_changed_at FROM cgis_app.users "
         "ORDER BY username").fetchall()
 
 
+# Raise WEAK_PASSWORD when security.password_problems finds issues. Used by create_user/set_password.
 def check_new_password(settings: Settings, username: str, password: str) -> None:
     problems = security.password_problems(password, username, settings.password_min_length)
     if problems:
         raise IdentityError("WEAK_PASSWORD", "password " + "; ".join(problems))
 
 
+# Insert an account after username/role/password checks. Used by cli, ensure_user and tests.
 def create_user(conn: psycopg.Connection, settings: Settings, username: str, password: str, role: str) -> User:
     name = security.normalize_username(username)
     if not security.USERNAME_RE.match(name):
@@ -121,6 +130,7 @@ def create_user(conn: psycopg.Connection, settings: Settings, username: str, pas
     return _user(row)  # type: ignore[return-value]
 
 
+# Change a password and revoke the user's other sessions. Used by /auth/password and cli.
 def set_password(conn: psycopg.Connection, settings: Settings, user: User, password: str,
                  *, keep_session: uuid.UUID | None = None) -> None:
     check_new_password(settings, user.username, password)
@@ -131,6 +141,7 @@ def set_password(conn: psycopg.Connection, settings: Settings, user: User, passw
     log.info("password changed for user %s; other sessions revoked", user.username)
 
 
+# Change a role and revoke the user's sessions. Used by cli users set-role/fixtures.
 def set_role(conn: psycopg.Connection, user: User, role: str) -> None:
     if role not in ROLES:
         raise IdentityError("INVALID_ROLE", f"role must be one of {', '.join(ROLES)}")
@@ -139,6 +150,7 @@ def set_role(conn: psycopg.Connection, user: User, role: str) -> None:
         revoke_user_sessions(conn, user.user_id, "role_changed")
 
 
+# Enable/disable an account (disabling revokes sessions). Used by cli.
 def set_disabled(conn: psycopg.Connection, user: User, disabled: bool) -> None:
     with conn.transaction():
         conn.execute("UPDATE cgis_app.users SET disabled = %s WHERE user_id = %s", (disabled, user.user_id))
@@ -146,9 +158,9 @@ def set_disabled(conn: psycopg.Connection, user: User, disabled: bool) -> None:
             revoke_user_sessions(conn, user.user_id, "account_disabled")
 
 
+# Bootstrap: create if absent, refuse a role mismatch, optionally reset the password. Used by cli bootstrap.
 def ensure_user(conn: psycopg.Connection, settings: Settings, username: str, password: str, role: str,
                 *, reset_password: bool = False) -> str:
-    """Bootstrap helper: create the account if absent; never silently change an existing one's role."""
     existing = get_user(conn, username)
     if existing is None:
         create_user(conn, settings, username, password, role)
@@ -163,6 +175,8 @@ def ensure_user(conn: psycopg.Connection, settings: Settings, username: str, pas
 
 
 # ------------------------------------------------------------------ sessions and tokens
+# Create a browser/bearer session or personal access token; returns the secret once. Used by
+# routes_auth.login and create_token.
 def create_session(conn: psycopg.Connection, settings: Settings, user: User, kind: str, *,
                    scope: str = "full", name: str | None = None, ttl_seconds: int | None = None) -> dict[str, Any]:
     token = security.new_token(kind)
@@ -191,8 +205,9 @@ SELECT s.session_id, s.kind, s.scope, s.csrf_token, s.expires_at, s.idle_seconds
 """
 
 
+# Principal for a presented secret, or IdentityError when unknown/revoked/expired/idle/disabled;
+# refreshes last_seen_at at most once a minute. Used by auth.resolve.
 def resolve_token(conn: psycopg.Connection, token: str, *, touch_after_seconds: int = 60) -> Principal:
-    """Return the principal for a presented secret or raise IdentityError (expired/revoked/unknown)."""
     if not security.looks_like_token(token):
         raise IdentityError("INVALID_TOKEN", "the credential is not valid")
     row = conn.execute(_RESOLVE_SQL, (security.token_digest(token),)).fetchone()
@@ -216,12 +231,14 @@ def resolve_token(conn: psycopg.Connection, token: str, *, touch_after_seconds: 
                      expires_at=row["expires_at"], csrf_token=row["csrf_token"])
 
 
+# Revoke one session. Used by /auth/logout.
 def revoke_session(conn: psycopg.Connection, session_id: uuid.UUID, reason: str) -> bool:
     cur = conn.execute("UPDATE cgis_app.sessions SET revoked_at = now(), revoked_reason = %s "
                        "WHERE session_id = %s AND revoked_at IS NULL", (reason, session_id))
     return cur.rowcount == 1
 
 
+# Revoke all of a user's sessions except `keep`. Used by set_password/set_role/set_disabled.
 def revoke_user_sessions(conn: psycopg.Connection, user_id: uuid.UUID, reason: str,
                          keep: uuid.UUID | None = None) -> int:
     cur = conn.execute("UPDATE cgis_app.sessions SET revoked_at = now(), revoked_reason = %s "
@@ -230,6 +247,7 @@ def revoke_user_sessions(conn: psycopg.Connection, user_id: uuid.UUID, reason: s
     return cur.rowcount
 
 
+# A user's personal access tokens (metadata only). Used by GET /auth/tokens.
 def list_tokens(conn: psycopg.Connection, user_id: uuid.UUID) -> list[dict[str, Any]]:
     return conn.execute(
         "SELECT session_id AS token_id, name, scope, created_at, last_seen_at, expires_at, revoked_at "
@@ -237,11 +255,13 @@ def list_tokens(conn: psycopg.Connection, user_id: uuid.UUID) -> list[dict[str, 
         (user_id,)).fetchall()
 
 
+# Number of a user's active tokens. Used by POST /auth/tokens (per-user cap).
 def count_live_tokens(conn: psycopg.Connection, user_id: uuid.UUID) -> int:
     return conn.execute("SELECT count(*) AS n FROM cgis_app.sessions WHERE user_id = %s AND kind = 'pat' "
                         "AND revoked_at IS NULL AND expires_at > now()", (user_id,)).fetchone()["n"]
 
 
+# Revoke one of the owner's tokens. Used by DELETE /auth/tokens/{id}.
 def revoke_token(conn: psycopg.Connection, user_id: uuid.UUID, token_id: uuid.UUID) -> bool:
     cur = conn.execute("UPDATE cgis_app.sessions SET revoked_at = now(), revoked_reason = 'revoked_by_owner' "
                        "WHERE session_id = %s AND user_id = %s AND kind = 'pat' AND revoked_at IS NULL",
@@ -249,6 +269,7 @@ def revoke_token(conn: psycopg.Connection, user_id: uuid.UUID, token_id: uuid.UU
     return cur.rowcount == 1
 
 
+# Delete sessions expired/revoked more than N days ago. Used by app._maintenance.
 def purge_expired_sessions(conn: psycopg.Connection, older_than_days: int = 30) -> int:
     cur = conn.execute("DELETE FROM cgis_app.sessions WHERE expires_at < now() - make_interval(days => %s) "
                        "OR revoked_at < now() - make_interval(days => %s)", (older_than_days, older_than_days))
@@ -256,14 +277,15 @@ def purge_expired_sessions(conn: psycopg.Connection, older_than_days: int = 30) 
 
 
 # ------------------------------------------------------------------ login throttling
+# Seconds until login is allowed for any key (0 = allowed). Used by routes_auth.login.
 def throttle_status(conn: psycopg.Connection, keys: list[str]) -> int:
-    """Seconds until login is allowed again for any of ``keys`` (0 = allowed)."""
     row = conn.execute("SELECT max(extract(epoch FROM locked_until - now())) AS wait FROM cgis_app.login_attempts "
                        "WHERE key = ANY(%s) AND locked_until > now()", (keys,)).fetchone()
     wait = row["wait"] if row else None
     return int(wait) + 1 if wait and wait > 0 else 0
 
 
+# Count a failed login in its window and lock the key at `limit`. Used by routes_auth.login.
 def record_failure(conn: psycopg.Connection, settings: Settings, key: str, limit: int) -> None:
     conn.execute(
         """
@@ -280,5 +302,6 @@ def record_failure(conn: psycopg.Connection, settings: Settings, key: str, limit
                  (settings.login_lockout_seconds, key[:200], limit))
 
 
+# Reset a key after a successful login. Used by routes_auth.login.
 def clear_failures(conn: psycopg.Connection, key: str) -> None:
     conn.execute("DELETE FROM cgis_app.login_attempts WHERE key = %s", (key[:200],))

@@ -1,19 +1,6 @@
-"""Request authentication and authorization (FastAPI dependencies).
-
-Credential sources, in order:
-
-1. ``Authorization: Bearer <token>`` — a bearer session (``POST /auth/login`` with ``token: true``) or a
-   personal access token (``POST /auth/tokens``). Not ambient, so no CSRF check.
-2. ``Authorization: Basic base64(<any user>:<personal access token>)`` — for clients that only support
-   HTTP Basic (QGIS, GDAL ``GDAL_HTTP_USERPWD``, curl ``-u``). Account passwords are NEVER accepted here.
-3. The ``cgis_session`` cookie (HttpOnly, SameSite=Strict) for browsers. Every unsafe method
-   (POST/PUT/PATCH/DELETE) additionally needs ``X-CSRF-Token`` equal to the session's token and, when the
-   browser sends ``Origin``/``Sec-Fetch-Site``, a same-origin request.
-
-A token type is only valid in its own channel (a browser session secret is refused in an Authorization
-header, a bearer/PAT secret is refused as a cookie). Authorization is enforced per route in the
-backend: hiding a button in the UI is never the control.
-"""
+# Request authentication/authorization as FastAPI dependencies. Credentials: Bearer (session or personal
+# access token), HTTP Basic with a token as password (never an account password), or the cgis_session cookie
+# (+X-CSRF-Token and same-origin on unsafe methods). Each secret is valid only in its own channel.
 
 from __future__ import annotations
 
@@ -35,10 +22,12 @@ SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 CSRF_HEADER = "x-csrf-token"
 
 
+# 401 ApiError with WWW-Authenticate. Used by resolve, require_user and routes_auth.verify.
 def _unauthenticated(code: str = errors.UNAUTHENTICATED, message: str = "sign in to use this endpoint") -> ApiError:
     return ApiError(401, code, message, headers={"WWW-Authenticate": 'Bearer realm="cgis"'})
 
 
+# Caller address (X-Real-IP only when APP_TRUST_PROXY_HEADERS). Used by routes_auth.login throttling.
 def client_ip(request: Request) -> str:
     settings = request.app.state.settings
     if settings.trust_proxy_headers:
@@ -50,8 +39,8 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+# (channel, secret) from Authorization or the cookie, or None; 401 for malformed headers. Used by resolve.
 def _credential(request: Request) -> tuple[str, str] | None:
-    """Return (channel, secret) or None; raises 401 for malformed Authorization headers."""
     header = request.headers.get("authorization")
     if header:
         scheme, _, value = header.partition(" ")
@@ -77,6 +66,7 @@ def _credential(request: Request) -> tuple[str, str] | None:
     return None
 
 
+# 403 ORIGIN_FORBIDDEN for foreign Origin/Sec-Fetch-Site. Used by check_csrf and login.
 def _check_same_origin(request: Request) -> None:
     settings = request.app.state.settings
     origin = request.headers.get("origin")
@@ -89,6 +79,7 @@ def _check_same_origin(request: Request) -> None:
         raise ApiError(403, errors.ORIGIN_FORBIDDEN, "cross-site requests are not allowed")
 
 
+# Enforce same-origin and X-CSRF-Token for unsafe methods of a cookie session. Used by resolve.
 def check_csrf(request: Request, principal: Principal, method: str | None = None) -> None:
     if (method or request.method).upper() in SAFE_METHODS:
         return
@@ -99,8 +90,9 @@ def check_csrf(request: Request, principal: Principal, method: str | None = None
                                                 "read csrf_token from POST /auth/login or GET /auth/me")
 
 
+# Authenticate the request once (cached in request.state); raises 401/403. Used by the dependencies
+# below and by /auth/logout, /auth/me, /auth/verify (with the original method).
 def resolve(request: Request, *, method: str | None = None) -> Principal | None:
-    """Authenticate the request (cached per request). Raises 401/403 for bad credentials or CSRF."""
     if hasattr(request.state, "principal"):
         return request.state.principal
     found = _credential(request)
@@ -127,10 +119,12 @@ def resolve(request: Request, *, method: str | None = None) -> Principal | None:
     return principal
 
 
+# Dependency: principal or None. Used by the catalog routes (OptionalPrincipal).
 def optional_principal(request: Request) -> Principal | None:
     return resolve(request)
 
 
+# Dependency: any signed-in principal, else 401. Used by export routes (UserPrincipal).
 def require_user(request: Request) -> Principal:
     principal = resolve(request)
     if principal is None:
@@ -138,6 +132,7 @@ def require_user(request: Request) -> Principal:
     return principal
 
 
+# Dependency: admin role, else 403 FORBIDDEN. Used by every /admin route (AdminPrincipal).
 def require_admin(request: Request) -> Principal:
     principal = require_user(request)
     if not principal.is_admin:
@@ -146,8 +141,9 @@ def require_admin(request: Request) -> Principal:
     return principal
 
 
+# Dependency: signed in with a session, not a personal access token. Used by /auth/tokens and
+# /auth/password (SessionPrincipal).
 def require_full_session(request: Request) -> Principal:
-    """Account management (tokens, password) needs a sign-in session, not a personal access token."""
     principal = require_user(request)
     if principal.kind == "pat":
         raise ApiError(403, errors.FORBIDDEN, "personal access tokens cannot manage tokens or passwords; "

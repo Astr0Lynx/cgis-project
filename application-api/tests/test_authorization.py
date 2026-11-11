@@ -1,5 +1,5 @@
-"""Server-side authorization: every admin route refuses anonymous (401) and user (403) callers on direct HTTP,
-including path and header spoofing; users may read and export."""
+# Server-side authorization: every admin route refuses anonymous (401) and user (403) callers, including
+# path and header spoofing; users may read and export.
 
 from __future__ import annotations
 
@@ -27,6 +27,7 @@ ADMIN_ROUTES = [
 TIFF = b"II*\x00" + b"\x00" * 64
 
 
+# Send method/path with an upload, JSON or empty body. Used by the authorization matrix.
 def _call(client, method, path, body):
     if body == "upload":
         return client.request(method, path, files={"file": ("x.tif", TIFF, "image/tiff"),
@@ -36,6 +37,7 @@ def _call(client, method, path, body):
     return client.request(method, path)
 
 
+# Verifies: anonymous gets 401.
 @pytest.mark.parametrize("method,path,body", ADMIN_ROUTES)
 def test_anonymous_gets_401(anon_client, method, path, body):
     r = _call(anon_client, method, path, body)
@@ -43,6 +45,7 @@ def test_anonymous_gets_401(anon_client, method, path, body):
     assert r.json()["error"]["code"] == "UNAUTHENTICATED"
 
 
+# Verifies: user gets 403.
 @pytest.mark.parametrize("method,path,body", ADMIN_ROUTES)
 def test_user_gets_403(user_client, roots, method, path, body):
     r = _call(user_client, method, path, body)
@@ -52,12 +55,14 @@ def test_user_gets_403(user_client, roots, method, path, body):
     assert list(roots["staging"].iterdir()) == []  # a refused upload never reaches staging
 
 
+# Verifies: admin is not refused.
 @pytest.mark.parametrize("method,path,body", ADMIN_ROUTES)
 def test_admin_is_not_refused(admin_client, method, path, body):
     r = _call(admin_client, method, path, body)
     assert r.status_code not in (401, 403), (method, path, r.text)
 
 
+# Verifies: spoofed headers do not grant admin.
 @pytest.mark.parametrize("headers", [
     {"X-Role": "admin"}, {"X-Cgis-Role": "admin"}, {"X-Cgis-User": "alice-admin"},
     {"X-Forwarded-User": "alice-admin"}, {"X-Original-URL": "/auth/me"}, {"X-Rewrite-URL": "/auth/me"},
@@ -68,6 +73,7 @@ def test_spoofed_headers_do_not_grant_admin(user_client, headers):
     assert user_client.post("/admin/datasets/x/versions/1/publish", headers=headers).status_code == 403
 
 
+# Verifies: path variants never expose admin.
 @pytest.mark.parametrize("path", [
     "/Admin/datasets", "/ADMIN/datasets", "/admin//datasets", "/api/../admin/datasets", "/api/%2e%2e/admin/datasets",
     "/admin/datasets%2f..%2f..%2fauth/me", "/auth/../admin/datasets", "/admin/datasets/;/", "/admin/datasets/.%2e/",
@@ -81,6 +87,7 @@ def test_path_variants_never_expose_admin(user_client, anon_client, path):
             assert client.get(target, follow_redirects=False).status_code in (401, 403, 404)
 
 
+# Verifies: user cannot escalate through bodies.
 def test_user_cannot_escalate_through_bodies(user_client):
     r = user_client.post("/api/exports", json={"dataset_id": "x", "kind": "full", "format": "COG", "owner": "alice"})
     assert r.status_code == 422
@@ -88,12 +95,14 @@ def test_user_cannot_escalate_through_bodies(user_client):
     assert r.status_code == 422
 
 
+# Verifies: users may read and export.
 def test_users_may_read_and_export(user_client):
     assert user_client.get("/api/catalog/datasets").status_code == 200
     assert user_client.get("/api/exports").status_code == 200
     assert user_client.get("/api/exports/capabilities").status_code == 200
 
 
+# Verifies: method not allowed is json.
 def test_method_not_allowed_is_json(user_client):
     r = user_client.request("PATCH", "/api/exports")
     assert r.status_code == 405 and r.json()["error"]["code"] == "METHOD_NOT_ALLOWED"

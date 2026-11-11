@@ -1,5 +1,5 @@
-"""Exports: native streaming (Range, checksum, constant memory), reprojection and clip jobs with correct CRS,
-bounds, NoData and values, vector GeoJSON, version selection, guardrails, expiry, cancel and crash recovery."""
+# Exports: native streaming (Range, checksum, constant memory), reprojection and clip jobs (CRS, bounds,
+# NoData, values), vector GeoJSON, version selection, guardrails, expiry, cancel and crash recovery.
 
 from __future__ import annotations
 
@@ -21,28 +21,33 @@ AOI = {"type": "Polygon", "coordinates": [[[78.0101, 17.9801], [78.0302, 17.9801
                                            [78.0101, 17.9902], [78.0101, 17.9801]]]}
 
 
+# Published synthetic raster dataset for export tests.
 @pytest.fixture
 def raster_ds(admin_client, run_ingest, samples):
     publish(admin_client, run_ingest, samples["raster"], synthetic.raster_meta("exp-pop", 1))
     return "exp-pop"
 
 
+# Published synthetic vector dataset.
 @pytest.fixture
 def vector_ds(admin_client, run_ingest, samples):
     publish(admin_client, run_ingest, samples["vector"], synthetic.vector_meta("exp-towns", 1, unit_id_prefix="et:"))
     return "exp-towns"
 
 
+# SHA-256 of bytes.
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+# POST /api/exports, assert the status and return the job JSON.
 def _export(client, body, expect=(201, 202)):
     r = client.post("/api/exports", json=body)
     assert r.status_code in expect, r.text
     return r.json()
 
 
+# Run the export worker if needed and return the completed job JSON.
 def _finish(client, job, run_export):
     if job["status"] != "completed":
         run_export()
@@ -51,6 +56,7 @@ def _finish(client, job, run_export):
     return job
 
 
+# Verifies: capabilities are public.
 def test_capabilities_are_public(anon_client):
     caps = anon_client.get("/api/exports/capabilities").json()
     assert [f["id"] for f in caps["formats"]["raster"]] == ["GTiff", "COG"]
@@ -58,11 +64,13 @@ def test_capabilities_are_public(anon_client):
     assert caps["kinds"] == ["full", "clip"] and caps["output_crs"]["accepts_any_epsg"] is True
 
 
+# Verifies: anonymous cannot export.
 def test_anonymous_cannot_export(anon_client, raster_ds):
     r = anon_client.post("/api/exports", json={"dataset_id": raster_ds, "kind": "full", "format": "COG"})
     assert r.status_code == 401
 
 
+# Verifies: native full export streams the published COG.
 def test_native_full_export_streams_the_published_cog(user_client, raster_ds, roots):
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "full", "format": "COG"}, expect=(201,))
     assert job["status"] == "completed" and job["links"]["download"] == f"/api/exports/{job['job_id']}/download"
@@ -95,8 +103,8 @@ def test_native_full_export_streams_the_published_cog(user_client, raster_ds, ro
     assert same_crs["result"]["source"] == "native_asset"
 
 
+# Verifies: A ~48 MB incompressible raster is streamed in chunks: peak Python allocation stays far below its size.
 def test_native_download_memory_is_bounded(admin_client, user_client, run_ingest, tmp_path):
-    """A ~48 MB incompressible raster is streamed in chunks: peak Python allocation stays far below its size."""
     import tracemalloc
 
     rng = np.random.default_rng(42)
@@ -123,6 +131,7 @@ def test_native_download_memory_is_bounded(admin_client, user_client, run_ingest
     assert peak < size / 4, f"peak {peak} bytes for a {size} byte file"
 
 
+# Verifies: reprojected full export GTiff and COG.
 def test_reprojected_full_export_gtiff_and_cog(user_client, raster_ds, run_export, samples):
     with rasterio.open(samples["raster"]) as src:
         source_values = set(np.unique(src.read(1)).tolist())
@@ -149,6 +158,7 @@ def test_reprojected_full_export_gtiff_and_cog(user_client, raster_ds, run_expor
             assert abs(lon_min - 78.0) < 0.002 and abs(lat_max - 18.0) < 0.002
 
 
+# Verifies: clip native values bounds and NoData.
 def test_clip_native_values_bounds_and_nodata(user_client, raster_ds, run_export, samples):
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "clip", "aoi": AOI, "aoi_crs": "EPSG:4326",
                                 "format": "GTiff"}, expect=(202,))
@@ -168,6 +178,7 @@ def test_clip_native_values_bounds_and_nodata(user_client, raster_ds, run_export
         assert valid.sum() == out["count_valid"] and np.array_equal(got[valid], expected[valid])
 
 
+# Verifies: clip with output CRS and COG.
 def test_clip_with_output_crs_and_cog(user_client, raster_ds, run_export):
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "clip", "aoi": AOI, "format": "COG",
                                 "output_crs": "EPSG:3857"}, expect=(202,))
@@ -177,6 +188,7 @@ def test_clip_with_output_crs_and_cog(user_client, raster_ds, run_export):
         assert ds.crs.to_epsg() == 3857
 
 
+# Verifies: export validation errors.
 @pytest.mark.parametrize("body,status,code", [
     ({"kind": "full", "format": "PNG"}, 422, "UNSUPPORTED_FORMAT"),
     ({"kind": "full", "format": "GeoJSON"}, 422, "UNSUPPORTED_FORMAT"),
@@ -202,6 +214,7 @@ def test_export_validation_errors(user_client, raster_ds, body, status, code):
     assert (r.status_code, r.json()["error"]["code"]) == (status, code), r.text
 
 
+# Verifies: unknown or path like dataset.
 def test_unknown_or_path_like_dataset(user_client):
     assert user_client.post("/api/exports", json={"dataset_id": "nope", "kind": "full", "format": "COG"}
                             ).json()["error"]["code"] == "DATASET_NOT_FOUND"
@@ -210,6 +223,7 @@ def test_unknown_or_path_like_dataset(user_client):
         assert r.status_code == 422 and r.json()["error"]["code"] == "INVALID_DATASET_ID"
 
 
+# Verifies: huge AOI refused.
 def test_huge_aoi_refused(admin_client, user_client, run_ingest, tmp_path):
     path = tmp_path / "wide.tif"
     with rasterio.open(path, "w", driver="GTiff", width=2000, height=2000, count=1, dtype="uint8", crs="EPSG:4326",
@@ -222,6 +236,7 @@ def test_huge_aoi_refused(admin_client, user_client, run_ingest, tmp_path):
     assert r.status_code == 413 and r.json()["error"]["code"] == "AOI_TOO_LARGE"
 
 
+# Verifies: vector exports.
 def test_vector_exports(user_client, vector_ds, run_export, roots):
     job = _export(user_client, {"dataset_id": vector_ds, "kind": "full", "format": "GeoJSON"}, expect=(201,))
     fc = json.loads(user_client.get(job["links"]["download"]).content)
@@ -257,6 +272,7 @@ def test_vector_exports(user_client, vector_ds, run_export, roots):
         assert r.json()["error"]["code"] == "AOI_OUTSIDE_DATASET"
 
 
+# Verifies: version selection.
 def test_version_selection(admin_client, user_client, run_ingest, samples, roots):
     publish(admin_client, run_ingest, samples["raster"], synthetic.raster_meta("ver-pop", 1))
     publish(admin_client, run_ingest, samples["raster_v2"], synthetic.raster_meta("ver-pop", 2))
@@ -269,6 +285,7 @@ def test_version_selection(admin_client, user_client, run_ingest, samples, roots
     assert user_client.get(old["links"]["download"]).content == v1
 
 
+# Verifies: jobs are private to their owner.
 def test_jobs_are_private_to_their_owner(user_client, admin_client, make_client, raster_ds, db, settings):
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "full", "format": "COG"}, expect=(201,))
     from cgis_app import identity
@@ -288,6 +305,7 @@ def test_jobs_are_private_to_their_owner(user_client, admin_client, make_client,
     assert user_client.get(f"/api/exports/{uuid.uuid4()}").status_code == 404
 
 
+# Verifies: cancel and states.
 def test_cancel_and_states(user_client, raster_ds, run_export):
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "full", "format": "GTiff",
                                 "output_crs": "EPSG:3857"}, expect=(202,))
@@ -302,6 +320,7 @@ def test_cancel_and_states(user_client, raster_ds, run_export):
     assert user_client.get(f"/api/exports/{job['job_id']}/download").json()["error"]["code"] == "JOB_FAILED"
 
 
+# Verifies: running job can be cancelled.
 def test_running_job_can_be_cancelled(user_client, raster_ds, worker_settings, db):
     from cgis_app import jobs
     from cgis_app.db import connect
@@ -311,6 +330,7 @@ def test_running_job_can_be_cancelled(user_client, raster_ds, worker_settings, d
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "full", "format": "GTiff",
                                 "output_crs": "EPSG:3857"}, expect=(202,))
 
+    # Export handler that requests a cancel, then reports progress until Cancelled is raised.
     def cancelling_handler(ctx):
         user_client.post(f"/api/exports/{job['job_id']}/cancel")
         import time
@@ -328,6 +348,7 @@ def test_running_job_can_be_cancelled(user_client, raster_ds, worker_settings, d
     assert row["status"] == "cancelled"
 
 
+# Verifies: expired export is gone.
 def test_expired_export_is_gone(user_client, raster_ds, run_export, db, roots, worker_settings):
     job = _finish(user_client, _export(user_client, {"dataset_id": raster_ds, "kind": "clip", "aoi": AOI,
                                                      "format": "GTiff"}, expect=(202,)), run_export)
@@ -347,6 +368,7 @@ def test_expired_export_is_gone(user_client, raster_ds, run_export, db, roots, w
     assert user_client.get(f"/api/exports/{job['job_id']}").json()["status"] == "expired"
 
 
+# Verifies: crashed worker job is recovered.
 def test_crashed_worker_job_is_recovered(user_client, raster_ds, run_export, db):
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "clip", "aoi": AOI, "format": "COG"}, expect=(202,))
     from cgis_app import jobs
@@ -361,6 +383,7 @@ def test_crashed_worker_job_is_recovered(user_client, raster_ds, run_export, db)
     assert done["attempts"] == 2
 
 
+# Verifies: job abandoned after max attempts.
 def test_job_abandoned_after_max_attempts(user_client, raster_ds, run_export, db):
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "clip", "aoi": AOI, "format": "GTiff"}, expect=(202,))
     with db.owner() as conn:
@@ -371,6 +394,7 @@ def test_job_abandoned_after_max_attempts(user_client, raster_ds, run_export, db
     assert row["status"] == "failed" and row["error"]["code"] == "JOB_ABANDONED"
 
 
+# Verifies: active job limit.
 def test_active_job_limit(user_client, raster_ds, app):
     limit = app.state.settings.export_max_active_per_user
     for _ in range(limit):
@@ -379,6 +403,7 @@ def test_active_job_limit(user_client, raster_ds, app):
     assert r.status_code == 429 and r.json()["error"]["code"] == "TOO_MANY_JOBS" and r.headers["retry-after"]
 
 
+# Verifies: dataset restricted after export.
 def test_dataset_restricted_after_export(admin_client, user_client, raster_ds):
     job = _export(user_client, {"dataset_id": raster_ds, "kind": "full", "format": "COG"}, expect=(201,))
     admin_client.put(f"/admin/datasets/{raster_ds}/access", json={"access": "admins"})

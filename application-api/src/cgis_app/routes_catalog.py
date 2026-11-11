@@ -1,9 +1,5 @@
-"""``/api/catalog``: path-free dataset discovery filtered by the caller's role and each dataset's access level.
-
-Anonymous callers see ``public`` datasets only (an empty list by default, since the default access level
-is ``users``); signed-in users see ``public`` + ``users``; admins see everything. A dataset the caller may
-not see answers 404, exactly like a dataset that does not exist.
-"""
+# /api/catalog routes: path-free discovery filtered by role and dataset access level. Anonymous callers see
+# public datasets only; users public+users; admins all. A hidden dataset answers 404 like a missing one.
 
 from __future__ import annotations
 
@@ -18,6 +14,7 @@ router = APIRouter(prefix="/api/catalog", tags=["catalog"])
 _E = {code: {"model": ErrorResponse} for code in (400, 401, 404, 422)}
 
 
+# Parse 'minLon,minLat,maxLon,maxLat' (EPSG:4326) or 422. Used by list_datasets.
 def _parse_bbox(text: str | None) -> list[float] | None:
     if text is None:
         return None
@@ -30,6 +27,7 @@ def _parse_bbox(text: str | None) -> list[float] | None:
     return values
 
 
+# GET /api/catalog/datasets: current ready versions the caller may see.
 @router.get("/datasets", response_model=Page, responses=_E, summary="Discover datasets (current ready versions)")
 def list_datasets(request: Request, principal: OptionalPrincipal,
                   kind: str | None = Query(None, pattern="^(raster|vector)$"),
@@ -55,6 +53,7 @@ def list_datasets(request: Request, principal: OptionalPrincipal,
     return {"items": items, "total": total, "offset": offset, "limit": limit, "links": links}
 
 
+# Access level of a dataset the caller may see, else 404 (422 for a bad id). Used by the routes below.
 def _visible(conn, settings, dataset_id: str, role: str | None) -> str:
     if not catalog.valid_dataset_id(dataset_id):
         raise ApiError(422, errors.INVALID_DATASET_ID, "dataset_id must be a lowercase catalog slug")
@@ -64,6 +63,7 @@ def _visible(conn, settings, dataset_id: str, role: str | None) -> str:
     return access
 
 
+# GET /api/catalog/datasets/{id}: current ready version plus its ready versions and links.
 @router.get("/datasets/{dataset_id}", responses=_E, summary="Current ready version of one dataset + its versions")
 def get_dataset(dataset_id: str, request: Request, principal: OptionalPrincipal):
     settings = request.app.state.settings
@@ -81,6 +81,7 @@ def get_dataset(dataset_id: str, request: Request, principal: OptionalPrincipal)
     return rec
 
 
+# GET /api/catalog/datasets/{id}/versions/{v}: one ready version.
 @router.get("/datasets/{dataset_id}/versions/{version}", responses=_E, summary="One ready version")
 def get_dataset_version(dataset_id: str, version: int, request: Request, principal: OptionalPrincipal):
     settings = request.app.state.settings

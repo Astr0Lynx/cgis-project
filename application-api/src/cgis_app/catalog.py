@@ -1,10 +1,6 @@
-"""Read-only catalog access, dataset access policy and path-free public metadata.
-
-The catalog (``catalog.datasets`` / ``catalog.current_datasets``) is the only source of dataset identity
-and asset locations. Clients only ever send ``dataset_id`` (+ optional version); ``asset_path`` and any
-provenance field that could reveal a server path, credential or restricted source link are removed
-before metadata leaves the service.
-"""
+# Read-only catalog access (catalog.datasets / current_datasets), per-dataset access policy
+# (cgis_app.dataset_access) and path-free public metadata. Clients only ever send dataset_id (+version);
+# asset_path and provenance that could reveal paths, credentials or restricted links never leave the service.
 
 from __future__ import annotations
 
@@ -41,24 +37,27 @@ _ALLOWED_KEYS = {"license", "licence", "citation", "doi", "group_id", "region", 
                  "geometry_type", "width", "height", "dtype", "nodata", "band", "band_count", "mask",
                  "stats", "valid_count", "nodata_count", "min", "max", "sum", "transform", "native_bounds",
                  "bbox_wgs84", "resolution_x", "resolution_y", "source_units", "source_driver",
-                 "source_is_cog", "asset", "format", "layout", "compression", "overviews", "access"}
-_ALLOWED_KEYS |= {"author", "authors", "contributors"}
+                 "source_is_cog", "asset", "format", "layout", "compression", "overviews", "access",
+                 "author", "authors", "contributors"}
 # A string value that looks like a filesystem path or URL is dropped even under an allowed key; the only
 # links kept are public DOI resolver links (citations).
 _PATHLIKE_RE = re.compile(r"(^/|^[A-Za-z]:\\|^\\\\|://|^~|\.\./|^file:|^vsi|/data/|\\)", re.I)
 _DOI_RE = re.compile(r"^https://doi\.org/10\.\d{4,9}/[^\s?#]+$")
 
 
+# True for a lowercase catalog slug. Used by the catalog, admin and export routes.
 def valid_dataset_id(dataset_id: str) -> bool:
     return isinstance(dataset_id, str) and bool(DATASET_ID_RE.match(dataset_id))
 
 
+# Keep DOI links; drop strings that look like paths/URLs; cap at 2000 chars. Used by _clean and _text.
 def safe_string(value: str) -> str | None:
     if _DOI_RE.match(value):
         return value
     return None if _PATHLIKE_RE.search(value) else value[:2000]
 
 
+# Recursively drop secret-looking keys and path-like values. Used by public_provenance.
 def _clean(value: Any, depth: int = 0) -> Any:
     if depth > 6:
         return None
@@ -80,8 +79,8 @@ def _clean(value: Any, depth: int = 0) -> Any:
     return value
 
 
+# Provenance safe for any reader (also without upload user/id/file name). Used by public_record.
 def public_provenance(provenance: dict[str, Any] | None) -> dict[str, Any]:
-    """Provenance subset safe for any reader: no paths, URLs, credentials or error traces."""
     if not isinstance(provenance, dict):
         return {}
     cleaned = _clean(provenance)
@@ -98,12 +97,9 @@ def public_provenance(provenance: dict[str, Any] | None) -> dict[str, Any]:
 _URL_IN_TEXT_RE = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://([^/\s?#@]*@)?([^/\s?#:]+)[^\s]*")
 
 
+# Catalog source text with links reduced to their host and server paths withheld.
+# Used by public_record and the export worker's GeoTIFF tags.
 def public_source(source: str | None) -> str | None:
-    """The catalog ``source`` text with links reduced to their host and local paths removed.
-
-    Download links for approval-gated sources (e.g. Bhuvan) can carry signed parameters; only the host is
-    kept so a reader still sees where the data came from.
-    """
     if not source:
         return source
     reduced = _URL_IN_TEXT_RE.sub(lambda m: f"{m.group(2)} (link withheld)", source)
@@ -112,12 +108,14 @@ def public_source(source: str | None) -> str | None:
     return reduced[:500]
 
 
+# [w, s, e, n] from the query columns, or None. Used by public_record.
 def _bbox(row: dict) -> list[float] | None:
     if row.get("w") is None:
         return None
     return [row["w"], row["s"], row["e"], row["n"]]
 
 
+# First string value among keys, made safe. Used by public_record and _license.
 def _text(prov: dict, *keys: str) -> str | None:
     for key in keys:
         value = prov.get(key)
@@ -126,6 +124,7 @@ def _text(prov: dict, *keys: str) -> str | None:
     return None
 
 
+# License from provenance (top level or provenance.source). Used by public_record.
 def _license(prov: dict) -> str | None:
     found = _text(prov, "license", "licence")
     if found:
@@ -136,12 +135,14 @@ def _license(prov: dict) -> str | None:
     return None
 
 
+# True for test data (provenance flag or 'synthetic'/'fixture' in source/title). Used by public_record.
 def is_synthetic(row: dict) -> bool:
     prov = row.get("provenance") or {}
     text = f"{row.get('source') or ''} {row.get('title') or ''}".lower()
     return bool(prov.get("synthetic")) or "synthetic" in text or "fixture" in text
 
 
+# Public dataset metadata for one catalog row. Used by the catalog routes, routes_exports and worker.export.
 def public_record(row: dict, *, access: str | None = None, include_provenance: bool = True) -> dict[str, Any]:
     prov = row.get("provenance") or {}
     clean = public_provenance(prov) if include_provenance else {}
@@ -183,6 +184,8 @@ def public_record(row: dict, *, access: str | None = None, include_provenance: b
 
 
 # ------------------------------------------------------------------ access policy
+# Access level per dataset id (explicit policy or APP_DEFAULT_DATASET_ACCESS). Used by catalog,
+# admin and export routes.
 def access_for(conn: psycopg.Connection, settings: Settings, dataset_ids: list[str]) -> dict[str, str]:
     rows = conn.execute("SELECT dataset_id, access FROM cgis_app.dataset_access WHERE dataset_id = ANY(%s)",
                         (list(dataset_ids),)).fetchall()
@@ -190,8 +193,8 @@ def access_for(conn: psycopg.Connection, settings: Settings, dataset_ids: list[s
     return {d: explicit.get(d, settings.default_dataset_access) for d in dataset_ids}
 
 
+# Access levels a role may see: anonymous public; user +users; admin all. Used by can_read/list_current.
 def allowed_levels(role: str | None) -> list[str]:
-    """Access levels a caller may see: anonymous -> public; user -> public+users; admin -> all."""
     if role == "admin":
         return ["public", "users", "admins"]
     if role == "user":
@@ -199,10 +202,12 @@ def allowed_levels(role: str | None) -> list[str]:
     return ["public"]
 
 
+# True when a role may see a dataset with this access level. Used by catalog and export routes.
 def can_read(access: str, role: str | None) -> bool:
     return access in allowed_levels(role)
 
 
+# Upsert a dataset's access level. Used by PUT /admin/datasets/{id}/access.
 def set_access(conn: psycopg.Connection, dataset_id: str, access: str, note: str | None, user_id) -> dict:
     return conn.execute(
         "INSERT INTO cgis_app.dataset_access (dataset_id, access, note, updated_by, updated_at) "
@@ -212,15 +217,15 @@ def set_access(conn: psycopg.Connection, dataset_id: str, access: str, note: str
 
 
 # ------------------------------------------------------------------ queries
-def _access_sql(settings: Settings) -> str:
-    # Default access applies to datasets without a policy row; bound as a parameter, never formatted.
-    return "coalesce(a.access, %(default_access)s)"
+# Default access applies to datasets without a policy row; bound as a parameter, never formatted.
+_ACCESS_SQL = "coalesce(a.access, %(default_access)s)"
 
 
+# Current ready versions the role may see, filtered and paged, plus the total. Used by GET /api/catalog/datasets.
 def list_current(conn: psycopg.Connection, settings: Settings, *, role: str | None, kind: str | None = None,
                  product_level: str | None = None, year: int | None = None, q: str | None = None,
                  bbox: list[float] | None = None, limit: int = 100, offset: int = 0) -> tuple[list[dict], int]:
-    where = [f"{_access_sql(settings)} = ANY(%(levels)s)"]
+    where = [f"{_ACCESS_SQL} = ANY(%(levels)s)"]
     params: dict[str, Any] = {"default_access": settings.default_dataset_access, "levels": allowed_levels(role),
                               "limit": limit, "offset": offset}
     if kind:
@@ -243,12 +248,13 @@ def list_current(conn: psycopg.Connection, settings: Settings, *, role: str | No
             f"WHERE {clause}")
     total = conn.execute(f"SELECT count(*) AS n {base}", params).fetchone()["n"]
     rows = conn.execute(
-        f"SELECT {_COLUMNS}, {_access_sql(settings)} AS access {base} "
+        f"SELECT {_COLUMNS}, {_ACCESS_SQL} AS access {base} "
         "ORDER BY d.product_level, d.year NULLS LAST, d.dataset_id LIMIT %(limit)s OFFSET %(offset)s",
         params).fetchall()
     return rows, total
 
 
+# Ready versions per dataset id, newest first. Used by the catalog routes.
 def ready_versions(conn: psycopg.Connection, dataset_ids: list[str]) -> dict[str, list[dict]]:
     rows = conn.execute("SELECT dataset_id, version, status, created_at FROM catalog.datasets "
                         "WHERE dataset_id = ANY(%s) AND status = 'ready' ORDER BY dataset_id, version DESC",
@@ -260,9 +266,9 @@ def ready_versions(conn: psycopg.Connection, dataset_ids: list[str]) -> dict[str
     return out
 
 
+# One catalog row: a given (ready) version or the current one. Used by catalog/export routes and worker.export.
 def get_version(conn: psycopg.Connection, dataset_id: str, version: int | None, *,
                 ready_only: bool = True) -> dict | None:
-    """One catalog row: the given version, or the current ready version when ``version`` is None."""
     if version is None:
         return conn.execute(f"SELECT {_COLUMNS} FROM catalog.current_datasets d WHERE d.dataset_id = %s",
                             (dataset_id,)).fetchone()
@@ -271,11 +277,8 @@ def get_version(conn: psycopg.Connection, dataset_id: str, version: int | None, 
                         f"{status_clause}", (dataset_id, version)).fetchone()
 
 
-def all_versions(conn: psycopg.Connection, dataset_id: str) -> list[dict]:
-    return conn.execute(f"SELECT {_COLUMNS} FROM catalog.datasets d WHERE d.dataset_id = %s ORDER BY d.version DESC",
-                        (dataset_id,)).fetchall()
 
-
+# True when any catalog version exists. Used by routes_exports and PUT .../access.
 def dataset_exists(conn: psycopg.Connection, dataset_id: str) -> bool:
     return conn.execute("SELECT 1 FROM catalog.datasets WHERE dataset_id = %s LIMIT 1", (dataset_id,)).fetchone() \
         is not None

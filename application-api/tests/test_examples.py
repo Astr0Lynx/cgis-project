@@ -1,5 +1,5 @@
-"""Records REAL request/response pairs of the main admin/user flows into docs/examples/ (APP_EXAMPLES_OUT=dir).
-Volatile values (ids, times, tokens, checksums) are replaced by stable placeholders so the files diff cleanly."""
+# Main admin/user flow end to end, recorded as scrubbed request/response pairs (written to APP_EXAMPLES_OUT
+# when set; volatile ids, times, tokens and checksums replaced by placeholders).
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ _TS = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:\d{2}|Z
 _TOKENS = re.compile(r"cgis_(s|b|pat)_[A-Za-z0-9_-]{43}")
 
 
+# Replace secrets, tokens, checksums, uuids and timestamps with placeholders.
 def _scrub(text: str, secrets: list[str]) -> str:
     for s in secrets:
         text = text.replace(s, "<csrf-token>")
@@ -34,11 +35,14 @@ def _scrub(text: str, secrets: list[str]) -> str:
     return _TS.sub("<timestamp>", text)
 
 
+# Collects request/response pairs.
 class Recorder:
+    # Start empty.
     def __init__(self):
         self.items: list[dict] = []
         self.secrets: list[str] = []
 
+    # Record one response (JSON body or a size note, selected headers).
     def add(self, name: str, method: str, path: str, resp, body=None, note: str | None = None):
         try:
             payload = resp.json()
@@ -51,6 +55,7 @@ class Recorder:
                                         "headers": {k: v for k, v in resp.headers.items() if k in keep},
                                         "body": payload}})
 
+    # Write the scrubbed pairs as NN_<name>.json files.
     def write(self, out: Path):
         out.mkdir(parents=True, exist_ok=True)
         for i, item in enumerate(self.items, 1):
@@ -58,6 +63,7 @@ class Recorder:
             (out / f"{i:02d}_{item['name']}.json").write_text(text + "\n")
 
 
+# Verifies: record examples.
 def test_record_examples(admin_client, user_client, anon_client, run_ingest, run_export, samples):
     out = os.environ.get("APP_EXAMPLES_OUT")
     rec = Recorder()

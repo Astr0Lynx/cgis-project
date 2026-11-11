@@ -1,4 +1,4 @@
-"""Operator CLI against the real database: migrate (idempotent, role provisioning), bootstrap, users, fixtures."""
+# Operator CLI against the real database: migrate (idempotent, role provisioning), bootstrap, users, fixtures.
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from cgis_app import cli
 pytestmark = pytest.mark.db
 
 
+# Environment with the owner's PG* settings for CLI subprocesses.
 @pytest.fixture
 def owner_env(db, monkeypatch):
     params = conninfo_to_dict(db.owner_dsn)
@@ -24,6 +25,7 @@ def owner_env(db, monkeypatch):
     return params
 
 
+# Verifies: migrate is idempotent and provisions roles.
 def test_migrate_is_idempotent_and_provisions_roles(owner_env, db, monkeypatch, capsys):
     monkeypatch.setenv("APP_DB_USER", "cgis_app_cli_api")
     monkeypatch.setenv("APP_DB_PASSWORD", "x9" * 12)
@@ -47,6 +49,7 @@ def test_migrate_is_idempotent_and_provisions_roles(owner_env, db, monkeypatch, 
     assert cli.main(["migrate"]) == 1
 
 
+# Verifies: bootstrap users and fixtures.
 def test_bootstrap_users_and_fixtures(db, monkeypatch, capsys, tmp_path):
     monkeypatch.setenv("APP_DATABASE_URL", db.api_dsn)
     monkeypatch.setenv("APP_BOOTSTRAP_ADMIN_USERNAME", "boot-admin")

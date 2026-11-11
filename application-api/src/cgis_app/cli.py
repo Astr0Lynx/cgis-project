@@ -1,17 +1,6 @@
-"""Command line: ``python -m cgis_app <command>`` (also installed as ``cgis-app``).
-
-  serve      [--host 0.0.0.0] [--port 8000] [--workers 2]     HTTP API (uvicorn, path-only access log)
-  migrate    [--status] [--no-roles]                         schema + login roles (owner PG* credentials)
-  bootstrap                                                  admin/user accounts from APP_BOOTSTRAP_* env
-  users      list | add NAME --role R | passwd NAME | set-role NAME R | disable NAME | enable NAME
-  fixtures   --out FILE [--prefix e2e]                       random-password admin+user for test suites
-  worker     --queue ingest|export [--once]                  background worker
-  worker-health [--max-age 120]                              worker container healthcheck
-  openapi    [--out FILE]                                    write the OpenAPI 3 document
-
-Passwords are read from stdin (``--password-stdin``) or an interactive prompt, never from argv, so they do
-not appear in shell history or ``ps``. Exit codes: 0 ok, 1 failure, 2 usage/config error.
-"""
+# Command line `cgis-app` (also `python -m cgis_app`): serve, migrate, bootstrap, users, fixtures, worker,
+# worker-health, openapi. Passwords come from stdin (--password-stdin) or a prompt, never argv.
+# Exit codes: 0 ok, 1 failure, 2 usage/config error.
 
 from __future__ import annotations
 
@@ -29,6 +18,7 @@ from .config import ConfigError, Settings, read_secret
 log = logging.getLogger("cgis_app.cli")
 
 
+# Settings from env, exit 2 on ConfigError. Used by the commands.
 def _settings() -> Settings:
     try:
         return Settings.from_env()
@@ -37,6 +27,7 @@ def _settings() -> Settings:
         sys.exit(2)
 
 
+# Password from the first stdin line or a repeated prompt. Used by users add/passwd.
 def _read_password(args, prompt: str = "Password: ") -> str:
     if getattr(args, "password_stdin", False):
         value = sys.stdin.readline().rstrip("\n")
@@ -51,12 +42,14 @@ def _read_password(args, prompt: str = "Password: ") -> str:
     return value
 
 
+# DB connection with the configured DSN (waits up to 30 s). Used by bootstrap, users, fixtures.
 def _conn(settings: Settings):
     from .db import connect
 
     return connect(settings.database_url, application_name="cgis-app-cli", wait_seconds=30)
 
 
+# `serve`: run uvicorn with app_factory (no uvicorn access log; ours is path-only).
 def cmd_serve(args) -> int:
     import uvicorn
 
@@ -68,6 +61,7 @@ def cmd_serve(args) -> int:
     return 0
 
 
+# `migrate [--status] [--no-roles]`: apply migrations and login roles with the owner's PG* settings.
 def cmd_migrate(args) -> int:
     from . import migrate
 
@@ -92,6 +86,7 @@ def cmd_migrate(args) -> int:
     return 0
 
 
+# `bootstrap`: create the APP_BOOTSTRAP_ADMIN/USER accounts if absent (Compose app-migrate).
 def cmd_bootstrap(args) -> int:
     from . import identity
 
@@ -123,6 +118,7 @@ def cmd_bootstrap(args) -> int:
     return 0
 
 
+# `users list|add|passwd|set-role|disable|enable`: account management.
 def cmd_users(args) -> int:
     from . import identity
 
@@ -157,12 +153,9 @@ def cmd_users(args) -> int:
             return 1
 
 
+# `fixtures --out FILE`: (re)create <prefix>-admin/-user with random passwords, written to FILE (0600)
+# for automated suites.
 def cmd_fixtures(args) -> int:
-    """Create (or re-key) an admin and a user with random passwords for automated tests.
-
-    The credentials are written to ``--out`` with mode 0600 and never printed; keep that file out of Git
-    (the default location under ./data/ is git-ignored).
-    """
     from . import identity
 
     settings = _settings()
@@ -189,6 +182,7 @@ def cmd_fixtures(args) -> int:
     return 0
 
 
+# `worker --queue ingest|export [--once]`: run a background worker.
 def cmd_worker(args) -> int:
     from .worker.runner import serve
 
@@ -197,13 +191,14 @@ def cmd_worker(args) -> int:
     return 0
 
 
+# `worker-health`: exit 0 when the worker loop or a heartbeat ran recently (container healthcheck).
 def cmd_worker_health(args) -> int:
-    """Container healthcheck for workers: 0 when the loop or a job heartbeat ran recently."""
     from .worker.runner import health_ok
 
     return 0 if health_ok(args.max_age) else 1
 
 
+# `openapi [--out FILE]`: write the OpenAPI document.
 def cmd_openapi(args) -> int:
     from .app import create_app
 
@@ -217,6 +212,7 @@ def cmd_openapi(args) -> int:
     return 0
 
 
+# The argparse command tree. Used by main and tests/test_cli.py.
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="cgis-app", description="CyberGIS application API")
     sub = p.add_subparsers(dest="command", required=True)
@@ -268,6 +264,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+# Parse argv, configure logging, run the command. Entry point of `cgis-app` and __main__.
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     level = os.environ.get("APP_LOG_LEVEL", "INFO").upper()

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cgis-application-api"
 version = "1.0.0"
-description = "CyberGIS application API: authentication, role-based admin dataset hosting, catalog discovery and exports (Agent 5)."
+description = "CyberGIS application API: authentication, role-based admin dataset hosting, catalog discovery and exports."
 requires-python = ">=3.11"
 # Exact pins for reproducible builds. The numeric/geo stack matches spatial-processing/pyproject.toml so
 # the clip code imported from that package runs on the versions it was tested with. The ingest worker
@@ -45,9 +45,9 @@ cgis_app = ["migrations/*.sql"]
 testpaths = ["tests"]
 addopts = "-ra"
 markers = [
-    "db: needs a disposable PostGIS database (APP_TEST_DSN); see scripts/with_temp_postgis.sh",
+    "db: needs a disposable PostGIS database (APP_TEST_DSN); see scripts/run_tests.sh",
     "ingest: needs the ingestion package and its pinned GDAL stack (run in the ingest-worker environment)",
-    "gateway: needs nginx (APP_TEST_NGINX) to exercise the proposed gateway configuration",
+    "gateway: needs nginx (APP_TEST_NGINX) to exercise infra/gateway/default.conf",
     "real_data: uses real public sample files downloaded by scripts/fetch_real_samples.sh",
 ]
 filterwarnings = [

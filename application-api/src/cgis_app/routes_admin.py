@@ -1,18 +1,7 @@
-"""``/admin``: dataset hosting for the ``admin`` role only.
-
-Lifecycle of one dataset version (``dataset_id`` + ``version``)::
-
-    upload (multipart) -> staged -> validating -> validated -> publishing -> ready
-                                         \\-> failed           \\-> failed
-    failed  -> validating (re-validate) | superseded by a new upload of the same version
-    staged/validated/failed -> discarded (DELETE)
-
-* The bytes go to server-named files in the staging volume; validation and publication run in the
-  restricted ingest worker through the existing importer (``ingestion.importer.Importer``), which owns
-  catalog writes, COG conversion and the ready-version immutability rules.
-* Same version + same checksum is idempotent (200, no new job). A ready version with a different
-  checksum is a 409 ``CHECKSUM_CONFLICT``: publish it as a new version.
-"""
+# /admin routes (admin role only): upload -> validating -> validated -> publishing -> ready, failed
+# (re-validate or replace), discard, access policy, job progress. Bytes go to server-named staging files; the
+# ingest worker runs the existing importer. Same version + same checksum is idempotent (200); a ready version
+# with other bytes is 409 CHECKSUM_CONFLICT.
 
 from __future__ import annotations
 
@@ -41,11 +30,13 @@ LIVE = ("staged", "validating", "validated", "publishing", "failed")
 VERSION_STATUSES = ("staged", "validating", "validated", "publishing", "ready", "failed")
 
 
+# Current UTC time. Used by _manifest_entry.
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
 # ------------------------------------------------------------------ version/dataset views
+# Non-discarded uploads (with uploader name). Used by _datasets.
 def _uploads_for(conn: psycopg.Connection, dataset_ids: list[str] | None = None) -> list[dict]:
     where = "u.status <> 'discarded'"
     params: list[Any] = []
@@ -58,6 +49,7 @@ def _uploads_for(conn: psycopg.Connection, dataset_ids: list[str] | None = None)
         "ORDER BY u.dataset_id, u.version, u.created_at", params).fetchall()
 
 
+# Catalog rows of all or some datasets. Used by _datasets.
 def _catalog_rows(conn: psycopg.Connection, dataset_ids: list[str] | None = None) -> list[dict]:
     where, params = "", []
     if dataset_ids is not None:
@@ -69,6 +61,7 @@ def _catalog_rows(conn: psycopg.Connection, dataset_ids: list[str] | None = None
         f"d.nodata FROM catalog.datasets d {where} ORDER BY d.dataset_id, d.version", params).fetchall()
 
 
+# Validation view of a failed catalog import. Used by _version_record.
 def _validation_from_catalog(row: dict) -> dict | None:
     if row["status"] != "failed":
         return None
@@ -77,6 +70,8 @@ def _validation_from_catalog(row: dict) -> dict | None:
                                      "message": str(err.get("message", "the import failed"))}], "warnings": []}
 
 
+# Merge one version's catalog row and uploads into status, validation and allowed actions.
+# Used by _datasets.
 def _version_record(version: int, cat: dict | None, ups: list[dict]) -> dict[str, Any]:
     live = next((u for u in reversed(ups) if u["status"] in LIVE), None)
     latest = live or (ups[-1] if ups else None)
@@ -126,6 +121,7 @@ def _version_record(version: int, cat: dict | None, ups: list[dict]) -> dict[str
     return record
 
 
+# Per-dataset summaries with every version record. Used by the dataset list/detail/version routes.
 def _datasets(conn: psycopg.Connection, settings, dataset_ids: list[str] | None = None) -> dict[str, dict]:
     cats = _catalog_rows(conn, dataset_ids)
     ups = _uploads_for(conn, dataset_ids)
@@ -166,10 +162,12 @@ def _datasets(conn: psycopg.Connection, settings, dataset_ids: list[str] | None 
     return out
 
 
+# Dataset summary without its versions. Used by list_datasets.
 def _summary(ds: dict) -> dict:
     return {k: v for k, v in ds.items() if k != "versions"}
 
 
+# GET /admin/datasets: every dataset with version status (filters q/status/kind, paged).
 @router.get("/datasets", response_model=Page, responses=_E,
             summary="List every dataset with version status (catalog + staged uploads)")
 def list_datasets(request: Request, principal: AdminPrincipal,
@@ -198,11 +196,13 @@ def list_datasets(request: Request, principal: AdminPrincipal,
             "links": links}
 
 
+# 422 INVALID_DATASET_ID unless a catalog slug. Used by the per-dataset routes.
 def _check_id(dataset_id: str) -> None:
     if not catalog.valid_dataset_id(dataset_id):
         raise ApiError(422, errors.INVALID_DATASET_ID, "dataset_id must be a lowercase catalog slug")
 
 
+# GET /admin/datasets/{id}: all versions plus recent ingest jobs.
 @router.get("/datasets/{dataset_id}", responses=_E, summary="One dataset with every version, validation and "
                                                              "provenance")
 def get_dataset(dataset_id: str, request: Request, principal: AdminPrincipal):
@@ -217,6 +217,7 @@ def get_dataset(dataset_id: str, request: Request, principal: AdminPrincipal):
     return found
 
 
+# GET /admin/datasets/{id}/versions/{v}: one version record.
 @router.get("/datasets/{dataset_id}/versions/{version}", responses=_E, summary="One version")
 def get_version(dataset_id: str, version: int, request: Request, principal: AdminPrincipal):
     _check_id(dataset_id)
@@ -241,6 +242,7 @@ validated asynchronously by the importer.
 """
 
 
+# Parse the metadata part into UploadMetadata (no file/path/URL keys). Used by _register_upload.
 def _parse_metadata(raw: bytes) -> UploadMetadata:
     try:
         data = json.loads(raw.decode("utf-8"))
@@ -258,6 +260,7 @@ def _parse_metadata(raw: bytes) -> UploadMetadata:
         raise ApiError(422, errors.INVALID_METADATA, "metadata is invalid", {"problems": problems}) from None
 
 
+# Importer manifest entry for an upload (+upload provenance, default source). Used by _register_upload.
 def _manifest_entry(meta: UploadMetadata, received: upload_stream.ReceivedUpload, principal, version: int,
                     upload_id: uuid.UUID) -> tuple[dict, list[str]]:
     warnings = []
@@ -277,6 +280,7 @@ def _manifest_entry(meta: UploadMetadata, received: upload_stream.ReceivedUpload
     return entry, warnings
 
 
+# 200 body for an unchanged/already uploaded repeat. Used by _register_upload.
 def _idempotent_response(job_row: dict, outcome: str, upload_id=None) -> JSONResponse:
     body = views.admin_job(job_row)
     body["result"] = {**(body.get("result") or {}), "outcome": outcome}
@@ -285,6 +289,7 @@ def _idempotent_response(job_row: dict, outcome: str, upload_id=None) -> JSONRes
     return JSONResponse(status_code=200, content=body)
 
 
+# POST /admin/datasets/uploads: streamed multipart upload, validation queued.
 @router.post("/datasets/uploads", status_code=202, response_model=AdminJob, summary="Upload a dataset version",
              description=_UPLOAD_DOC, responses={**_E, 200: {"model": AdminJob, "description": "Idempotent repeat"}},
              openapi_extra={"requestBody": {"required": True, "content": {"multipart/form-data": {"schema": {
@@ -295,6 +300,7 @@ async def upload(request: Request, principal: AdminPrincipal):
     return await _handle_upload(request, principal)
 
 
+# POST /admin/datasets: alias of the upload route.
 @router.post("/datasets", status_code=202, response_model=AdminJob, include_in_schema=True,
              summary="Upload a dataset version (alias of POST /admin/datasets/uploads)", description=_UPLOAD_DOC,
              responses={**_E, 200: {"model": AdminJob}},
@@ -305,6 +311,8 @@ async def upload_alias(request: Request, principal: AdminPrincipal):
     return await _handle_upload(request, principal)
 
 
+# Shared upload flow: encoding/preflight checks, stream to staging, register (staged file removed on
+# error). Used by upload and upload_alias.
 async def _handle_upload(request: Request, principal) -> Any:
     import anyio
 
@@ -326,6 +334,8 @@ async def _handle_upload(request: Request, principal) -> Any:
         raise
 
 
+# Check metadata vs file, resolve version/kind/idempotency/conflicts under an advisory lock, record
+# the upload and enqueue validation. Used by _handle_upload (in a thread).
 def _register_upload(request: Request, principal, received: upload_stream.ReceivedUpload, upload_id: uuid.UUID):
     settings = request.app.state.settings
     root = request.app.state.staging_root
@@ -420,6 +430,7 @@ def _register_upload(request: Request, principal, received: upload_stream.Receiv
 
 
 # ------------------------------------------------------------------ validate / publish / discard
+# The live upload of a version (locked), or 409 READY_IMMUTABLE / 404. Used by validate/publish/discard.
 def _live_upload(conn, dataset_id: str, version: int) -> dict:
     live = conn.execute("SELECT * FROM cgis_app.uploads WHERE dataset_id = %s AND version = %s AND status = ANY(%s) "
                         "FOR UPDATE", (dataset_id, version, list(LIVE))).fetchone()
@@ -433,6 +444,7 @@ def _live_upload(conn, dataset_id: str, version: int) -> dict:
     raise ApiError(404, errors.VERSION_NOT_FOUND, f"no staged upload for {dataset_id} v{version}")
 
 
+# POST .../versions/{v}/validate: re-validate a staged/failed/validated upload.
 @router.post("/datasets/{dataset_id}/versions/{version}/validate", status_code=202, response_model=AdminJob,
              responses=_E, summary="(Re)validate a staged or failed upload with the importer")
 def validate(dataset_id: str, version: int, request: Request, principal: AdminPrincipal):
@@ -452,6 +464,7 @@ def validate(dataset_id: str, version: int, request: Request, principal: AdminPr
     return JSONResponse(status_code=202, content=views.admin_job(job))
 
 
+# POST .../versions/{v}/publish: queue publication of a validated upload.
 @router.post("/datasets/{dataset_id}/versions/{version}/publish", status_code=202, response_model=AdminJob,
              responses=_E, summary="Publish a validated upload (importer: COG/normalize, catalog ready)")
 def publish(dataset_id: str, version: int, request: Request, principal: AdminPrincipal):
@@ -471,6 +484,7 @@ def publish(dataset_id: str, version: int, request: Request, principal: AdminPri
     return JSONResponse(status_code=202, content=views.admin_job(job))
 
 
+# DELETE .../versions/{v}: discard an unpublished upload and its staged file.
 @router.delete("/datasets/{dataset_id}/versions/{version}", status_code=204, responses=_E,
                summary="Discard an unpublished upload (ready versions are immutable)")
 def discard(dataset_id: str, version: int, request: Request, principal: AdminPrincipal):
@@ -487,6 +501,7 @@ def discard(dataset_id: str, version: int, request: Request, principal: AdminPri
 
 
 # ------------------------------------------------------------------ access policy
+# PUT /admin/datasets/{id}/access: set public | users | admins.
 @router.put("/datasets/{dataset_id}/access", responses=_E,
             summary="Set who may discover/export a dataset: public | users | admins")
 def put_access(dataset_id: str, req: AccessUpdate, request: Request, principal: AdminPrincipal):
@@ -503,6 +518,7 @@ def put_access(dataset_id: str, req: AccessUpdate, request: Request, principal: 
 
 
 # ------------------------------------------------------------------ jobs
+# GET /admin/jobs: ingest jobs (filters status/kind, paged).
 @router.get("/jobs", response_model=Page, responses=_E, summary="Admin jobs (upload/validate/publish)")
 def list_admin_jobs(request: Request, principal: AdminPrincipal,
                     status: str | None = Query(None, pattern="^(queued|running|completed|failed|cancelled)$"),
@@ -514,6 +530,7 @@ def list_admin_jobs(request: Request, principal: AdminPrincipal,
             "links": {}}
 
 
+# GET /admin/jobs/{id}: one ingest job with progress.
 @router.get("/jobs/{job_id}", response_model=AdminJob, responses=_E, summary="One admin job with progress")
 def get_admin_job(job_id: uuid.UUID, request: Request, principal: AdminPrincipal):
     with request.app.state.db.connection() as conn:

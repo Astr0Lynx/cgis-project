@@ -1,11 +1,6 @@
-"""REAL public inputs through the real pipeline (software evidence; NOT CyberGIS scientific outputs).
-
-* WorldPop Global 1 km unconstrained population, India 2011 (CC BY 4.0), 3508 x 3451 float32, EPSG:4326.
-* geoBoundaries gbOpen India ADM1, simplified (CC BY 2.5 IN).
-
-Fetch them with ``application-api/scripts/fetch_real_samples.sh`` (checksum-verified into ./data/real-samples);
-the tests are skipped when the files are absent.
-"""
+# Real public inputs through the real pipeline (software test inputs, not CyberGIS outputs): WorldPop 1 km
+# India 2011 (CC BY 4.0) and geoBoundaries India ADM1 (CC BY 2.5 IN). Fetch with scripts/fetch_real_samples.sh
+# into ./data/real-samples; skipped when absent.
 
 from __future__ import annotations
 
@@ -33,12 +28,14 @@ HYDERABAD = {"type": "Polygon", "coordinates": [[[78.30, 17.25], [78.65, 17.25],
 EVIDENCE = []
 
 
+# Skip when a real sample is absent; assert its pinned checksum.
 def _need(path: Path, sha: str) -> None:
     if not path.is_file():
         pytest.skip(f"{path.name} not present; run scripts/fetch_real_samples.sh")
     assert hashlib.sha256(path.read_bytes()).hexdigest() == sha, f"{path.name} does not match the pinned checksum"
 
 
+# Run fn and record its duration in EVIDENCE.
 def _timed(label, fn):
     t = time.monotonic()
     out = fn()
@@ -46,6 +43,7 @@ def _timed(label, fn):
     return out
 
 
+# Module fixture: write EVIDENCE to APP_EVIDENCE_OUT when set.
 @pytest.fixture(scope="module", autouse=True)
 def _write_evidence():
     yield
@@ -54,6 +52,7 @@ def _write_evidence():
         Path(out).write_text(json.dumps(EVIDENCE, indent=2, default=str))
 
 
+# Verifies: real worldpop upload publish export.
 def test_real_worldpop_upload_publish_export(admin_client, user_client, run_ingest, run_export, roots, db):
     _need(WORLDPOP, WORLDPOP_SHA)
     meta = {"dataset_id": "real-worldpop-1km-ind-2011", "version": 1, "kind": "raster", "product_level": "source",
@@ -123,6 +122,7 @@ def test_real_worldpop_upload_publish_export(admin_client, user_client, run_inge
         assert ds.tags(ns="IMAGE_STRUCTURE")["LAYOUT"] == "COG"
 
 
+# Verifies: real geoboundaries adm1.
 def test_real_geoboundaries_adm1(admin_client, user_client, run_ingest, run_export):
     _need(ADM1, ADM1_SHA)
     meta = {"dataset_id": "real-geoboundaries-ind-adm1", "version": 1, "kind": "vector", "product_level": "source",

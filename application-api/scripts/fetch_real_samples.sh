@@ -13,7 +13,8 @@ set -eu
 OUT="${OUT:-data/real-samples}"
 mkdir -p "$OUT"
 
-fetch() {  # url file sha256
+# fetch URL FILE SHA256: download into $OUT unless a verified copy exists; refuse a checksum mismatch.
+fetch() {
   if [ -f "$OUT/$2" ] && [ "$(sha256sum "$OUT/$2" | cut -d' ' -f1)" = "$3" ]; then
     echo "ok (cached) $2"; return 0
   fi

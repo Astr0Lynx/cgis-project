@@ -1,4 +1,5 @@
-"""JSON views of job rows (admin jobs and export jobs). Never exposes lease owners or server paths."""
+# JSON views of job rows for admin jobs and export jobs (never lease owners or server paths).
+# Used by routes_admin and routes_exports.
 
 from __future__ import annotations
 
@@ -6,10 +7,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 
+# ISO 8601 text for datetimes, other values unchanged. Used by the views below.
 def _iso(value: Any) -> Any:
     return value.isoformat() if isinstance(value, datetime) else value
 
 
+# Public {code, message, details?} of a job's error column. Used by admin_job/export_job.
 def _error(row: dict) -> dict | None:
     err = row.get("error")
     if not err:
@@ -20,6 +23,7 @@ def _error(row: dict) -> dict | None:
     return out
 
 
+# AdminJob body for an ingest-queue row. Used by routes_admin.
 def admin_job(row: dict) -> dict[str, Any]:
     job_id = str(row["job_id"])
     return {
@@ -42,6 +46,7 @@ def admin_job(row: dict) -> dict[str, Any]:
     }
 
 
+# ExportJob body for an export-queue row, with download/metadata/cancel links by status. Used by routes_exports.
 def export_job(row: dict) -> dict[str, Any]:
     job_id = str(row["job_id"])
     status = row["status"]
@@ -79,6 +84,7 @@ def export_job(row: dict) -> dict[str, Any]:
     }
 
 
+# True when an export is expired or past expires_at. Used by routes_exports._completed.
 def is_expired(row: dict) -> bool:
     exp = row.get("expires_at")
     return row["status"] == "expired" or (exp is not None and exp <= datetime.now(timezone.utc))

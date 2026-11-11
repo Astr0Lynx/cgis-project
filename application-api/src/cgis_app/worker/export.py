@@ -1,17 +1,6 @@
-"""Export worker: reprojected/converted full exports and clips, written to the export volume.
-
-* Raster full + reprojection: a ``WarpedVRT`` (nearest neighbour) is read in full-width strips of at most
-  ``CHUNK_PIXELS`` cells and written to a tiled DEFLATE GeoTIFF, so memory stays bounded for national
-  rasters; ``COG`` output is then produced by GDAL's COG driver from that file. The grid size is checked
-  against ``APP_EXPORT_MAX_PIXELS`` and the growing file against ``APP_EXPORT_MAX_OUTPUT_BYTES``.
-* Raster clip: the tested ``/api/operations/clip`` code (pixel-centre rule, NoData kept, optional
-  reprojection) bounded by ``APP_EXPORT_CLIP_MAX_PIXELS``.
-* Vector: the normalized GeoJSON asset, optionally clipped (features intersecting the AOI, geometries cut
-  to it) and/or reprojected.
-
-Outputs are written as ``.tmp-*`` files inside a per-job directory and renamed into place only when
-complete and verified; cancelled/failed/interrupted jobs leave nothing behind.
-"""
+# Export worker: reprojected full exports (WarpedVRT strips -> tiled GTiff, optional COG), raster clips
+# (spatial-processing clip code: pixel-centre rule, NoData kept) and vector clip/reprojection. Outputs are
+# written as .tmp-* files in a per-job directory and renamed only when complete.
 
 from __future__ import annotations
 
@@ -24,7 +13,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from .. import catalog, exportspec, jobs, storage
+from .. import catalog, exportspec, geo, jobs, storage
 from ..config import Settings
 from ..storage import StorageError
 from .runner import JobContext, JobFailure, Outcome
@@ -34,6 +23,7 @@ log = logging.getLogger("cgis_app.worker.export")
 CHUNK_PIXELS = 8_000_000  # cells per strip (32 MB for float32)
 
 
+# SHA-256 of a file in 1 MiB blocks. Used by handle.
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -42,22 +32,16 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def _convert_processing_error(exc) -> JobFailure:
-    return JobFailure(exc.code, exc.message, dict(exc.details or {}))
-
-
+# pyproj CRS from text, or None. Used by the raster clip and vector paths.
 def _crs(text: str | None):
     from pyproj import CRS
 
     return CRS.from_user_input(text) if text else None
 
 
-def _epsg_label(crs) -> str:
-    epsg = crs.to_epsg() if crs is not None else None
-    return f"EPSG:{epsg}" if epsg else (crs.to_string() if crs is not None else "")
-
-
 # ------------------------------------------------------------------ raster
+# Reproject a whole raster strip by strip (bounded memory, size/time limits), optionally to COG.
+# Used by handle.
 def _raster_full(ctx: JobContext, row: dict, asset: Path, out_path: Path, fmt: str, out_crs_text: str) -> dict:
     import numpy as np
     import rasterio
@@ -120,6 +104,7 @@ def _raster_full(ctx: JobContext, row: dict, asset: Path, out_path: Path, fmt: s
     return _verify_raster(out_path, fmt, resampled=True)
 
 
+# Reopen the output and measure count/sum of valid cells, layout and grid. Used by _raster_full.
 def _verify_raster(path: Path, fmt: str, *, resampled: bool) -> dict:
     import numpy as np
     import rasterio
@@ -137,16 +122,17 @@ def _verify_raster(path: Path, fmt: str, *, resampled: bool) -> dict:
         layout = chk.tags(ns="IMAGE_STRUCTURE").get("LAYOUT", "GTiff")
         if fmt == "COG" and layout.upper() != "COG":
             raise JobFailure("EXPORT_VERIFICATION_FAILED", "the written file is not a Cloud-Optimized GeoTIFF")
-        return {"format": fmt, "layout": layout, "crs": _epsg_label(chk.crs), "width": chk.width, "height": chk.height,
+        return {"format": fmt, "layout": layout, "crs": geo.crs_label(chk.crs) if chk.crs is not None else "", "width": chk.width, "height": chk.height,
                 "transform_gdal": list(chk.transform.to_gdal()), "bounds": list(chk.bounds), "nodata": chk.nodata,
                 "dtype": chk.dtypes[0], "count_valid": valid, "sum_valid": total, "resampled": resampled,
                 "resampling": "nearest" if resampled else "none"}
 
 
+# Clip with the spatial-processing code and add native-grid figures. Used by handle.
 def _raster_clip(ctx: JobContext, row: dict, asset: Path, out_path: Path, fmt: str, inp: dict) -> dict:
     from shapely.geometry import shape
     from spatial_processing import __version__ as sp_version
-    from spatial_processing.errors import ApiError as ProcessingError
+    from spatial_processing.config import ApiError as ProcessingError
     from spatial_processing.geometry import transform_geometry
     from spatial_processing.raster import gdal_env, open_raster, select_pixels, write_clip
 
@@ -155,6 +141,7 @@ def _raster_clip(ctx: JobContext, row: dict, asset: Path, out_path: Path, fmt: s
     aoi_crs = _crs(inp["aoi_crs"])
     out_crs = _crs(inp.get("output_crs"))
 
+    # Deadline callback for spatial-processing: our cancel/timeout check.
     def deadline(stage: str) -> None:
         ctx.check(stage)
 
@@ -185,11 +172,12 @@ def _raster_clip(ctx: JobContext, row: dict, asset: Path, out_path: Path, fmt: s
             meta["count_semantics"] = ("count_valid/sum_valid describe the written file; native_* describe the "
                                        "selected native-grid pixels")
     except ProcessingError as exc:
-        raise _convert_processing_error(exc) from None
+        raise JobFailure(exc.code, exc.message, dict(exc.details or {})) from None
     return meta
 
 
 # ------------------------------------------------------------------ vector
+# Clip (features intersecting the AOI, cut to it) and/or reproject the GeoJSON asset. Used by handle.
 def _vector(ctx: JobContext, row: dict, asset: Path, out_path: Path, inp: dict) -> dict:
     import shapely
     from pyproj import CRS, Transformer
@@ -247,13 +235,14 @@ def _vector(ctx: JobContext, row: dict, asset: Path, out_path: Path, inp: dict) 
         raise JobFailure("OUTPUT_TOO_LARGE", f"the export exceeds {ctx.settings.export_max_output_bytes} bytes")
     os.replace(tmp, out_path)
     bounds = shapely.total_bounds([shape(f["geometry"]) for f in out_features]).tolist()
-    return {"format": "GeoJSON", "crs": _epsg_label(out_crs) if out_crs is not None else "EPSG:4326",
+    return {"format": "GeoJSON", "crs": geo.crs_label(out_crs) if out_crs is not None else "EPSG:4326",
             "feature_count": len(out_features), "features_clipped": clipped, "bounds": bounds,
             "rfc7946": out_crs is None, "warnings": warnings,
             "clip_rule": "features intersecting the AOI; geometries cut to the AOI" if clip_geom is not None else None}
 
 
 # ------------------------------------------------------------------ job entry points
+# Export job: resolve the asset, run the right path, checksum and describe the output. Used by runner.serve.
 def handle(ctx: JobContext) -> Outcome:
     settings = ctx.settings
     inp = ctx.job["input"]
@@ -303,8 +292,8 @@ def handle(ctx: JobContext) -> Outcome:
                    expires_at=jobs.expires_in(settings.export_ttl_seconds))
 
 
+# Expire outputs past retention and delete unreferenced export directories. Run every minute by runner.serve.
 def maintenance(conn, settings: Settings) -> None:
-    """Expire outputs past retention and delete export directories that no live job references."""
     for row in jobs.expire_due(conn, "export"):
         if row.get("result_path"):
             storage.remove_result_dir(settings.export_root, row["result_path"].split("/", 1)[0])

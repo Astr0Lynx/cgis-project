@@ -1,9 +1,5 @@
-"""Bounded-memory evidence on a large SYNTHETIC raster (run with APP_BENCH=1; skipped otherwise).
-
-A 16000 x 16000 float32 grid (256 M cells, 1 GiB uncompressed) goes through upload -> validate -> publish ->
-native download -> national-style reprojection, each worker in its own process so its peak RSS
-(``ru_maxrss``) is measured. Results go to ``APP_EVIDENCE_OUT`` when set.
-"""
+# Bounded-memory benchmark on a large SYNTHETIC raster (APP_BENCH=1, size APP_BENCH_SIZE; skipped otherwise):
+# upload -> validate -> publish -> native download -> reprojection, peak RSS per worker process; JSON to APP_EVIDENCE_OUT.
 
 from __future__ import annotations
 
@@ -27,6 +23,7 @@ pytestmark = [pytest.mark.db]
 SIZE = int(os.environ.get("APP_BENCH_SIZE", "16000"))
 
 
+# Run one worker pass in its own process; returns seconds and peak RSS.
 def _worker(queue: str, db, roots, py: str, extra: dict | None = None) -> dict:
     env = {"PATH": os.environ.get("PATH", ""), "HOME": os.environ.get("HOME", "/tmp"),
            "PYTHONPATH": os.pathsep.join([str(APP_ROOT / "src"), str(REPO), str(REPO / "spatial-processing/src")]),
@@ -44,6 +41,7 @@ def _worker(queue: str, db, roots, py: str, extra: dict | None = None) -> dict:
             "ru_maxrss_children_kib_before": before}
 
 
+# Verifies: large raster bounded memory.
 def test_large_raster_bounded_memory(admin_client, user_client, db, roots, tmp_path, settings):
     if os.environ.get("APP_BENCH") != "1":
         pytest.skip("set APP_BENCH=1 to run the large-raster benchmark")

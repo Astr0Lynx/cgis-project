@@ -1,4 +1,4 @@
-"""Deterministic SYNTHETIC test files (never real population data). Generated on demand into a temp dir."""
+# Deterministic SYNTHETIC test files (never real population data), generated into a temp dir.
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ RES_4326 = 0.0005
 NODATA = -9999.0
 
 
+# Small float32 GeoTIFF in EPSG:4326 with a NoData corner (value_offset makes a different file).
 def raster_4326(path: Path, *, width: int = 100, height: int = 80, value_offset: float = 0.0) -> Path:
     data = (np.arange(width * height, dtype=np.float32).reshape(height, width) % 7 + 1 + value_offset).astype("float32")
     data[:5, :5] = NODATA  # a NoData corner
@@ -26,6 +27,7 @@ def raster_4326(path: Path, *, width: int = 100, height: int = 80, value_offset:
     return path
 
 
+# Small int32 GeoTIFF in a projected (UTM) CRS.
 def raster_utm(path: Path) -> Path:
     width, height = 60, 40
     data = np.full((height, width), 2, dtype="int32")
@@ -36,6 +38,7 @@ def raster_utm(path: Path) -> Path:
     return path
 
 
+# GeoTIFF without a CRS (MISSING_CRS).
 def raster_no_crs(path: Path) -> Path:
     with rasterio.open(path, "w", driver="GTiff", width=10, height=10, count=1, dtype="float32",
                        transform=from_origin(0, 10, 1, 1), nodata=0) as dst:
@@ -43,6 +46,7 @@ def raster_no_crs(path: Path) -> Path:
     return path
 
 
+# GeoTIFF with a non-EPSG CRS (UNSUPPORTED_CRS).
 def raster_unknown_crs(path: Path) -> Path:
     crs = CRS.from_proj4("+proj=tmerc +lat_0=11.3 +lon_0=79.7 +k=0.99 +x_0=123456 +y_0=0 +ellps=WGS84 +units=m")
     with rasterio.open(path, "w", driver="GTiff", width=10, height=10, count=1, dtype="float32", crs=crs,
@@ -51,8 +55,8 @@ def raster_unknown_crs(path: Path) -> Path:
     return path
 
 
+# Tiny sparse file declaring a huge grid: a decompression-bomb stand-in.
 def raster_sparse(path: Path, width: int, height: int) -> Path:
-    """A tiny file declaring a huge grid (no tile data written): a decompression-bomb stand-in."""
     with rasterio.open(path, "w", driver="GTiff", width=width, height=height, count=1, dtype="uint8",
                        crs="EPSG:4326", transform=from_origin(70, 30, 1e-5, 1e-5), nodata=0, tiled=True,
                        blockxsize=512, blockysize=512, compress="deflate", sparse_ok=True, bigtiff="YES"):
@@ -60,22 +64,26 @@ def raster_sparse(path: Path, width: int, height: int) -> Path:
     return path
 
 
+# TIFF magic of a valid file followed by garbage (CORRUPT_RASTER).
 def corrupt_tiff(path: Path, valid: Path) -> Path:
     data = valid.read_bytes()
     path.write_bytes(data[:4] + bytes(range(256)) * 40)
     return path
 
 
+# First third of a valid GeoTIFF.
 def truncated_tiff(path: Path, valid: Path) -> Path:
     data = valid.read_bytes()
     path.write_bytes(data[: len(data) // 3])
     return path
 
 
+# Closed square ring. Used by the vector builders.
 def _square(x0, y0, d):
     return [[[x0, y0], [x0 + d, y0], [x0 + d, y0 + d], [x0, y0 + d], [x0, y0]]]
 
 
+# Valid SYNTHETIC towns FeatureCollection.
 def vector_ok(path: Path) -> Path:
     fc = {"type": "FeatureCollection", "features": [
         {"type": "Feature", "properties": {"unit_id": "town-a", "name": "SYNTHETIC Town A", "level": "town"},
@@ -87,6 +95,7 @@ def vector_ok(path: Path) -> Path:
     return path
 
 
+# FeatureCollection with a self-intersecting polygon (INVALID_GEOMETRY).
 def vector_invalid(path: Path) -> Path:
     bowtie = [[[78.0, 17.9], [78.1, 18.0], [78.1, 17.9], [78.0, 18.0], [78.0, 17.9]]]
     fc = {"type": "FeatureCollection", "features": [
@@ -96,6 +105,7 @@ def vector_invalid(path: Path) -> Path:
     return path
 
 
+# GeoJSON with a legacy crs member naming an unknown EPSG code.
 def vector_bad_crs(path: Path) -> Path:
     fc = {"type": "FeatureCollection", "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::999999"}},
           "features": [{"type": "Feature", "properties": {"unit_id": "x", "name": "SYNTHETIC x"},
@@ -104,6 +114,7 @@ def vector_bad_crs(path: Path) -> Path:
     return path
 
 
+# Write every sample file into a directory; returns name -> path. Used by the samples fixture.
 def make_all(root: Path) -> dict[str, Path]:
     root.mkdir(parents=True, exist_ok=True)
     out = {
@@ -121,6 +132,7 @@ def make_all(root: Path) -> dict[str, Path]:
     return out
 
 
+# SYNTHETIC-marked upload metadata for a raster.
 def raster_meta(dataset_id: str, version: int | None = 1, **extra) -> dict:
     meta = {"dataset_id": dataset_id, "title": f"SYNTHETIC {dataset_id}", "kind": "raster", "product_level": "other",
             "year": 2011, "units": "people_per_cell", "source": "synthetic test fixture (application-api tests)",
@@ -131,6 +143,7 @@ def raster_meta(dataset_id: str, version: int | None = 1, **extra) -> dict:
     return meta
 
 
+# SYNTHETIC-marked upload metadata for a vector.
 def vector_meta(dataset_id: str, version: int | None = 1, **extra) -> dict:
     meta = {"dataset_id": dataset_id, "title": f"SYNTHETIC {dataset_id}", "kind": "vector", "product_level": "other",
             "source": "synthetic test fixture (application-api tests)", "provenance": {"synthetic": True}}

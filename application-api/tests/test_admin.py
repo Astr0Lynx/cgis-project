@@ -1,5 +1,5 @@
-"""Admin dataset lifecycle through the real importer: upload -> validate -> publish -> version status, idempotency,
-conflicts, negative inputs (bad CRS, corrupt TIFF, invalid geometry, bombs, traversal, oversize) and access policy."""
+# Admin dataset lifecycle through the real importer: upload -> validate -> publish -> versions, idempotency,
+# conflicts, negative inputs (bad CRS, corrupt TIFF, invalid geometry, bombs, traversal, oversize), access policy.
 
 from __future__ import annotations
 
@@ -14,12 +14,13 @@ from conftest import upload, wait_job
 pytestmark = pytest.mark.db
 
 
+# SHA-256 of a file.
 def _sha(path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# Upload, validate and publish; returns the publish job. Used by many tests here and in test_exports.
 def publish(client, run_ingest, path, meta) -> dict:
-    """Upload, validate and publish; returns the publish job."""
     r = upload(client, path, meta)
     assert r.status_code == 202, r.text
     job = wait_job(client, r.json()["job_id"], run_ingest)
@@ -32,6 +33,7 @@ def publish(client, run_ingest, path, meta) -> dict:
     return job
 
 
+# Verifies: raster upload validate publish and discover.
 def test_raster_upload_validate_publish_and_discover(admin_client, user_client, run_ingest, samples, db, roots):
     meta = synthetic.raster_meta("test-pop-2011", 1)
     r = upload(admin_client, samples["raster"], meta)
@@ -85,6 +87,7 @@ def test_raster_upload_validate_publish_and_discover(admin_client, user_client, 
     assert listing["items"][0]["latest_status"] == "ready"
 
 
+# Verifies: repeat upload is idempotent and conflict needs new version.
 def test_repeat_upload_is_idempotent_and_conflict_needs_new_version(admin_client, run_ingest, samples, db, roots):
     publish(admin_client, run_ingest, samples["raster"], synthetic.raster_meta("idem-pop", 1))
     asset = roots["assets"] / "rasters/idem-pop/v1/idem-pop_v1.tif"
@@ -111,12 +114,14 @@ def test_repeat_upload_is_idempotent_and_conflict_needs_new_version(admin_client
     assert _sha(asset) == before
 
 
+# Verifies: version is assigned when omitted.
 def test_version_is_assigned_when_omitted(admin_client, run_ingest, samples):
     publish(admin_client, run_ingest, samples["raster"], synthetic.raster_meta("auto-ver", 1))
     r = upload(admin_client, samples["raster_v2"], synthetic.raster_meta("auto-ver", None))
     assert r.status_code == 202 and r.json()["version"] == 2
 
 
+# Verifies: staged version conflict and discard.
 def test_staged_version_conflict_and_discard(admin_client, run_ingest, samples, roots):
     r = upload(admin_client, samples["raster"], synthetic.raster_meta("staged-x", 1))
     assert r.status_code == 202
@@ -132,6 +137,7 @@ def test_staged_version_conflict_and_discard(admin_client, run_ingest, samples, 
     assert r.status_code == 202
 
 
+# Verifies: state machine guards.
 def test_state_machine_guards(admin_client, run_ingest, samples):
     r = upload(admin_client, samples["raster"], synthetic.raster_meta("guards", 1))
     assert admin_client.post("/admin/datasets/guards/versions/1/publish").status_code == 409  # not validated yet
@@ -146,6 +152,7 @@ def test_state_machine_guards(admin_client, run_ingest, samples):
     assert admin_client.post("/admin/datasets/guards/versions/9/publish").status_code == 404
 
 
+# Verifies: bad rasters fail validation with codes.
 @pytest.mark.parametrize("sample,code", [
     ("no_crs", "MISSING_CRS"),
     ("unknown_crs", "UNSUPPORTED_CRS"),
@@ -165,6 +172,7 @@ def test_bad_rasters_fail_validation_with_codes(admin_client, run_ingest, sample
         assert conn.execute("SELECT count(*) AS n FROM catalog.datasets").fetchone()["n"] == 0
 
 
+# Verifies: failed upload is superseded by a new file.
 def test_failed_upload_is_superseded_by_a_new_file(admin_client, run_ingest, samples):
     r = upload(admin_client, samples["no_crs"], synthetic.raster_meta("fixme", 1))
     wait_job(admin_client, r.json()["job_id"], run_ingest)
@@ -174,6 +182,7 @@ def test_failed_upload_is_superseded_by_a_new_file(admin_client, run_ingest, sam
     assert job["status"] == "completed"
 
 
+# Verifies: failed publish leaves existing ready version.
 def test_failed_publish_leaves_existing_ready_version(admin_client, run_ingest, samples, db, roots):
     publish(admin_client, run_ingest, samples["raster"], synthetic.raster_meta("keep-v1", 1))
     r = upload(admin_client, samples["corrupt"], synthetic.raster_meta("keep-v1", 2))
@@ -184,6 +193,7 @@ def test_failed_publish_leaves_existing_ready_version(admin_client, run_ingest, 
     assert cur["version"] == 1 and (roots["assets"] / "rasters/keep-v1/v1/keep-v1_v1.tif").is_file()
 
 
+# Verifies: bomb like rasters are refused before decoding.
 def test_bomb_like_rasters_are_refused_before_decoding(admin_client, run_ingest, tmp_path):
     bomb = synthetic.raster_sparse(tmp_path / "bomb.tif", 40000, 40000)  # 1.6e9 cells in a few hundred KB
     assert bomb.stat().st_size < 2_000_000
@@ -196,6 +206,7 @@ def test_bomb_like_rasters_are_refused_before_decoding(admin_client, run_ingest,
     assert job["status"] == "failed" and job["error"]["code"] == "RASTER_TOO_LARGE", job
 
 
+# Verifies: vector lifecycle and invalid geometry.
 def test_vector_lifecycle_and_invalid_geometry(admin_client, user_client, run_ingest, samples, db):
     meta = synthetic.vector_meta("test-towns", 1, id_property="unit_id", unit_id_prefix="tt:")
     job = publish(admin_client, run_ingest, samples["vector"], meta)
@@ -213,6 +224,7 @@ def test_vector_lifecycle_and_invalid_geometry(admin_client, user_client, run_in
     assert job["status"] == "failed" and job["error"]["code"] == "UNSUPPORTED_CRS"
 
 
+# Verifies: bad metadata rejected and staging cleaned.
 @pytest.mark.parametrize("meta_patch,code", [
     ({"kind": "vector"}, "INVALID_METADATA"),          # raster bytes, vector metadata
     ({"units": None}, "INVALID_METADATA"),
@@ -232,6 +244,7 @@ def test_bad_metadata_rejected_and_staging_cleaned(admin_client, samples, roots,
     assert list(roots["staging"].iterdir()) == []
 
 
+# Verifies: traversal filename is display only.
 def test_traversal_filename_is_display_only(admin_client, samples, roots, db):
     r = upload(admin_client, samples["raster"], synthetic.raster_meta("trav", 1), filename="../../../../etc/cron.d/x.tif")
     assert r.status_code == 202
@@ -241,6 +254,7 @@ def test_traversal_filename_is_display_only(admin_client, samples, roots, db):
     assert [p.name for p in roots["staging"].iterdir()] == [row["staged_name"]]
 
 
+# Verifies: wrong file types.
 @pytest.mark.parametrize("filename,payload,code,status", [
     ("x.png", b"\x89PNG\r\n\x1a\n" + b"0" * 64, "UNSUPPORTED_MEDIA_TYPE", 415),
     ("x.zip", b"PK\x03\x04" + b"0" * 64, "UNSUPPORTED_MEDIA_TYPE", 415),
@@ -255,6 +269,7 @@ def test_wrong_file_types(admin_client, tmp_path, roots, filename, payload, code
     assert list(roots["staging"].iterdir()) == []
 
 
+# Verifies: oversize and encoded bodies.
 def test_oversize_and_encoded_bodies(admin_client, tmp_path, roots):
     big = tmp_path / "big.tif"
     with open(big, "wb") as fh:
@@ -275,13 +290,15 @@ def test_oversize_and_encoded_bodies(admin_client, tmp_path, roots):
     assert r.status_code == 413
 
 
+# Verifies: kind cannot change between versions.
 def test_kind_cannot_change_between_versions(admin_client, run_ingest, samples):
     publish(admin_client, run_ingest, samples["raster"], synthetic.raster_meta("kindy", 1))
     r = upload(admin_client, samples["vector"], synthetic.vector_meta("kindy", 2))
     assert r.status_code == 409 and r.json()["error"]["code"] == "KIND_CONFLICT"
 
 
-def test_access_policy_controls_discovery_and_export(admin_client, user_client, anon_client, run_ingest, samples):
+# Verifies: access policy controls discovery and export.
+def test_access_policy_controls_discovery_and_export(admin_client, user_client, anon_client, run_ingest, samples, db):
     publish(admin_client, run_ingest, samples["raster"], synthetic.raster_meta("policy-x", 1))
     assert anon_client.get("/api/catalog/datasets").json()["total"] == 0  # default access: users
     assert anon_client.get("/api/catalog/datasets/policy-x").status_code == 404
@@ -302,8 +319,17 @@ def test_access_policy_controls_discovery_and_export(admin_client, user_client, 
                             ).status_code == 401
     assert admin_client.put("/admin/datasets/nope/access", json={"access": "public"}).status_code == 404
     assert admin_client.put("/admin/datasets/policy-x/access", json={"access": "everyone"}).status_code == 422
+    # Migration 0003: the OGC publisher's role may read exactly (dataset_id, access), nothing else.
+    with db.owner() as conn:
+        # First column of a one-row privilege query.
+        def priv(sql):
+            return conn.execute(sql).fetchone()["p"]
+        assert priv("SELECT has_column_privilege('cgis_reader', 'cgis_app.dataset_access', 'access', 'SELECT') AS p")
+        assert not priv("SELECT has_column_privilege('cgis_reader', 'cgis_app.dataset_access', 'note', 'SELECT') AS p")
+        assert not priv("SELECT has_table_privilege('cgis_reader', 'cgis_app.users', 'SELECT') AS p")
 
 
+# Verifies: admin job listing.
 def test_admin_job_listing(admin_client, run_ingest, samples):
     r = upload(admin_client, samples["raster"], synthetic.raster_meta("jobs-x", 1))
     wait_job(admin_client, r.json()["job_id"], run_ingest)
@@ -314,6 +340,7 @@ def test_admin_job_listing(admin_client, run_ingest, samples):
     assert detail["recent_jobs"] and detail["access"] == "users"
 
 
+# Verifies: pagination and filters.
 def test_pagination_and_filters(admin_client, run_ingest, samples):
     for i in range(3):
         upload(admin_client, samples["raster"], synthetic.raster_meta(f"page-{i}", 1))

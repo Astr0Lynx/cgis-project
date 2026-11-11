@@ -1,4 +1,4 @@
-"""Pure unit tests: hashing, tokens, metadata sanitization, path safety, upload stream parsing, config."""
+# Unit tests without a database: hashing, tokens, metadata sanitization, path safety, upload stream, config.
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from cgis_app.errors import ApiError
 
 
 # ------------------------------------------------------------------ passwords and tokens
+# Verifies: password hash is argon2id and verifies.
 def test_password_hash_is_argon2id_and_verifies():
     h = security.hash_password("correct horse battery staple")
     assert h.startswith("$argon2id$")
@@ -24,6 +25,7 @@ def test_password_hash_is_argon2id_and_verifies():
     assert not security.needs_rehash(h)
 
 
+# Verifies: password policy.
 def test_password_policy():
     assert security.password_problems("short", "bob", 12)
     assert security.password_problems("CHANGE_ME_12345", "bob", 12)
@@ -32,6 +34,7 @@ def test_password_policy():
     assert security.password_problems("x7#Lq9!vR2@pZm", "alice", 12) == []
 
 
+# Verifies: tokens are random prefixed and digest only.
 def test_tokens_are_random_prefixed_and_digest_only():
     a, b = security.new_token("pat"), security.new_token("pat")
     assert a != b and a.startswith("cgis_pat_") and security.looks_like_token(a)
@@ -43,6 +46,7 @@ def test_tokens_are_random_prefixed_and_digest_only():
 
 
 # ------------------------------------------------------------------ metadata hygiene
+# Verifies: public provenance removes paths urls and secrets.
 def test_public_provenance_removes_paths_urls_and_secrets():
     prov = {
         "license": "CC BY 4.0",
@@ -67,6 +71,7 @@ def test_public_provenance_removes_paths_urls_and_secrets():
     assert out["ingestion"]["importer"] == "cgis-ingestion"
 
 
+# Verifies: public source withholds links and paths.
 def test_public_source_withholds_links_and_paths():
     assert catalog.public_source("WorldPop https://data.worldpop.org/a/b.tif?sig=1") == \
         "WorldPop data.worldpop.org (link withheld)"
@@ -74,12 +79,14 @@ def test_public_source_withholds_links_and_paths():
     assert catalog.public_source("Census of India 2011 PCA") == "Census of India 2011 PCA"
 
 
+# Verifies: dataset id slug.
 def test_dataset_id_slug():
     assert catalog.valid_dataset_id("india-l1-pop-2011")
     for bad in ("../x", "/etc/passwd", "UPPER", "a b", "http://x", "x/y", "", "-x", "x" * 200):
         assert not catalog.valid_dataset_id(bad), bad
 
 
+# Verifies: access levels.
 def test_access_levels():
     assert catalog.allowed_levels(None) == ["public"]
     assert catalog.can_read("users", "user") and not catalog.can_read("admins", "user")
@@ -87,6 +94,7 @@ def test_access_levels():
 
 
 # ------------------------------------------------------------------ storage safety
+# Verifies: display filename strips paths and controls.
 def test_display_filename_strips_paths_and_controls():
     assert storage.display_filename("../../etc/passwd.tif") == "passwd.tif"
     assert storage.display_filename("C:\\Users\\x\\pop.tif") == "pop.tif"
@@ -94,6 +102,7 @@ def test_display_filename_strips_paths_and_controls():
     assert storage.display_filename("..") is None
 
 
+# Verifies: sniff kind.
 def test_sniff_kind():
     assert storage.sniff_kind(b"II*\x00rest") == "raster"
     assert storage.sniff_kind(b"MM\x00+rest") == "raster"
@@ -102,6 +111,7 @@ def test_sniff_kind():
     assert storage.sniff_kind(b"\x89PNG") is None
 
 
+# Verifies: create exclusive refuses existing and symlinks.
 def test_create_exclusive_refuses_existing_and_symlinks(tmp_path):
     root = storage.ensure_root(tmp_path / "staging")
     fd = storage.create_exclusive(root, "a" * 32 + ".tif")
@@ -120,6 +130,7 @@ def test_create_exclusive_refuses_existing_and_symlinks(tmp_path):
         storage.staged_path(root, "b" * 32 + ".tif")  # symlink is not a regular file
 
 
+# Verifies: symlinked root is refused.
 def test_symlinked_root_is_refused(tmp_path):
     real = tmp_path / "real"
     real.mkdir()
@@ -128,6 +139,7 @@ def test_symlinked_root_is_refused(tmp_path):
         storage.ensure_root(tmp_path / "link")
 
 
+# Verifies: resolve asset rejects escapes.
 def test_resolve_asset_rejects_escapes(tmp_path):
     root = tmp_path / "assets"
     (root / "rasters").mkdir(parents=True)
@@ -143,6 +155,7 @@ def test_resolve_asset_rejects_escapes(tmp_path):
             storage.resolve_asset(root, bad, "raster")
 
 
+# Verifies: resolve result rejects bad paths.
 def test_resolve_result_rejects_bad_paths(tmp_path):
     root = tmp_path / "exports"
     d = storage.make_result_dir(storage.ensure_root(root), "c" * 32)
@@ -154,6 +167,7 @@ def test_resolve_result_rejects_bad_paths(tmp_path):
 
 
 # ------------------------------------------------------------------ streaming multipart
+# Multipart body bytes for the upload-stream tests.
 def _body(parts: list[tuple[str, str | None, bytes, str | None]], boundary: str = "XyZ123") -> bytes:
     out = b""
     for name, filename, data, ctype in parts:
@@ -165,11 +179,13 @@ def _body(parts: list[tuple[str, str | None, bytes, str | None]], boundary: str 
     return out + f"--{boundary}--\r\n".encode()
 
 
+# Async iterator over body chunks (7000 bytes).
 async def _stream(data: bytes, chunk: int = 7000):
     for i in range(0, len(data), chunk):
         yield data[i:i + chunk]
 
 
+# Run receive_multipart on a body with small limits.
 def _receive(tmp_path, body: bytes, **overrides):
     settings = Settings(max_upload_bytes=overrides.pop("max_upload", 2 * MIB),
                         max_vector_upload_bytes=overrides.pop("max_vector", 1 * MIB), min_free_bytes=0)
@@ -183,6 +199,7 @@ TIFF = b"II*\x00" + bytes(range(256)) * 300
 META = json.dumps({"dataset_id": "x", "version": 1}).encode()
 
 
+# Verifies: stream file first order and checksum.
 def test_stream_file_first_order_and_checksum(tmp_path):
     import hashlib
 
@@ -194,6 +211,7 @@ def test_stream_file_first_order_and_checksum(tmp_path):
     assert json.loads(rx.metadata_raw) == {"dataset_id": "x", "version": 1}
 
 
+# Verifies: stream rejections leave no file.
 @pytest.mark.parametrize("parts,code,status", [
     ([("metadata", None, META, None)], "INVALID_REQUEST", 422),
     ([("file", "a.tif", TIFF, None)], "INVALID_METADATA", 422),
@@ -219,6 +237,7 @@ def test_stream_rejections_leave_no_file(tmp_path, parts, code, status):
     assert list((tmp_path / "staging").iterdir()) == []
 
 
+# Verifies: stream rejects non multipart.
 def test_stream_rejects_non_multipart(tmp_path):
     settings = Settings(min_free_bytes=0)
     root = storage.ensure_root(tmp_path / "staging")
@@ -228,6 +247,7 @@ def test_stream_rejects_non_multipart(tmp_path):
     assert err.value.status == 415
 
 
+# Verifies: preflight refuses declared oversize and full disk.
 def test_preflight_refuses_declared_oversize_and_full_disk(tmp_path):
     root = storage.ensure_root(tmp_path / "s")
     with pytest.raises(ApiError) as err:
@@ -239,6 +259,7 @@ def test_preflight_refuses_declared_oversize_and_full_disk(tmp_path):
 
 
 # ------------------------------------------------------------------ configuration
+# Verifies: settings from env and redaction.
 def test_settings_from_env_and_redaction(monkeypatch):
     monkeypatch.setenv("APP_DATABASE_URL", "postgresql://svc:s3cr3t-pass@db:5432/cgis")
     monkeypatch.setenv("APP_PUBLIC_BASE_URL", "https://maps.example.org/")
@@ -252,6 +273,7 @@ def test_settings_from_env_and_redaction(monkeypatch):
         Settings.from_env()
 
 
+# Verifies: secret file variable.
 def test_secret_file_variable(monkeypatch, tmp_path):
     from cgis_app.config import read_secret
 
@@ -261,6 +283,7 @@ def test_secret_file_variable(monkeypatch, tmp_path):
     assert read_secret("APP_BOOTSTRAP_ADMIN_PASSWORD") == "from-a-file"
 
 
+# Verifies: login role config is checked.
 def test_login_role_config_is_checked():
     from cgis_app.migrate import MigrationError, read_login_roles
 
@@ -274,6 +297,7 @@ def test_login_role_config_is_checked():
             read_login_roles({**good, **patch})
 
 
+# Verifies: OpenAPI document lists contract.
 def test_openapi_document_lists_contract(tmp_path):
     from cgis_app.app import create_app
 
@@ -290,6 +314,7 @@ def test_openapi_document_lists_contract(tmp_path):
     assert "sessionCookie" in doc["components"]["securitySchemes"]
 
 
+# Verifies: docs page is not blocked by csp.
 def test_docs_page_is_not_blocked_by_csp():
     from fastapi.testclient import TestClient
 
@@ -303,6 +328,7 @@ def test_docs_page_is_not_blocked_by_csp():
         assert caps.headers["x-content-type-options"] == "nosniff" and caps.headers["x-frame-options"] == "DENY"
 
 
+# Verifies: loopback origins are aliases only for local hosts.
 def test_loopback_origins_are_aliases_only_for_local_hosts(monkeypatch):
     monkeypatch.setenv("APP_PUBLIC_BASE_URL", "http://localhost:8080")
     assert set(Settings.from_env().allowed_origins) == {"http://localhost:8080", "http://127.0.0.1:8080",
@@ -312,6 +338,7 @@ def test_loopback_origins_are_aliases_only_for_local_hosts(monkeypatch):
     assert Settings.from_env().allowed_origins == ("https://maps.example.org", "https://viewer.example.org")
 
 
+# Verifies: worker health file.
 def test_worker_health_file(tmp_path, monkeypatch):
     import os as _os
 

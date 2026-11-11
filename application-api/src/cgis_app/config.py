@@ -1,9 +1,5 @@
-"""Runtime configuration read once from ``APP_*`` environment variables.
-
-Secrets (database passwords, bootstrap passwords) are never logged; :meth:`Settings.describe` returns a
-redacted view that is safe for startup logs. Every limit has a conservative default sized for the
-16 GB local Docker target.
-"""
+# Settings read once from APP_* environment variables (secrets also from NAME_FILE). Defaults are sized
+# for the 16 GB local target; describe() gives a redacted view for logs.
 
 from __future__ import annotations
 
@@ -18,15 +14,18 @@ MIB = 1024**2
 ACCESS_LEVELS = ("public", "users", "admins")
 
 
+# Invalid configuration; names the variable, never echoes a secret. Caught by cli._settings.
 class ConfigError(ValueError):
-    """Invalid configuration; the message names the variable but never echoes a secret."""
+    pass
 
 
+# Stripped env value or default when unset/blank. Used by Settings.from_env.
 def _str(name: str, default: str | None = None) -> str | None:
     raw = os.environ.get(name)
     return default if raw is None or raw.strip() == "" else raw.strip()
 
 
+# Integer env value with a minimum (ConfigError otherwise). Used by Settings.from_env.
 def _int(name: str, default: int, minimum: int = 0) -> int:
     raw = os.environ.get(name)
     if raw is None or raw.strip() == "":
@@ -40,6 +39,7 @@ def _int(name: str, default: int, minimum: int = 0) -> int:
     return value
 
 
+# Float env value with a minimum. Used by Settings.from_env.
 def _float(name: str, default: float, minimum: float = 0.0) -> float:
     raw = os.environ.get(name)
     if raw is None or raw.strip() == "":
@@ -53,6 +53,7 @@ def _float(name: str, default: float, minimum: float = 0.0) -> float:
     return value
 
 
+# true/false env value (1/0, yes/no, on/off). Used by Settings.from_env.
 def _bool(name: str, default: bool) -> bool:
     raw = os.environ.get(name)
     if raw is None or raw.strip() == "":
@@ -65,8 +66,8 @@ def _bool(name: str, default: bool) -> bool:
     raise ConfigError(f"{name} must be true or false")
 
 
+# NAME, or the contents of the file named by NAME_FILE. Used by from_env and cli bootstrap.
 def read_secret(name: str) -> str | None:
-    """``NAME`` or the contents of the file named by ``NAME_FILE`` (Docker/Compose secrets)."""
     file_var = os.environ.get(f"{name}_FILE")
     if file_var:
         try:
@@ -77,6 +78,7 @@ def read_secret(name: str) -> str | None:
     return raw if raw else None
 
 
+# scheme://host[:port] of an absolute URL. Used by from_env and Settings.public_origin.
 def _origin(url: str) -> str:
     parts = urlsplit(url)
     if not parts.scheme or not parts.netloc:
@@ -84,8 +86,9 @@ def _origin(url: str) -> str:
     return f"{parts.scheme}://{parts.netloc}".lower()
 
 
+# localhost/127.0.0.1/[::1] spellings of a loopback origin, so a local stack accepts all of them.
+# Used by from_env for allowed_origins.
 def _loopback_aliases(origin: str) -> tuple[str, ...]:
-    """A local stack is opened as either localhost or 127.0.0.1; accept both spellings (loopback only)."""
     parts = urlsplit(origin)
     host, port = parts.hostname or "", f":{parts.port}" if parts.port else ""
     if host in ("localhost", "127.0.0.1", "::1"):
@@ -93,6 +96,7 @@ def _loopback_aliases(origin: str) -> tuple[str, ...]:
     return ()
 
 
+# All runtime limits and locations. Built by from_env (service, workers, CLI) or directly in tests.
 @dataclass(frozen=True)
 class Settings:
     # --- connections
@@ -161,10 +165,12 @@ class Settings:
     log_level: str = "INFO"
     extra: dict = field(default_factory=dict, compare=False)
 
+    # Origin of public_base_url.
     @property
     def public_origin(self) -> str:
         return _origin(self.public_base_url)
 
+    # Build Settings from the environment and check cross-field rules. Used by cli and app.app_factory.
     @classmethod
     def from_env(cls) -> "Settings":
         public = _str("APP_PUBLIC_BASE_URL", _str("PUBLIC_BASE_URL", cls.public_base_url))
@@ -232,8 +238,8 @@ class Settings:
             raise ConfigError("APP_SESSION_IDLE_SECONDS must not exceed APP_SESSION_TTL_SECONDS")
         return settings
 
+    # Settings as a dict with the database URL redacted. Used by the app start-up log.
     def describe(self) -> dict:
-        """Configuration for logs: no secrets, database URL reduced to host/db."""
         out = {}
         for f in fields(self):
             if f.name in ("extra",):
@@ -245,8 +251,8 @@ class Settings:
         return out
 
 
+# Hide passwords in URL and key=value conninfo strings. Used by describe and db.connect.
 def redact_dsn(dsn: str) -> str:
-    """Hide passwords in URL and key=value conninfo forms."""
     import re
 
     if not dsn:

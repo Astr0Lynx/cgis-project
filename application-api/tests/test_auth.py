@@ -1,5 +1,5 @@
-"""Authentication: password login, cookie/CSRF, bearer and personal access tokens, expiry, revocation,
-throttling, and that no secret reaches the logs."""
+# Authentication: password login, cookie/CSRF, bearer and personal access tokens, expiry, revocation,
+# throttling, and that no secret reaches the logs.
 
 from __future__ import annotations
 
@@ -13,10 +13,12 @@ from conftest import PASSWORD_ADMIN, PASSWORD_USER, login
 pytestmark = pytest.mark.db
 
 
+# All Set-Cookie headers of a response joined.
 def _cookie_header(resp) -> str:
     return "; ".join(v for k, v in resp.headers.multi_items() if k.lower() == "set-cookie")
 
 
+# Verifies: login sets hardened cookie and returns role.
 def test_login_sets_hardened_cookie_and_returns_role(anon_client, users):
     r = anon_client.post("/auth/login", json={"username": "Alice-Admin", "password": PASSWORD_ADMIN})
     assert r.status_code == 200
@@ -31,6 +33,7 @@ def test_login_sets_hardened_cookie_and_returns_role(anon_client, users):
     assert me["authenticated"] and me["user"]["role"] == "admin" and me["csrf_token"] == body["csrf_token"]
 
 
+# Verifies: anonymous me is 200.
 def test_anonymous_me_is_200(anon_client):
     r = anon_client.get("/auth/me")
     body = r.json()
@@ -38,6 +41,7 @@ def test_anonymous_me_is_200(anon_client):
     assert body["user"] is None and body["expires_at"] is None and body["csrf_token"] is None
 
 
+# Verifies: bad credentials are indistinguishable.
 def test_bad_credentials_are_indistinguishable(anon_client, users):
     a = anon_client.post("/auth/login", json={"username": "alice-admin", "password": "not-the-password-1"})
     b = anon_client.post("/auth/login", json={"username": "nobody-here", "password": "not-the-password-1"})
@@ -47,6 +51,7 @@ def test_bad_credentials_are_indistinguishable(anon_client, users):
     assert "set-cookie" not in a.headers
 
 
+# Verifies: lockout after repeated failures.
 def test_lockout_after_repeated_failures(anon_client, users):
     for _ in range(3):  # login_max_failures=3 in the test settings
         assert anon_client.post("/auth/login", json={"username": "bob-user", "password": "wrong-wrong-1"}
@@ -59,6 +64,7 @@ def test_lockout_after_repeated_failures(anon_client, users):
                             ).status_code == 200
 
 
+# Verifies: logout revokes and needs CSRF.
 def test_logout_revokes_and_needs_csrf(make_client, users):
     c = make_client()
     csrf = login(c, users["user"])
@@ -76,6 +82,7 @@ def test_logout_revokes_and_needs_csrf(make_client, users):
     assert r.status_code == 401 and r.json()["error"]["code"] == "SESSION_REVOKED"
 
 
+# Verifies: CSRF and origin enforced for cookie sessions.
 def test_csrf_and_origin_enforced_for_cookie_sessions(user_client):
     token = user_client.headers.pop("X-CSRF-Token")
     body = {"dataset_id": "nope", "kind": "full", "format": "COG"}
@@ -91,17 +98,20 @@ def test_csrf_and_origin_enforced_for_cookie_sessions(user_client):
     assert r.status_code == 404  # authenticated and allowed; the dataset just does not exist
 
 
+# Verifies: login CSRF from foreign origin refused.
 def test_login_csrf_from_foreign_origin_refused(anon_client, users):
     r = anon_client.post("/auth/login", json={"username": "bob-user", "password": PASSWORD_USER},
                          headers={"Origin": "https://evil.example"})
     assert r.status_code == 403 and r.json()["error"]["code"] == "ORIGIN_FORBIDDEN"
 
 
+# Verifies: login requires json.
 def test_login_requires_json(anon_client, users):
     r = anon_client.post("/auth/login", data={"username": "bob-user", "password": PASSWORD_USER})
     assert r.status_code == 422
 
 
+# Verifies: session expiry and idle timeout.
 def test_session_expiry_and_idle_timeout(db, make_client, users):
     c = make_client()
     login(c, users["user"])
@@ -123,6 +133,7 @@ def test_session_expiry_and_idle_timeout(db, make_client, users):
     assert r.status_code == 401 and r.json()["error"]["code"] == "SESSION_EXPIRED"
 
 
+# Verifies: bearer login for scripts.
 def test_bearer_login_for_scripts(anon_client, make_client, users):
     r = anon_client.post("/auth/login", json={"username": "bob-user", "password": PASSWORD_USER, "token": True})
     assert r.status_code == 200 and "set-cookie" not in r.headers
@@ -140,6 +151,7 @@ def test_bearer_login_for_scripts(anon_client, make_client, users):
     assert r.status_code == 401 and r.json()["error"]["code"] == "SESSION_REVOKED"
 
 
+# Verifies: credentials only valid in their channel.
 def test_credentials_only_valid_in_their_channel(make_client, users):
     c = make_client()
     login(c, users["user"])
@@ -156,6 +168,7 @@ def test_credentials_only_valid_in_their_channel(make_client, users):
         assert other.get("/api/exports", headers={"Authorization": bad}).status_code == 401
 
 
+# Verifies: personal access tokens.
 def test_personal_access_tokens(admin_client, make_client, users):
     r = admin_client.post("/auth/tokens", json={"name": "QGIS desktop", "expires_in_days": 7})
     assert r.status_code == 201, r.text
@@ -183,6 +196,7 @@ def test_personal_access_tokens(admin_client, make_client, users):
     assert admin_client.delete(f"/auth/tokens/{created['token_id']}").status_code == 404
 
 
+# Verifies: user cannot create admin scoped token.
 def test_user_cannot_create_admin_scoped_token(user_client):
     r = user_client.post("/auth/tokens", json={"name": "escalate", "scope": "admin"})
     assert r.status_code == 403
@@ -190,18 +204,21 @@ def test_user_cannot_create_admin_scoped_token(user_client):
     assert r.status_code == 422  # unknown fields are refused
 
 
+# Verifies: basic auth never accepts passwords.
 def test_basic_auth_never_accepts_passwords(anon_client, users):
     basic = base64.b64encode(f"bob-user:{PASSWORD_USER}".encode()).decode()
     r = anon_client.get("/api/exports", headers={"Authorization": f"Basic {basic}"})
     assert r.status_code == 401 and r.json()["error"]["code"] == "INVALID_TOKEN"
 
 
+# Verifies: secrets in URL refused.
 @pytest.mark.parametrize("query", ["access_token=abc", "token=abc", "password=x", "api_key=1", "TOKEN=x"])
 def test_secrets_in_url_refused(anon_client, query):
     r = anon_client.get(f"/api/catalog/datasets?{query}")
     assert r.status_code == 400 and r.json()["error"]["code"] == "SECRET_IN_URL"
 
 
+# Verifies: password change revokes other sessions.
 def test_password_change_revokes_other_sessions(make_client, users):
     a, b = make_client(), make_client()
     csrf = login(a, users["user"])
@@ -224,6 +241,7 @@ def test_password_change_revokes_other_sessions(make_client, users):
     assert c.post("/auth/login", json={"username": "bob-user", "password": "N3w-Strong-pass!"}).status_code == 200
 
 
+# Verifies: disabled account.
 def test_disabled_account(db, settings, make_client, users):
     from cgis_app import identity
     from cgis_app.db import connect
@@ -237,6 +255,7 @@ def test_disabled_account(db, settings, make_client, users):
     assert r.status_code == 403 and r.json()["error"]["code"] == "ACCOUNT_DISABLED"
 
 
+# Verifies: role change revokes sessions.
 def test_role_change_revokes_sessions(db, make_client, users):
     from cgis_app import identity
     from cgis_app.db import connect
@@ -249,6 +268,7 @@ def test_role_change_revokes_sessions(db, make_client, users):
     assert c.get("/admin/datasets").status_code == 401
 
 
+# Verifies: passwords stored hashed.
 def test_passwords_stored_hashed(db, users):
     with db.owner() as conn:
         rows = conn.execute("SELECT password_hash FROM cgis_app.users").fetchall()
@@ -261,6 +281,7 @@ def test_passwords_stored_hashed(db, users):
     assert sessions == [] or all(len(bytes(s["token_hash"])) == 32 for s in sessions)
 
 
+# Verifies: no secrets in logs.
 def test_no_secrets_in_logs(caplog, make_client, users):
     caplog.set_level(logging.DEBUG)
     c = make_client()
@@ -275,6 +296,7 @@ def test_no_secrets_in_logs(caplog, make_client, users):
         assert secret not in text
 
 
+# Verifies: gateway verify.
 def test_gateway_verify(make_client, users):
     anon = make_client()
     assert anon.get("/auth/verify").status_code == 401

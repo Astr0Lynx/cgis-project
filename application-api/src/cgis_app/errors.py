@@ -1,15 +1,14 @@
-"""Normalized error envelope ``{"error": {"code", "message", "details"?}}`` (same as /api/operations).
-
-Messages are written for API clients: they never contain filesystem paths, SQL, stack traces,
-passwords, tokens or session identifiers.
-"""
+# ApiError and the stable error codes. Every error body is {"error": {code, message, details?}}; messages
+# never contain paths, SQL, stack traces, passwords or tokens.
 
 from __future__ import annotations
 
 from typing import Any
 
 
+# HTTP error raised anywhere in the service; rendered by app._error_response.
 class ApiError(Exception):
+    # Store status, code, message, optional details and extra response headers.
     def __init__(self, status: int, code: str, message: str, details: dict[str, Any] | None = None,
                  headers: dict[str, str] | None = None):
         super().__init__(message)
@@ -19,14 +18,12 @@ class ApiError(Exception):
         self.details = details or {}
         self.headers = headers or {}
 
+    # The JSON error envelope. Used by app._error_response.
     def to_body(self) -> dict[str, Any]:
         err: dict[str, Any] = {"code": self.code, "message": self.message}
         if self.details:
             err["details"] = self.details
         return {"error": err}
-
-    def to_dict(self) -> dict[str, Any]:
-        return self.to_body()["error"]
 
 
 # 400 / 422 request problems

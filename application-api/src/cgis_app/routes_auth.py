@@ -1,4 +1,4 @@
-"""``/auth``: login, logout, session introspection, personal access tokens, password change, gateway check."""
+# /auth routes: login, logout, /me, gateway auth_request check (/verify), personal access tokens, password change.
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 _E = {code: {"model": ErrorResponse} for code in (400, 401, 403, 404, 409, 422, 429)}
 
 
+# Session response body (anonymous shape when principal is None). Used by login and me.
 def _session_body(principal: Principal | None, settings, *, csrf: str | None = None,
                   access_token: str | None = None, reason: str | None = None) -> dict[str, Any]:
     if principal is None:
@@ -43,16 +44,19 @@ def _session_body(principal: Principal | None, settings, *, csrf: str | None = N
     return body
 
 
+# Set the HttpOnly SameSite=Strict session cookie. Used by login.
 def _set_cookie(response: Response, settings, token: str) -> None:
     response.set_cookie(settings.session_cookie, token, max_age=settings.session_ttl_seconds, path="/",
                         secure=settings.cookie_secure, httponly=True, samesite="strict")
 
 
+# Delete the session cookie. Used by logout and me.
 def _clear_cookie(response: Response, settings) -> None:
     response.delete_cookie(settings.session_cookie, path="/", secure=settings.cookie_secure, httponly=True,
                            samesite="strict")
 
 
+# POST /auth/login: throttled password check, then a cookie session (+CSRF) or a bearer token.
 @router.post("/login", summary="Sign in (browser cookie session, or bearer token with token=true)",
              response_model=Session, responses={**_E, 200: {"description": "Signed in. Browser mode sets the "
                                                                           "HttpOnly cgis_session cookie."}})
@@ -95,6 +99,7 @@ def login(req: LoginRequest, request: Request, response: Response):
     return _session_body(principal, settings, access_token=created["token"])
 
 
+# POST /auth/logout: revoke the current session and clear the cookie (idempotent).
 @router.post("/logout", status_code=204, summary="Sign out: revoke the current session (idempotent)",
              responses={**_E, 204: {"description": "Signed out; the cookie is cleared."}})
 def logout(request: Request):
@@ -115,6 +120,7 @@ def logout(request: Request):
     return response
 
 
+# GET /auth/me: current identity; 200 anonymous (and a cleared cookie) for a stale cookie.
 @router.get("/me", response_model=Session, summary="Current identity and role (200 with authenticated=false "
                                                     "for anonymous callers)")
 def me(request: Request):
@@ -132,6 +138,7 @@ def me(request: Request):
     return _session_body(principal, settings)
 
 
+# GET /auth/verify: nginx auth_request target for protected read routes (infra/gateway).
 @router.get("/verify", status_code=204, summary="Gateway auth_request check (204 allowed, 401/403 refused)",
             responses={**_E, 204: {"description": "Allowed; X-Cgis-User / X-Cgis-Role headers describe the caller."}})
 def verify(request: Request, require: str = Query("user", pattern="^(user|admin)$")):
@@ -147,12 +154,14 @@ def verify(request: Request, require: str = Query("user", pattern="^(user|admin)
 
 
 # ------------------------------------------------------------------ personal access tokens
+# TokenInfo body for a token row. Used by list_tokens.
 def _token_info(row: dict) -> dict[str, Any]:
     return {"token_id": str(row["token_id"]), "name": row["name"], "scope": row["scope"],
             "created_at": row["created_at"], "last_seen_at": row.get("last_seen_at"),
             "expires_at": row["expires_at"], "revoked_at": row.get("revoked_at")}
 
 
+# POST /auth/tokens: create a personal access token (admin scope for admins only), shown once.
 @router.post("/tokens", status_code=201, response_model=TokenCreated, responses=_E,
              summary="Create a personal access token for QGIS/GDAL/scripts (shown once)")
 def create_token(req: TokenCreate, request: Request, principal: SessionPrincipal):
@@ -174,12 +183,14 @@ def create_token(req: TokenCreate, request: Request, principal: SessionPrincipal
             "created_at": created["created_at"], "expires_at": created["expires_at"], "token": created["token"]}
 
 
+# GET /auth/tokens: my tokens.
 @router.get("/tokens", response_model=list[TokenInfo], responses=_E, summary="List my personal access tokens")
 def list_tokens(request: Request, principal: SessionPrincipal):
     with request.app.state.db.connection() as conn:
         return [_token_info(r) for r in identity.list_tokens(conn, principal.user_id)]
 
 
+# DELETE /auth/tokens/{id}: revoke one of my tokens.
 @router.delete("/tokens/{token_id}", status_code=204, responses=_E, summary="Revoke one of my tokens")
 def revoke_token(token_id: uuid.UUID, request: Request, principal: SessionPrincipal):
     with request.app.state.db.connection() as conn:
@@ -188,6 +199,7 @@ def revoke_token(token_id: uuid.UUID, request: Request, principal: SessionPrinci
     return Response(status_code=204)
 
 
+# POST /auth/password: verify the current password, set a new one, revoke other sessions.
 @router.post("/password", status_code=204, responses=_E,
              summary="Change my password (revokes every other session and token)")
 def change_password(req: PasswordChange, request: Request, principal: SessionPrincipal):

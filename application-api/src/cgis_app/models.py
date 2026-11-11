@@ -1,5 +1,5 @@
-"""Request and response schemas. Requests forbid unknown fields, so a client can never smuggle a server
-path, URL, role or owner into a request body."""
+# Pydantic request/response schemas (also the OpenAPI components). Request bodies forbid unknown fields,
+# so a client can never smuggle a server path, URL, role or owner into a request.
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ _TOWN = {"type": "Polygon",
          "coordinates": [[[78.01, 17.98], [78.02, 17.98], [78.02, 17.99], [78.01, 17.99], [78.01, 17.98]]]}
 
 
+# Base for request bodies: unknown fields are rejected (422).
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -123,12 +124,14 @@ class UploadMetadata(_Strict):
     level_property: str | None = Field(None, min_length=1, max_length=64)
     unit_id_prefix: str | None = Field(None, max_length=32, pattern=r"^[A-Za-z0-9._:-]*$")
 
+    # Limit provenance to 32 KiB of JSON and 8 levels of nesting.
     @field_validator("provenance")
     @classmethod
     def _small_provenance(cls, value: dict[str, Any]) -> dict[str, Any]:
         if len(json.dumps(value, default=str)) > 32_768:
             raise ValueError("provenance must be at most 32 KiB of JSON")
 
+        # Recursive nesting-depth check.
         def depth(v, d=0):
             if d > 8:
                 raise ValueError("provenance is nested too deeply")

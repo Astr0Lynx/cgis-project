@@ -1,13 +1,6 @@
-"""PostgreSQL job queue shared by the API (enqueue/inspect/cancel) and the workers (claim/run).
-
-* Claiming uses ``FOR UPDATE SKIP LOCKED`` so several workers never take the same job.
-* A claimed job holds a lease that the worker extends while it reports progress. If a worker dies,
-  the lease expires and the job is re-queued (``attempts`` counts tries); after ``max_attempts`` it fails
-  with ``JOB_ABANDONED``. Work is written to temporary files and published atomically, so a retried job
-  never sees a half-written output.
-* Status graph (enforced by a trigger): queued -> running -> completed | failed | cancelled;
-  running -> queued (lease expiry); completed -> expired (output retention elapsed).
-"""
+# PostgreSQL job queue shared by the API (enqueue/inspect/cancel) and the workers (claim/run).
+# Claims use FOR UPDATE SKIP LOCKED and a lease extended by heartbeats; an expired lease re-queues the job until
+# max_attempts, then JOB_ABANDONED. States: queued -> running -> completed|failed|cancelled, completed -> expired.
 
 from __future__ import annotations
 
@@ -22,10 +15,12 @@ ACTIVE = ("queued", "running")
 TERMINAL = ("completed", "failed", "cancelled", "expired")
 
 
+# Current UTC time. Used by expires_in.
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+# Insert a queued job. Used by routes_admin (upload/validate/publish) and routes_exports.
 def enqueue(conn: psycopg.Connection, *, queue: str, kind: str, owner_id: uuid.UUID | None, input: dict[str, Any],
             upload_id: uuid.UUID | None = None, dataset_id: str | None = None, dataset_version: int | None = None,
             max_attempts: int = 3, progress_message: str | None = "queued", job_id: uuid.UUID | None = None) -> dict:
@@ -37,6 +32,7 @@ def enqueue(conn: psycopg.Connection, *, queue: str, kind: str, owner_id: uuid.U
          progress_message)).fetchone()
 
 
+# Insert an already completed job (idempotent uploads, native exports). Used by routes_admin/routes_exports.
 def insert_completed(conn: psycopg.Connection, *, queue: str, kind: str, owner_id: uuid.UUID | None,
                      input: dict[str, Any], result: dict[str, Any], dataset_id: str | None = None,
                      dataset_version: int | None = None, upload_id: uuid.UUID | None = None,
@@ -50,10 +46,12 @@ def insert_completed(conn: psycopg.Connection, *, queue: str, kind: str, owner_i
          result_sha256, expires_at)).fetchone()
 
 
+# One job row. Used by the admin and export job routes.
 def get(conn: psycopg.Connection, job_id: uuid.UUID) -> dict | None:
     return conn.execute("SELECT * FROM cgis_app.jobs WHERE job_id = %s", (job_id,)).fetchone()
 
 
+# Filtered, paged job rows plus the total. Used by GET /admin/jobs, /admin/datasets/{id}, /api/exports.
 def list_jobs(conn: psycopg.Connection, *, queue: str | None = None, owner_id: uuid.UUID | None = None,
               status: str | None = None, kind: str | None = None, limit: int = 50, offset: int = 0
               ) -> tuple[list[dict], int]:
@@ -69,13 +67,14 @@ def list_jobs(conn: psycopg.Connection, *, queue: str | None = None, owner_id: u
     return rows, total
 
 
+# Queued+running jobs of one owner. Used by routes_exports (per-user cap).
 def count_active(conn: psycopg.Connection, *, owner_id: uuid.UUID, queue: str) -> int:
     return conn.execute("SELECT count(*) AS n FROM cgis_app.jobs WHERE owner_id = %s AND queue = %s "
                         "AND status IN ('queued', 'running')", (owner_id, queue)).fetchone()["n"]
 
 
+# Fail over-retried expired leases, then take the oldest runnable job. Used by worker.runner.run_one.
 def claim(conn: psycopg.Connection, queue: str, worker_id: str, lease_seconds: int) -> dict | None:
-    """Take the oldest runnable job (queued, or running with an expired lease)."""
     with conn.transaction():
         # Jobs whose lease expired too many times are failed instead of retried forever.
         conn.execute(
@@ -102,12 +101,10 @@ def claim(conn: psycopg.Connection, queue: str, worker_id: str, lease_seconds: i
     return row
 
 
+# Extend the lease and record progress; True when cancel was requested; LookupError if the lease was lost.
+# Used by worker.runner.Heartbeat.
 def heartbeat(conn: psycopg.Connection, job_id: uuid.UUID, worker_id: str, *, lease_seconds: int,
               progress: float | None = None, message: str | None = None) -> bool:
-    """Extend the lease and record progress; returns True when cancellation was requested.
-
-    Raises LookupError if the job is no longer leased by this worker (e.g. lease lost).
-    """
     row = conn.execute(
         "UPDATE cgis_app.jobs SET lease_expires_at = now() + make_interval(secs => %s), "
         "progress = coalesce(%s, progress), progress_message = coalesce(%s, progress_message) "
@@ -119,6 +116,7 @@ def heartbeat(conn: psycopg.Connection, job_id: uuid.UUID, worker_id: str, *, le
     return bool(row["cancel_requested"])
 
 
+# Mark a leased job completed with its result. Used by worker.runner.run_one.
 def complete(conn: psycopg.Connection, job_id: uuid.UUID, worker_id: str, *, result: dict[str, Any],
              result_path: str | None = None, result_size: int | None = None, result_sha256: str | None = None,
              expires_at: datetime | None = None) -> dict | None:
@@ -129,6 +127,7 @@ def complete(conn: psycopg.Connection, job_id: uuid.UUID, worker_id: str, *, res
         (Jsonb(result), result_path, result_size, result_sha256, expires_at, job_id, worker_id)).fetchone()
 
 
+# Mark a job failed (optionally only if leased by worker_id). Used by worker.runner.run_one.
 def fail(conn: psycopg.Connection, job_id: uuid.UUID, worker_id: str | None, error: dict[str, Any]) -> dict | None:
     params: tuple = (Jsonb(error), job_id)
     owner_clause = ""
@@ -141,6 +140,7 @@ def fail(conn: psycopg.Connection, job_id: uuid.UUID, worker_id: str | None, err
         params).fetchone()
 
 
+# Mark a leased job cancelled. Used by worker.runner.run_one.
 def mark_cancelled(conn: psycopg.Connection, job_id: uuid.UUID, worker_id: str) -> dict | None:
     return conn.execute(
         "UPDATE cgis_app.jobs SET status = 'cancelled', progress_message = 'cancelled', lease_owner = NULL, "
@@ -148,8 +148,8 @@ def mark_cancelled(conn: psycopg.Connection, job_id: uuid.UUID, worker_id: str) 
         (job_id, worker_id)).fetchone()
 
 
+# Cancel a queued job now or flag a running one for its worker. Used by POST /api/exports/{id}/cancel.
 def request_cancel(conn: psycopg.Connection, job_id: uuid.UUID) -> dict | None:
-    """Queued -> cancelled immediately; running -> flag for the worker. Returns the updated row."""
     with conn.transaction():
         row = conn.execute("SELECT * FROM cgis_app.jobs WHERE job_id = %s FOR UPDATE", (job_id,)).fetchone()
         if row is None or row["status"] not in ACTIVE:
@@ -161,8 +161,8 @@ def request_cancel(conn: psycopg.Connection, job_id: uuid.UUID) -> dict | None:
                             "WHERE job_id = %s RETURNING *", (job_id,)).fetchone()
 
 
+# Move completed jobs past expires_at to expired and return them. Used by worker.export.maintenance.
 def expire_due(conn: psycopg.Connection, queue: str, *, limit: int = 200) -> list[dict]:
-    """Completed jobs whose retention elapsed become ``expired``; returns them so outputs can be deleted."""
     return conn.execute(
         "UPDATE cgis_app.jobs SET status = 'expired', progress_message = 'output expired' "
         "WHERE job_id IN (SELECT job_id FROM cgis_app.jobs WHERE queue = %s AND status = 'completed' "
@@ -170,17 +170,20 @@ def expire_due(conn: psycopg.Connection, queue: str, *, limit: int = 200) -> lis
         (queue, limit)).fetchall()
 
 
+# Result paths still referenced by live jobs. Used by worker.export.maintenance.
 def live_result_paths(conn: psycopg.Connection) -> set[str]:
     rows = conn.execute("SELECT result_path FROM cgis_app.jobs WHERE result_path IS NOT NULL "
                         "AND status IN ('queued', 'running', 'completed')").fetchall()
     return {r["result_path"] for r in rows}
 
 
+# Bytes held by completed exports (volume quota). Used by routes_exports.create_export.
 def total_result_bytes(conn: psycopg.Connection) -> int:
     row = conn.execute("SELECT coalesce(sum(result_size), 0) AS n FROM cgis_app.jobs WHERE status = 'completed' "
                        "AND result_path IS NOT NULL").fetchone()
     return int(row["n"])
 
 
+# now + seconds (UTC). Used for export retention by routes_exports and worker.export.
 def expires_in(seconds: int) -> datetime:
     return _now() + timedelta(seconds=seconds)

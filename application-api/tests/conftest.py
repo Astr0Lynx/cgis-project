@@ -1,12 +1,6 @@
-"""Test fixtures. Database tests run against a REAL PostGIS server with the real migrations:
-
-* ``database/`` core migrations (Agent 4's frozen schema) + ``cgis_app`` migrations, applied by the owner;
-* the API and the workers connect with their own least-privilege login roles, exactly as in Compose.
-
-Run everything with ``application-api/scripts/run_tests.sh`` (starts a throwaway cluster). The ingest worker
-runs in a SEPARATE interpreter with the ingestion image's pinned GDAL stack when ``APP_TEST_INGEST_PYTHON``
-is set (as in production); otherwise in-process.
-"""
+# Fixtures: a fresh database per session with the real database/ core + cgis_app migrations; the API and
+# workers connect with their own least-privilege roles. APP_TEST_DSN comes from scripts/run_tests.sh; the ingest
+# worker runs out of process on APP_TEST_INGEST_PYTHON (ingestion pins) when set, else in-process.
 
 from __future__ import annotations
 
@@ -36,6 +30,7 @@ PASSWORD_ADMIN = "adm-" + secrets.token_urlsafe(18)
 PASSWORD_USER = "usr-" + secrets.token_urlsafe(18)
 
 
+# Skip every db-marked test when APP_TEST_DSN is not set.
 def pytest_collection_modifyitems(config, items):
     if os.environ.get("APP_TEST_DSN"):
         return
@@ -46,19 +41,23 @@ def pytest_collection_modifyitems(config, items):
 
 
 # ------------------------------------------------------------------ database
+# Owner/API/worker DSNs of the per-session test database.
 class TestDatabase:
+    # Store the DSNs and database name.
     def __init__(self, owner_dsn: str, api_dsn: str, worker_dsn: str, dbname: str):
         self.owner_dsn = owner_dsn
         self.api_dsn = api_dsn
         self.worker_dsn = worker_dsn
         self.dbname = dbname
 
+    # Autocommit dict-row connection as the database owner. Used by tests that inspect tables.
     def owner(self):
         import psycopg
         from psycopg.rows import dict_row
 
         return psycopg.connect(self.owner_dsn, autocommit=True, row_factory=dict_row)
 
+    # Empty the cgis_app, geo and catalog tables between tests. Used by the db fixture.
     def reset(self) -> None:
         with self.owner() as conn:
             conn.execute("TRUNCATE cgis_app.jobs, cgis_app.uploads, cgis_app.dataset_access, cgis_app.sessions, "
@@ -69,6 +68,7 @@ class TestDatabase:
             conn.execute("ALTER TABLE catalog.datasets ENABLE TRIGGER USER")
 
 
+# Session fixture: create a database, migrate it, provision test login roles; drop it all afterwards.
 @pytest.fixture(scope="session")
 def database():
     import psycopg
@@ -104,6 +104,7 @@ def database():
             c.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(sql.Identifier(role)))
 
 
+# Per-test fixture: the session database, emptied.
 @pytest.fixture
 def db(database):
     database.reset()
@@ -111,6 +112,7 @@ def db(database):
 
 
 # ------------------------------------------------------------------ settings / app
+# Per-test staging/assets/exports directories.
 @pytest.fixture
 def roots(tmp_path):
     out = {name: tmp_path / name for name in ("staging", "assets", "exports")}
@@ -119,6 +121,7 @@ def roots(tmp_path):
     return out
 
 
+# API Settings with small test limits on the API role.
 @pytest.fixture
 def settings(db, roots):
     return Settings(
@@ -130,11 +133,13 @@ def settings(db, roots):
         export_clip_max_pixels=2_000_000, export_max_pixels=50_000_000)
 
 
+# The same Settings on the worker role.
 @pytest.fixture
 def worker_settings(settings, db):
     return replace(settings, database_url=db.worker_dsn)
 
 
+# FastAPI app without the maintenance thread.
 @pytest.fixture
 def app(settings):
     from cgis_app.app import create_app
@@ -142,12 +147,14 @@ def app(settings):
     return create_app(settings, start_maintenance=False)
 
 
+# Factory of TestClients that are closed after the test.
 @pytest.fixture
 def make_client(app):
     from fastapi.testclient import TestClient
 
     clients = []
 
+    # Open one more TestClient.
     def factory():
         c = TestClient(app, base_url="http://testserver")
         c.__enter__()
@@ -159,6 +166,7 @@ def make_client(app):
         c.__exit__(None, None, None)
 
 
+# Create alice-admin and bob-user with random passwords.
 @pytest.fixture
 def users(db, settings):
     from cgis_app import identity
@@ -171,12 +179,14 @@ def users(db, settings):
             "user": {"username": user.username, "password": PASSWORD_USER}}
 
 
+# Sign a client in and return its CSRF token. Used by the client fixtures and tests.
 def login(client, creds: dict) -> str:
     r = client.post("/auth/login", json={"username": creds["username"], "password": creds["password"]})
     assert r.status_code == 200, r.text
     return r.json()["csrf_token"]
 
 
+# Signed-in admin client with X-CSRF-Token set.
 @pytest.fixture
 def admin_client(make_client, users):
     c = make_client()
@@ -184,6 +194,7 @@ def admin_client(make_client, users):
     return c
 
 
+# Signed-in user client with X-CSRF-Token set.
 @pytest.fixture
 def user_client(make_client, users):
     c = make_client()
@@ -191,20 +202,21 @@ def user_client(make_client, users):
     return c
 
 
+# Anonymous client.
 @pytest.fixture
 def anon_client(make_client):
     return make_client()
 
 
 # ------------------------------------------------------------------ workers
+# APP_TEST_INGEST_PYTHON, or None for an in-process ingest worker.
 def _ingest_python() -> str | None:
     return os.environ.get("APP_TEST_INGEST_PYTHON") or None
 
 
+# Callable that drains the ingest queue (separate interpreter when APP_TEST_INGEST_PYTHON is set).
 @pytest.fixture
 def run_ingest(worker_settings, db, roots):
-    """Drain the ingest queue. Out-of-process with the ingestion pins when APP_TEST_INGEST_PYTHON is set."""
-
     py = _ingest_python()
     if py is None:
         try:
@@ -212,6 +224,7 @@ def run_ingest(worker_settings, db, roots):
         except ImportError:
             pytest.skip("set APP_TEST_INGEST_PYTHON to an interpreter with ingestion/requirements.txt")
 
+    # Run `cgis-app worker --queue ingest --once` (or serve(..., once=True) in-process).
     def run():
         if py is None:
             from cgis_app.worker.runner import serve
@@ -233,10 +246,12 @@ def run_ingest(worker_settings, db, roots):
     return run
 
 
+# Callable that drains the export queue in-process.
 @pytest.fixture
 def run_export(worker_settings, db):
     from cgis_app.worker.runner import serve
 
+    # serve(..., 'export', once=True).
     def run():
         return serve(worker_settings, "export", dsn=db.worker_dsn, once=True)
 
@@ -244,6 +259,7 @@ def run_export(worker_settings, db):
 
 
 # ------------------------------------------------------------------ data helpers
+# All synthetic sample files (synthetic.make_all).
 @pytest.fixture
 def samples(tmp_path):
     import synthetic
@@ -251,6 +267,7 @@ def samples(tmp_path):
     return synthetic.make_all(tmp_path / "samples")
 
 
+# POST a multipart upload (file + metadata). Used by the admin/export/gateway tests.
 def upload(client, path: Path, metadata: dict, *, filename: str | None = None, content_type: str = "application/octet-stream",
            url: str = "/admin/datasets/uploads"):
     with open(path, "rb") as fh:
@@ -258,6 +275,7 @@ def upload(client, path: Path, metadata: dict, *, filename: str | None = None, c
                                        "metadata": (None, json.dumps(metadata), "application/json")})
 
 
+# Run the worker once and return the job's JSON. Used by the admin/export tests.
 def wait_job(client, job_id: str, runner, *, prefix: str = "/admin/jobs") -> dict:
     runner()
     r = client.get(f"{prefix}/{job_id}")

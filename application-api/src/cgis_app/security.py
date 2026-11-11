@@ -1,10 +1,5 @@
-"""Password hashing (argon2id) and opaque credential secrets.
-
-* Passwords: argon2id with argon2-cffi's RFC 9106 "low memory" profile (t=3, m=64 MiB, p=4). At most
-  ``hash_concurrency`` hashes run at once so a burst of logins cannot exhaust the 16 GB budget.
-* Session/bearer/personal-access tokens: 256-bit ``secrets`` values. Only SHA-256 digests are stored;
-  a high-entropy random secret does not need a slow hash.
-"""
+# Password hashing (argon2id, RFC 9106 low-memory profile, bounded concurrency) and opaque credential
+# secrets (256-bit, typed prefixes, stored only as SHA-256 digests).
 
 from __future__ import annotations
 
@@ -27,18 +22,20 @@ _hash_slots = threading.BoundedSemaphore(2)
 _DUMMY_HASH = _hasher.hash(secrets.token_urlsafe(24))
 
 
+# Set how many argon2 hashes may run at once. Called by app.create_app.
 def configure(hash_concurrency: int) -> None:
     global _hash_slots
     _hash_slots = threading.BoundedSemaphore(max(1, hash_concurrency))
 
 
+# argon2id hash of a password. Used by identity and the login rehash.
 def hash_password(password: str) -> str:
     with _hash_slots:
         return _hasher.hash(password)
 
 
+# Constant-work check; False for unknown users (dummy hash). Used by login, password change, bootstrap.
 def verify_password(stored_hash: str | None, password: str) -> bool:
-    """Constant-work verification; also returns False for unknown users (``stored_hash=None``)."""
     with _hash_slots:
         try:
             return _hasher.verify(stored_hash or _DUMMY_HASH, password) and stored_hash is not None
@@ -46,6 +43,7 @@ def verify_password(stored_hash: str | None, password: str) -> bool:
             return False
 
 
+# True when a stored hash uses outdated parameters. Used by routes_auth.login.
 def needs_rehash(stored_hash: str) -> bool:
     try:
         return _hasher.check_needs_rehash(stored_hash)
@@ -57,6 +55,7 @@ _COMMON = {"password", "passw0rd", "123456789012", "qwertyuiop12", "letmein12345
            "administrator", "cybergis1234", "cgis-admin-1234"}
 
 
+# Reasons a new password is too weak (length, placeholder, username, repetition). Used by identity.
 def password_problems(password: str, username: str, min_length: int) -> list[str]:
     problems = []
     if len(password) < min_length:
@@ -73,26 +72,32 @@ def password_problems(password: str, username: str, min_length: int) -> list[str
     return problems
 
 
+# Lowercase, trimmed username. Used by identity and routes_auth.login.
 def normalize_username(raw: str) -> str:
     return raw.strip().lower()
 
 
+# New random secret with its kind prefix (cgis_s_/cgis_b_/cgis_pat_). Used by identity.create_session.
 def new_token(kind: str) -> str:
     return TOKEN_PREFIXES[kind] + secrets.token_urlsafe(32)
 
 
+# Random synchronizer CSRF token for browser sessions. Used by identity.create_session.
 def new_csrf_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+# SHA-256 digest stored instead of a secret. Used by identity.
 def token_digest(token: str) -> bytes:
     return hashlib.sha256(token.encode("utf-8")).digest()
 
 
+# Cheap format check before any DB lookup. Used by identity.resolve_token.
 def looks_like_token(value: str) -> bool:
     return bool(TOKEN_RE.match(value))
 
 
+# Timing-safe string comparison (False if either is empty). Used by auth.check_csrf.
 def constant_time_equals(a: str | None, b: str | None) -> bool:
     if not a or not b:
         return False

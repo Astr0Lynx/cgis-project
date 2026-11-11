@@ -11,4 +11,3 @@
 **/.pytest_cache
 **/*.egg-info
 ingestion/tests
-ingestion/docs

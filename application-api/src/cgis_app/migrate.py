@@ -1,13 +1,6 @@
-"""Apply the cgis_app schema migrations and provision the service login roles.
-
-Run as the database owner (the same PG* credentials the root ``migrate`` one-shot uses), AFTER the
-database/ migrations, e.g. ``python -m cgis_app migrate``. Idempotent:
-
-* every ``migrations/NNNN_*.sql`` is applied once, in order, inside a transaction, and its SHA-256 is
-  recorded; a changed file that was already applied is reported as drift and refused;
-* ``APP_DB_USER`` / ``APP_WORKER_DB_USER`` login roles are created (or their password re-applied) and
-  granted ``cgis_app_api`` / ``cgis_app_worker``.
-"""
+# `cgis-app migrate`: apply migrations/NNNN_*.sql once each (checksummed; a changed applied file is refused as
+# drift) and create/update the APP_DB_USER / APP_WORKER_DB_USER login roles. Run as the DB owner after the
+# database/ migrations (Compose one-shot app-migrate).
 
 from __future__ import annotations
 
@@ -39,21 +32,25 @@ LOGIN_ROLES = (
 )
 
 
+# Migration or role configuration problem. Printed by cli migrate.
 class MigrationError(RuntimeError):
     pass
 
 
+# One SQL migration file.
 @dataclass(frozen=True)
 class Migration:
     version: int
     name: str
     sql: str
 
+    # SHA-256 of the SQL text, recorded in cgis_app.schema_migrations.
     @property
     def checksum(self) -> str:
         return hashlib.sha256(self.sql.encode("utf-8")).hexdigest()
 
 
+# Packaged migrations in order (versions must be contiguous from 0001). Used by apply/status.
 def load_migrations() -> list[Migration]:
     out = []
     for entry in resources.files("cgis_app.migrations").iterdir():
@@ -67,8 +64,9 @@ def load_migrations() -> list[Migration]:
     return out
 
 
+# Apply pending migrations under an advisory lock, refusing drift; returns the names applied.
+# Used by run and tests/conftest.py.
 def apply_migrations(conn: psycopg.Connection) -> list[str]:
-    """Apply pending migrations; returns the names applied. ``conn`` must be autocommit."""
     applied: list[str] = []
     conn.execute("SELECT pg_advisory_lock(hashtextextended(%s, 0))", (LOCK_KEY,))
     try:
@@ -100,6 +98,7 @@ def apply_migrations(conn: psycopg.Connection) -> list[str]:
     return applied
 
 
+# applied/pending/DRIFT per migration. Used by `cgis-app migrate --status`.
 def migration_status(conn: psycopg.Connection) -> list[dict]:
     exists = conn.execute("SELECT to_regclass('cgis_app.schema_migrations') IS NOT NULL").fetchone()[0]
     done = {}
@@ -112,6 +111,7 @@ def migration_status(conn: psycopg.Connection) -> list[dict]:
     return rows
 
 
+# Validated (user, password, group) triples from APP_*_DB_USER/PASSWORD. Used by run.
 def read_login_roles(env: dict[str, str] | None = None) -> list[tuple[str, str, str]]:
     env = dict(os.environ if env is None else env)
     owner = env.get("PGUSER", "")
@@ -134,6 +134,7 @@ def read_login_roles(env: dict[str, str] | None = None) -> list[tuple[str, str, 
     return roles
 
 
+# Create or update the login roles and grant their group + CONNECT. Used by run and tests.
 def provision_login_roles(conn: psycopg.Connection, roles: list[tuple[str, str, str]]) -> list[str]:
     done = []
     dbname = conn.info.dbname
@@ -152,6 +153,7 @@ def provision_login_roles(conn: psycopg.Connection, roles: list[tuple[str, str, 
     return done
 
 
+# Migrations plus optional role provisioning on one connection. Used by cli migrate.
 def run(dsn: str = "", *, provision: bool = True) -> dict:
     roles = read_login_roles() if provision else []
     with psycopg.connect(dsn, autocommit=True, application_name="cgis_app_migrate") as conn:

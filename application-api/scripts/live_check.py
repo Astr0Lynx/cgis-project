@@ -1,12 +1,7 @@
-"""End-to-end check against a RUNNING stack (gateway + app-api + workers + OGC), using the bootstrap accounts
-from the root .env. Prints a JSON report; never prints passwords or tokens.
-
-    python application-api/scripts/live_check.py [--base http://localhost:8080] [--raster data/real-samples/ind_ppp_2011_1km_Aggregated.tif]
-
-Steps: anonymous/user/admin authorization on real routes; admin upload -> validate -> publish of a real GeoTIFF;
-OGC API collection discovery (waits for the publisher refresh); personal access token use; native and clipped
-exports with checksum verification; cleanup of nothing (the published dataset stays; version is auto-assigned).
-"""
+# End-to-end check of a RUNNING stack (gateway, app-api, workers, OGC) with the bootstrap accounts from the
+# root .env; prints a JSON report, never secrets. Steps: 401/403 matrix, admin upload -> validate -> publish of a
+# real GeoTIFF, OGC collection discovery, token use, native and clipped exports with checksums.
+#   python application-api/scripts/live_check.py [--base http://localhost:8080] [--raster <GeoTIFF>]
 
 from __future__ import annotations
 
@@ -22,6 +17,7 @@ import httpx
 REPO = Path(__file__).resolve().parents[2]
 
 
+# KEY=VALUE pairs of a .env file. Used by main.
 def read_env(path: Path) -> dict[str, str]:
     env = {}
     for line in path.read_text().splitlines():
@@ -31,6 +27,7 @@ def read_env(path: Path) -> dict[str, str]:
     return env
 
 
+# Call fn until it returns non-None or the timeout passes. Used by main.
 def poll(fn, timeout=300, every=1.0):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -41,6 +38,7 @@ def poll(fn, timeout=300, every=1.0):
     raise TimeoutError("timed out")
 
 
+# Run the steps and print the report; exit 1 when any step fails.
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://localhost:8080")
@@ -51,6 +49,7 @@ def main() -> int:
     B = args.base
     report: dict = {"base": B, "steps": []}
 
+    # Record one named step's outcome.
     def step(name, ok, **info):
         report["steps"].append({"step": name, "ok": bool(ok), **info})
         if not ok:
@@ -65,6 +64,7 @@ def main() -> int:
     step("anonymous export is 401", anon.post(f"{B}/api/exports", json={"dataset_id": "x", "kind": "full",
                                                                       "format": "COG"}).status_code == 401)
 
+    # Sign in with a password and return a client with its CSRF header.
     def login(user, pw):
         c = httpx.Client(timeout=600)
         r = c.post(f"{B}/auth/login", json={"username": user, "password": pw}, headers={"Origin": B})

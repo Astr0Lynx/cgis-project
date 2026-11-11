@@ -1,18 +1,19 @@
-"""The PROPOSED gateway config (deploy/gateway/default.conf) with a real nginx in front of the real app (uvicorn)
-and echo stubs for ogc/tiles/processing/viewer. Needs APP_TEST_NGINX=/path/to/nginx; skipped otherwise.
-
-Proves: route split /api/exports|catalog|app -> app-api while /api/operations stays on processing; large
-uploads pass the gateway (no 1m cap) yet the service limit applies; read-only routes; dot-segment refusal;
-X-Real-IP cannot be spoofed; downloads stream with Range through the gateway."""
+# The real gateway config (infra/gateway/default.conf + nginx.conf) under a real nginx, in front of the real
+# app (uvicorn) and in-process echo stubs for ogc/tiles/processing/viewer. Needs APP_TEST_NGINX; skipped otherwise.
+# Covers the route split, large streamed uploads, read-only routes, dot segments, X-Real-IP, Range downloads and
+# the GATEWAY_READ_ACCESS=protected variant (auth_request -> /auth/verify).
 
 from __future__ import annotations
 
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
+import threading
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import httpx
@@ -22,14 +23,19 @@ import synthetic
 from conftest import APP_ROOT, PASSWORD_ADMIN, PASSWORD_USER, REPO
 
 pytestmark = [pytest.mark.db, pytest.mark.gateway]
+GATEWAY = REPO / "infra" / "gateway"
+UPSTREAMS = {"ogc_up": "ogc", "tiles_up": "tiles", "processing_up": "processing", "viewer_up": "viewer",
+             "app_api_up": "app"}
 
 
+# A free loopback TCP port. Used by _gateway for every stub, the app and nginx.
 def _free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
 
 
+# Poll `url` until it answers below 500. Used by _gateway to wait for uvicorn and nginx.
 def _wait(url: str, timeout: float = 20) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -42,27 +48,64 @@ def _wait(url: str, timeout: float = 20) -> None:
     raise AssertionError(f"{url} did not come up")
 
 
+# Start a thread-backed HTTP stub that echoes {service, method, path} as JSON. Used by _gateway.
+def _echo_server(name: str, port: int) -> ThreadingHTTPServer:
+    class Echo(BaseHTTPRequestHandler):
+        # Drain the body and answer with the echo JSON (no body for HEAD).
+        def _reply(self):
+            length = int(self.headers.get("Content-Length") or 0)
+            if length:
+                self.rfile.read(length)
+            body = json.dumps({"service": name, "method": self.command, "path": self.path}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(body)
+
+        do_GET = do_POST = do_HEAD = do_PUT = do_DELETE = _reply
+
+        # Silence the default stderr request log.
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", port), Echo)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
+
+# The protected read-access snippet, taken from the gateway start-up script (GATEWAY_READ_ACCESS=protected).
+def _protected_snippet() -> str:
+    script = (GATEWAY / "40-cgis-gateway.sh").read_text()
+    found = re.search(r"<<'CONF'\n(.*?)\nCONF\n", script, re.S)
+    assert found, "protected read-access block not found in 40-cgis-gateway.sh"
+    return found.group(1) + "\n"
+
+
+# Gateway in public read mode.
 @pytest.fixture
 def gateway(db, users, roots, tmp_path):
-    yield from _gateway(db, roots, tmp_path, "default.conf")
+    yield from _gateway(db, roots, tmp_path, protected=False)
 
 
+# Gateway with GATEWAY_READ_ACCESS=protected.
 @pytest.fixture
 def protected_gateway(db, users, roots, tmp_path):
-    yield from _gateway(db, roots, tmp_path, "default.protected.conf")
+    yield from _gateway(db, roots, tmp_path, protected=True)
 
 
-def _gateway(db, roots, tmp_path, conf_name):
+# Run stubs + uvicorn + nginx with infra/gateway rewritten to loopback ports; yields the gateway base URL.
+# Used by the gateway / protected_gateway fixtures.
+def _gateway(db, roots, tmp_path, *, protected: bool):
     nginx = os.environ.get("APP_TEST_NGINX")
     if not nginx:
         pytest.skip("APP_TEST_NGINX not set")
-    procs = []
+    procs, stubs = [], []
     ports = {name: _free_port() for name in ("ogc", "tiles", "processing", "viewer", "app", "gw")}
     base = f"http://127.0.0.1:{ports['gw']}"
     try:
-        for name in ("ogc", "tiles", "processing", "viewer"):
-            procs.append(subprocess.Popen([sys.executable, str(REPO / "infra/tests/echo_server.py")],
-                                          env={**os.environ, "MOCK_NAME": name, "MOCK_PORT": str(ports[name])}))
+        stubs = [_echo_server(name, ports[name]) for name in ("ogc", "tiles", "processing", "viewer")]
         env = {**os.environ, "APP_DATABASE_URL": db.api_dsn, "APP_STAGING_ROOT": str(roots["staging"]),
                "APP_ASSET_ROOT": str(roots["assets"]), "APP_EXPORT_ROOT": str(roots["exports"]),
                "APP_PUBLIC_BASE_URL": base, "APP_TRUST_PROXY_HEADERS": "true", "APP_MAX_UPLOAD_BYTES": str(6 * 2**20),
@@ -70,16 +113,17 @@ def _gateway(db, roots, tmp_path, conf_name):
                "PYTHONPATH": os.pathsep.join([str(APP_ROOT / "src"), str(REPO / "spatial-processing/src")])}
         procs.append(subprocess.Popen([sys.executable, "-m", "uvicorn", "--factory", "cgis_app.app:app_factory",
                                        "--host", "127.0.0.1", "--port", str(ports["app"]), "--no-access-log"], env=env))
-        conf = (APP_ROOT / "deploy/gateway" / conf_name).read_text()
-        for host, port in (("ogc:5000", "ogc"), ("tiles:8000", "tiles"), ("processing:8000", "processing"),
-                           ("viewer:8080", "viewer"), ("app-api:8000", "app")):
-            assert f"server {host};" in conf
-            conf = conf.replace(f"server {host};", f"server 127.0.0.1:{ports[port]};")
-        conf = conf.replace("listen 8080 default_server;", f"listen 127.0.0.1:{ports['gw']} default_server;")
         prefix = tmp_path / "nginx"
         (prefix / "logs").mkdir(parents=True)
+        (prefix / "resolver.conf").write_text("resolver 127.0.0.1 valid=10s ipv6=off;\n")  # upstreams are IPs here
+        (prefix / "read-access.conf").write_text(_protected_snippet() if protected else "")
+        conf = (GATEWAY / "default.conf").read_text().replace("/etc/nginx/cgis/", f"{prefix}/")
+        for var, port in UPSTREAMS.items():
+            conf, n = re.subn(rf"set \${var}\s+[\w.-]+:\d+;", f"set ${var} 127.0.0.1:{ports[port]};", conf)
+            assert n == 1, var
+        conf = conf.replace("listen 8080 default_server;", f"listen 127.0.0.1:{ports['gw']} default_server;")
         (prefix / "default.conf").write_text(conf)
-        main = (REPO / "infra/gateway/nginx.conf").read_text()
+        main = (GATEWAY / "nginx.conf").read_text()
         mime = Path(nginx).resolve().parent.parent / "etc" / "nginx" / "mime.types"
         if not mime.is_file():
             mime = next(Path(nginx).resolve().parent.parent.rglob("mime.types"))
@@ -105,10 +149,12 @@ def _gateway(db, roots, tmp_path, conf_name):
                 p.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 p.kill()
+        for s in stubs:
+            s.shutdown()
 
 
+# Status of a verbatim request line (HTTP clients normalize '..' before sending). Used by test_routing_split.
 def _raw_status(base: str, path: str) -> int:
-    """Send a request line verbatim (HTTP clients normalize '..' away before sending)."""
     port = int(base.rsplit(":", 1)[1])
     with socket.create_connection(("127.0.0.1", port), timeout=5) as sock:
         sock.sendall(f"GET {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n".encode())
@@ -116,12 +162,14 @@ def _raw_status(base: str, path: str) -> int:
     return int(head.split(" ", 2)[1])
 
 
+# Sign in through the gateway; returns the CSRF token.
 def _login(c: httpx.Client, base: str, user: str, password: str) -> str:
     r = c.post(f"{base}/auth/login", json={"username": user, "password": password}, headers={"Origin": base})
     assert r.status_code == 200, r.text
     return r.json()["csrf_token"]
 
 
+# Verifies: routing split.
 def test_routing_split(gateway):
     with httpx.Client() as c:
         assert c.get(f"{gateway}/auth/me").json()["authenticated"] is False
@@ -139,6 +187,7 @@ def test_routing_split(gateway):
             assert _raw_status(gateway, raw) == 400, raw  # dot segments refused before routing
 
 
+# Verifies: upload publish and stream download through gateway.
 def test_upload_publish_and_stream_download_through_gateway(gateway, tmp_path, run_ingest):
     import hashlib
 
@@ -189,6 +238,7 @@ def test_upload_publish_and_stream_download_through_gateway(gateway, tmp_path, r
         assert part.status_code == 206 and len(part.content) == 10
 
 
+# Verifies: X-Real-IP is set by the gateway.
 def test_x_real_ip_is_set_by_the_gateway(gateway, db):
     with httpx.Client() as c:
         for _ in range(2):
@@ -199,6 +249,7 @@ def test_x_real_ip_is_set_by_the_gateway(gateway, db):
     assert "ip:127.0.0.1" in keys and "ip:203.0.113.9" not in keys
 
 
+# Verifies: user session through gateway.
 def test_user_session_through_gateway(gateway):
     with httpx.Client() as c:
         csrf = _login(c, gateway, "bob-user", PASSWORD_USER)
@@ -213,6 +264,7 @@ def test_user_session_through_gateway(gateway):
         assert c.get(f"{gateway}/api/exports").status_code == 401
 
 
+# Verifies: protected variant gates read routes.
 def test_protected_variant_gates_read_routes(protected_gateway):
     base = protected_gateway
     with httpx.Client() as anon:

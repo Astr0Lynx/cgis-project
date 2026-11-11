@@ -1,15 +1,6 @@
-"""``/api/exports``: full or clipped downloads of permitted datasets for signed-in users (and admins).
-
-* ``kind=full`` in the native CRS: the published asset (a lossless COG for rasters, normalized GeoJSON for
-  vectors) is streamed directly from the read-only assets volume — no copy, constant memory, HTTP Range,
-  ``ETag``/``Repr-Digest`` with the recorded SHA-256. The job is ``completed`` immediately (201).
-* reprojection (``output_crs`` != native), GTiff/COG conversion of a reprojected grid and every ``clip``
-  run asynchronously in the export worker (202 ``queued``; poll ``links.self``) with bounded memory,
-  per-job time limit, output size cap, scratch quota, retention (``APP_EXPORT_TTL_SECONDS``) and cancel.
-
-The pre-existing ``/api/operations/clip`` and ``/api/downloads/{job_id}`` of the processing service are
-unchanged and remain available.
-"""
+# /api/exports routes for signed-in users. A full native export streams the published asset directly
+# (201 completed, Range/ETag/Repr-Digest); reprojections and clips are queued for the export worker (202).
+# The processing service's /api/operations and /api/downloads are separate and unchanged.
 
 from __future__ import annotations
 
@@ -33,6 +24,7 @@ router = APIRouter(prefix="/api/exports", tags=["exports"])
 _E = {code: {"model": ErrorResponse} for code in (401, 403, 404, 409, 410, 413, 422, 429, 503, 507)}
 
 
+# GET /api/exports/capabilities: formats, CRS rules and current limits (public).
 @router.get("/capabilities", summary="Supported export kinds, formats per dataset kind and output CRS rules")
 def capabilities(request: Request):
     caps = exportspec.capabilities()
@@ -45,6 +37,7 @@ def capabilities(request: Request):
     return caps
 
 
+# Catalog row + access of a dataset version the caller may export (404/409 otherwise). Used by create_export.
 def _dataset_for(conn, settings, principal: Principal, dataset_id: str, version: int | None) -> tuple[dict, str]:
     if not catalog.valid_dataset_id(dataset_id):
         raise ApiError(422, errors.INVALID_DATASET_ID, "dataset_id must be a lowercase catalog slug (not a path or URL)")
@@ -61,18 +54,21 @@ def _dataset_for(conn, settings, principal: Principal, dataset_id: str, version:
     return row, access
 
 
+# SHA-256 of the published asset recorded by the importer, if any. Used by _native_result/_public_provenance.
 def _asset_sha(row: dict) -> str | None:
     ing = (row.get("provenance") or {}).get("ingestion") or {}
     sha = ing.get("asset_sha256")
     return sha if isinstance(sha, str) and len(sha) == 64 else None
 
 
+# Provenance block of a native export result. Used by _native_result.
 def _public_provenance(row: dict) -> dict[str, Any]:
     rec = catalog.public_record(row, include_provenance=False)
     return {k: rec[k] for k in ("dataset_id", "version", "title", "source", "license", "citation", "synthetic",
                                 "units", "checksum_sha256", "product_level", "year")} | {"asset_sha256": _asset_sha(row)}
 
 
+# Result body, size and checksum of a native (unconverted) download. Used by create_export.
 def _native_result(row: dict, fmt: str, settings) -> tuple[dict, int, str | None]:
     try:
         path = storage.resolve_asset(settings.asset_root, row["asset_path"], row["kind"])
@@ -104,6 +100,7 @@ def _native_result(row: dict, fmt: str, settings) -> tuple[dict, int, str | None
     return result, size, _asset_sha(row)
 
 
+# Cell count of the reprojected grid (None if unknown; 422 if impossible). Used by create_export.
 def _estimate_reprojected_pixels(row: dict, dst_crs, settings) -> int | None:
     import rasterio
     from rasterio.warp import calculate_default_transform
@@ -121,6 +118,7 @@ def _estimate_reprojected_pixels(row: dict, dst_crs, settings) -> int | None:
                        {"reason": type(exc).__name__}) from None
 
 
+# Approximate native cells under an AOI's bounds. Used by create_export (AOI_TOO_LARGE).
 def _estimate_clip_pixels(row: dict, geom_native) -> int | None:
     rx, ry = row.get("resolution_x"), row.get("resolution_y")
     if not rx or not ry:
@@ -129,6 +127,7 @@ def _estimate_clip_pixels(row: dict, geom_native) -> int | None:
     return int(((maxx - minx) / rx + 2) * ((maxy - miny) / ry + 2))
 
 
+# POST /api/exports: validate dataset/format/CRS/AOI and limits, then answer 201 (native) or 202 (queued).
 @router.post("", status_code=202, response_model=ExportJob, responses={**_E, 201: {"model": ExportJob, "description":
              "Native full export: completed immediately, download now"}},
              summary="Request a full or clipped export (dataset, version, AOI, output CRS, format)")
@@ -217,6 +216,7 @@ def create_export(req: ExportRequest, request: Request, principal: UserPrincipal
     return JSONResponse(status_code=202, content=views.export_job(job))
 
 
+# Export job visible to the caller (owner or admin), else 404. Used by the job routes.
 def _own_job(request: Request, principal: Principal, job_id: uuid.UUID) -> dict:
     with request.app.state.db.connection() as conn:
         row = jobs.get(conn, job_id)
@@ -225,6 +225,7 @@ def _own_job(request: Request, principal: Principal, job_id: uuid.UUID) -> dict:
     return row
 
 
+# GET /api/exports: my export jobs (admins: all=true).
 @router.get("", response_model=Page, responses=_E, summary="My export jobs (admins: all=true for everyone's)")
 def list_exports(request: Request, principal: UserPrincipal, all: bool = False,
                  status: str | None = Query(None, pattern="^(queued|running|completed|failed|cancelled|expired)$"),
@@ -235,11 +236,13 @@ def list_exports(request: Request, principal: UserPrincipal, all: bool = False,
     return {"items": [views.export_job(r) for r in rows], "total": total, "offset": offset, "limit": limit, "links": {}}
 
 
+# GET /api/exports/{id}: status, progress and result.
 @router.get("/{job_id}", response_model=ExportJob, responses=_E, summary="Export job status, progress and result")
 def get_export(job_id: uuid.UUID, request: Request, principal: UserPrincipal):
     return views.export_job(_own_job(request, principal, job_id))
 
 
+# POST /api/exports/{id}/cancel: cancel a queued/running export (409 when finished).
 @router.post("/{job_id}/cancel", response_model=ExportJob, responses=_E, summary="Cancel a queued or running export")
 def cancel_export(job_id: uuid.UUID, request: Request, principal: UserPrincipal):
     row = _own_job(request, principal, job_id)
@@ -252,6 +255,7 @@ def cancel_export(job_id: uuid.UUID, request: Request, principal: UserPrincipal)
     return views.export_job(row)
 
 
+# A downloadable job (409/410 otherwise) whose dataset the caller may still read (403). Used by download/metadata.
 def _completed(request: Request, principal: Principal, job_id: uuid.UUID) -> dict:
     row = _own_job(request, principal, job_id)
     if row["status"] == "failed":
@@ -272,6 +276,7 @@ def _completed(request: Request, principal: Principal, job_id: uuid.UUID) -> dic
     return row
 
 
+# ETag, Repr-Digest and X-Checksum-SHA256 headers for a file. Used by download.
 def _digest_headers(sha_hex: str | None) -> dict[str, str]:
     headers = {"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store"}
     if sha_hex:
@@ -288,12 +293,14 @@ _DOWNLOAD_RESPONSES = {
     206: {"description": "Partial content (HTTP Range)"}}
 
 
+# HEAD /api/exports/{id}/download: headers only.
 @router.head("/{job_id}/download", response_class=FileResponse, responses=_DOWNLOAD_RESPONSES,
              summary="Headers of a completed export (size, checksum) without the body")
 def download_head(job_id: uuid.UUID, request: Request, principal: UserPrincipal):
     return download(job_id, request, principal)
 
 
+# GET /api/exports/{id}/download: stream the file from disk (Range supported).
 @router.get("/{job_id}/download", response_class=FileResponse, responses=_DOWNLOAD_RESPONSES,
             summary="Download a completed export (streams from disk; HTTP Range supported)")
 def download(job_id: uuid.UUID, request: Request, principal: UserPrincipal):
@@ -317,6 +324,7 @@ def download(job_id: uuid.UUID, request: Request, principal: UserPrincipal):
                         filename=result.get("filename") or path.name, headers=_digest_headers(row.get("result_sha256")))
 
 
+# GET /api/exports/{id}/metadata: JSON sidecar (CRS, grid, NoData, units, provenance).
 @router.get("/{job_id}/metadata", responses=_E, summary="Metadata sidecar: CRS, grid, NoData, units, provenance")
 def metadata(job_id: uuid.UUID, request: Request, principal: UserPrincipal):
     row = _completed(request, principal, job_id)

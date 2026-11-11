@@ -1,13 +1,6 @@
-"""Ingest worker: validate and publish admin uploads with the EXISTING importer (``ingestion/``).
-
-This module runs in the ingest-worker image, on the ingestion package's own pinned GDAL stack, with the
-assets volume mounted read-write and the ``cgis_app_worker`` DB role (member of ``cgis_ingest``). It never
-imports FastAPI and never talks to Docker.
-
-Before handing a file to the importer, cheap guards reject decompression bombs and resource exhaustion:
-TIFF header dimensions/bands/uncompressed size and compression ratio, GDAL driver allow-list (GTiff only,
-so no VRT/XML that could reference other files), GeoJSON nesting depth.
-"""
+# Ingest worker: validate and publish admin uploads with the existing importer (ingestion/), on the ingestion
+# pins, assets read-write, DB role cgis_app_worker (member of cgis_ingest). Cheap pre-checks refuse
+# decompression bombs (TIFF header size/bands/ratio), non-GTiff drivers and over-nested GeoJSON first.
 
 from __future__ import annotations
 
@@ -28,7 +21,9 @@ from .runner import JobContext, JobFailure, Outcome
 log = logging.getLogger("cgis_app.worker.ingest")
 
 
+# Pre-check failure with an importer-style code. Converted to a job error by _validate/_publish.
 class PrecheckError(Exception):
+    # Store code, message and details.
     def __init__(self, code: str, message: str, details: dict | None = None):
         super().__init__(message)
         self.code = code
@@ -36,6 +31,8 @@ class PrecheckError(Exception):
         self.details = details or {}
 
 
+# Header-only raster guards (bands, cells, uncompressed size, compression ratio); returns warnings.
+# Used by _validate and _publish.
 def precheck_raster(path: Path, settings: Settings) -> list[str]:
     import numpy as np
     import rasterio
@@ -78,6 +75,7 @@ def precheck_raster(path: Path, settings: Settings) -> list[str]:
     return warnings
 
 
+# Parse the GeoJSON (bounded nesting) and require a non-empty FeatureCollection. Used by _validate/_publish.
 def precheck_vector(path: Path, settings: Settings) -> list[str]:
     try:
         doc = json.loads(path.read_bytes().decode("utf-8"))
@@ -95,6 +93,7 @@ def precheck_vector(path: Path, settings: Settings) -> list[str]:
     return []
 
 
+# The job's upload row (fails when discarded). Used by handle.
 def _upload(ctx: JobContext) -> dict:
     row = ctx.conn.execute("SELECT * FROM cgis_app.uploads WHERE upload_id = %s", (ctx.job["upload_id"],)).fetchone()
     if row is None or row["status"] == "discarded":
@@ -102,6 +101,7 @@ def _upload(ctx: JobContext) -> dict:
     return row
 
 
+# Importer DatasetSpec for an upload, file resolved inside the staging root. Used by _validate/_publish.
 def _spec(upload: dict, staging_root: Path):
     from ingestion.manifest import parse_entry
 
@@ -110,6 +110,7 @@ def _spec(upload: dict, staging_root: Path):
     return parse_entry(entry, staging_root)
 
 
+# Job error dict with an upper-case code. Used by _validate/_publish.
 def _error_dict(code: str, message: str, details: dict | None = None) -> dict[str, Any]:
     err: dict[str, Any] = {"code": code.upper(), "message": message}
     if details:
@@ -117,6 +118,7 @@ def _error_dict(code: str, message: str, details: dict | None = None) -> dict[st
     return err
 
 
+# Mark the upload failed with its validation errors. Used by _validate/_publish.
 def _fail_upload(ctx: JobContext, upload: dict, error: dict, warnings: list[str]) -> None:
     ctx.conn.execute(
         "UPDATE cgis_app.uploads SET status = 'failed', error = %s, validation = %s WHERE upload_id = %s "
@@ -124,6 +126,7 @@ def _fail_upload(ctx: JobContext, upload: dict, error: dict, warnings: list[str]
         (Jsonb(error), Jsonb({"ok": False, "errors": [error], "warnings": warnings}), upload["upload_id"]))
 
 
+# Pre-check + Importer.validate; upload becomes validated or failed. Used by handle (upload/validate jobs).
 def _validate(ctx: JobContext, upload: dict) -> Outcome:
     from ingestion import IMPORTER_NAME, __version__ as importer_version
     from ingestion.errors import IngestionError
@@ -167,6 +170,8 @@ def _validate(ctx: JobContext, upload: dict) -> Outcome:
     raise JobFailure(error["code"], error["message"], error.get("details"))
 
 
+# Pre-check + Importer.import_dataset (COG/normalize, catalog ready); upload becomes published or failed.
+# Used by handle (publish jobs).
 def _publish(ctx: JobContext, upload: dict) -> Outcome:
     from ingestion.catalog import Catalog, connect as ingestion_connect
     from ingestion.errors import IngestionError
@@ -208,6 +213,7 @@ def _publish(ctx: JobContext, upload: dict) -> Outcome:
     raise JobFailure(error["code"], error["message"], error.get("details"))
 
 
+# Ingest job dispatcher by kind. Used by runner.serve for the ingest queue.
 def handle(ctx: JobContext) -> Outcome:
     upload = _upload(ctx)
     kind = ctx.job["kind"]
@@ -222,8 +228,9 @@ def handle(ctx: JobContext) -> Outcome:
     raise JobFailure("INVALID_STATE", f"unknown ingest job kind {kind!r}")
 
 
+# Fail uploads whose job died, discard stale staging, delete orphan staged files. Run every minute by
+# runner.serve.
 def maintenance(conn, settings: Settings) -> None:
-    """Expire abandoned staging, release uploads whose job died, delete orphan staged files."""
     # Uploads stuck in validating/publishing whose latest job ended (abandoned after crashes, cancelled).
     conn.execute("""
         UPDATE cgis_app.uploads u SET status = 'failed',
