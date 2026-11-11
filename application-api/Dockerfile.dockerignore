@@ -1,0 +1,14 @@
+# Build context is the repository root; send only what the application-api images need.
+*
+!application-api/pyproject.toml
+!application-api/src/**
+!application-api/tests/**
+!ingestion/**
+!spatial-processing/pyproject.toml
+!spatial-processing/src/**
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/*.egg-info
+ingestion/tests
+ingestion/docs

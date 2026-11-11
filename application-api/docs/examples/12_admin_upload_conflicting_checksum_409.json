@@ -1,0 +1,26 @@
+{
+  "name": "admin_upload_conflicting_checksum_409",
+  "request": {
+    "method": "POST",
+    "path": "/admin/datasets/uploads",
+    "body": null
+  },
+  "note": null,
+  "response": {
+    "status": 409,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "error": {
+        "code": "CHECKSUM_CONFLICT",
+        "message": "example-pop-2011 v1 is already published with different content; ready versions are immutable - upload it as a new version",
+        "details": {
+          "existing_checksum": "<sha256>",
+          "new_checksum": "<sha256>",
+          "suggested_version": 2
+        }
+      }
+    }
+  }
+}

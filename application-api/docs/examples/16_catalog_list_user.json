@@ -1,0 +1,136 @@
+{
+  "name": "catalog_list_user",
+  "request": {
+    "method": "GET",
+    "path": "/api/catalog/datasets",
+    "body": null
+  },
+  "note": null,
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "items": [
+        {
+          "dataset_id": "example-pop-2011",
+          "version": 1,
+          "title": "SYNTHETIC example-pop-2011",
+          "description": null,
+          "kind": "raster",
+          "product_level": "other",
+          "year": 2011,
+          "units": "people_per_cell",
+          "crs": "EPSG:4326",
+          "bbox": [
+            78.0,
+            17.96,
+            78.05,
+            18.0
+          ],
+          "resolution_x": 0.0005,
+          "resolution_y": 0.0005,
+          "nodata": -9999.0,
+          "source": "synthetic test fixture (application-api tests)",
+          "license": "CC0-1.0 (test data)",
+          "citation": null,
+          "synthetic": true,
+          "group_id": "test-group",
+          "region": null,
+          "checksum_sha256": "<sha256>",
+          "status": "ready",
+          "created_at": "<timestamp>",
+          "updated_at": "<timestamp>",
+          "width": 100,
+          "height": 80,
+          "dtype": "float32",
+          "access": "users",
+          "provenance": {
+            "raster": {
+              "crs": "EPSG:4326",
+              "band": 1,
+              "mask": "nodata",
+              "dtype": "float32",
+              "stats": {
+                "max": 7.0,
+                "min": 1.0,
+                "sum": 31899.0,
+                "valid_count": 7975,
+                "nodata_count": 25
+              },
+              "width": 100,
+              "height": 80,
+              "nodata": -9999.0,
+              "transform": [
+                0.0005,
+                0.0,
+                78.0,
+                0.0,
+                -0.0005,
+                18.0
+              ],
+              "band_count": 1,
+              "bbox_wgs84": [
+                78.0,
+                17.96,
+                78.05,
+                18.0
+              ],
+              "resolution_x": 0.0005,
+              "resolution_y": 0.0005,
+              "native_bounds": [
+                78.0,
+                17.96,
+                78.05,
+                18.0
+              ],
+              "source_driver": "GTiff",
+              "source_is_cog": true
+            },
+            "upload": {
+              "via": "cgis-application-api",
+              "sha256": "<sha256>",
+              "size_bytes": 1043,
+              "uploaded_at": "<timestamp>"
+            },
+            "license": "CC0-1.0 (test data)",
+            "group_id": "test-group",
+            "ingestion": {
+              "asset": {
+                "format": "COG",
+                "blocksize": [
+                  512,
+                  512
+                ],
+                "predictor": "YES",
+                "compression": "DEFLATE",
+                "cog_warnings": [],
+                "overview_factors": [],
+                "overview_resampling": "nearest"
+              },
+              "importer": "cgis-ingestion",
+              "started_at": "<timestamp>",
+              "asset_sha256": "<sha256>",
+              "completed_at": "<timestamp>",
+              "gdal_version": "3.9.3",
+              "source_sha256": "<sha256>",
+              "importer_version": "1.0.0"
+            },
+            "synthetic": true
+          },
+          "versions": [
+            {
+              "version": 1,
+              "status": "ready"
+            }
+          ]
+        }
+      ],
+      "total": 1,
+      "offset": 0,
+      "limit": 100,
+      "links": {}
+    }
+  }
+}

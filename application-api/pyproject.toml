@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cgis-application-api"
+version = "1.0.0"
+description = "CyberGIS application API: authentication, role-based admin dataset hosting, catalog discovery and exports (Agent 5)."
+requires-python = ">=3.11"
+# Exact pins for reproducible builds. The numeric/geo stack matches spatial-processing/pyproject.toml so
+# the clip code imported from that package runs on the versions it was tested with. The ingest worker
+# image installs ingestion/requirements.txt instead (see Dockerfile), never these GDAL pins.
+dependencies = [
+    "fastapi==0.162.0",
+    "starlette==1.10.0",
+    "uvicorn==0.54.0",
+    "pydantic==2.14.2",
+    "numpy==2.5.4",
+    "rasterio==1.5.2",
+    "shapely==2.2.0",
+    "pyproj==3.8.0",
+    "psycopg[binary]==3.3.6",
+    "psycopg-pool==3.3.3",
+    "argon2-cffi==25.1.0",
+    "argon2-cffi-bindings==26.1.0",
+    "python-multipart==0.0.32",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.2.0",
+    "httpx==0.28.1",
+]
+
+[project.scripts]
+cgis-app = "cgis_app.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+cgis_app = ["migrations/*.sql"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "db: needs a disposable PostGIS database (APP_TEST_DSN); see scripts/with_temp_postgis.sh",
+    "ingest: needs the ingestion package and its pinned GDAL stack (run in the ingest-worker environment)",
+    "gateway: needs nginx (APP_TEST_NGINX) to exercise the proposed gateway configuration",
+    "real_data: uses real public sample files downloaded by scripts/fetch_real_samples.sh",
+]
+filterwarnings = [
+    "ignore:Using .httpx. with .starlette.testclient. is deprecated",
+    "ignore::rasterio.errors.NotGeoreferencedWarning",
+]

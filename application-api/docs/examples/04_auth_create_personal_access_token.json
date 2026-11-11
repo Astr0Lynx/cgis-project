@@ -1,0 +1,28 @@
+{
+  "name": "auth_create_personal_access_token",
+  "request": {
+    "method": "POST",
+    "path": "/auth/tokens",
+    "body": {
+      "name": "QGIS desktop",
+      "expires_in_days": 30
+    }
+  },
+  "note": null,
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "token_id": "<uuid>",
+      "name": "QGIS desktop",
+      "scope": "read",
+      "created_at": "<timestamp>",
+      "last_seen_at": null,
+      "expires_at": "<timestamp>",
+      "revoked_at": null,
+      "token": "cgis_pat_<secret>"
+    }
+  }
+}

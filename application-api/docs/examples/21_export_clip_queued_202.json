@@ -1,0 +1,105 @@
+{
+  "name": "export_clip_queued_202",
+  "request": {
+    "method": "POST",
+    "path": "/api/exports",
+    "body": {
+      "dataset_id": "example-pop-2011",
+      "kind": "clip",
+      "aoi": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.0101,
+              17.9801
+            ],
+            [
+              78.0302,
+              17.9801
+            ],
+            [
+              78.0302,
+              17.9902
+            ],
+            [
+              78.0101,
+              17.9902
+            ],
+            [
+              78.0101,
+              17.9801
+            ]
+          ]
+        ]
+      },
+      "aoi_crs": "EPSG:4326",
+      "format": "GTiff",
+      "output_crs": "EPSG:32644"
+    }
+  },
+  "note": null,
+  "response": {
+    "status": 202,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "job_id": "<uuid>",
+      "kind": "export",
+      "status": "queued",
+      "progress": null,
+      "progress_message": "queued",
+      "input": {
+        "aoi": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                78.0101,
+                17.9801
+              ],
+              [
+                78.0302,
+                17.9801
+              ],
+              [
+                78.0302,
+                17.9902
+              ],
+              [
+                78.0101,
+                17.9902
+              ],
+              [
+                78.0101,
+                17.9801
+              ]
+            ]
+          ]
+        },
+        "kind": "clip",
+        "format": "GTiff",
+        "aoi_crs": "EPSG:4326",
+        "version": 1,
+        "dataset_id": "example-pop-2011",
+        "native_crs": "EPSG:4326",
+        "output_crs": "EPSG:32644",
+        "dataset_kind": "raster"
+      },
+      "result": null,
+      "error": null,
+      "attempts": 0,
+      "owner": "<uuid>",
+      "created_at": "<timestamp>",
+      "updated_at": "<timestamp>",
+      "started_at": null,
+      "finished_at": null,
+      "expires_at": null,
+      "links": {
+        "self": "/api/exports/<uuid>",
+        "cancel": "/api/exports/<uuid>/cancel"
+      }
+    }
+  }
+}

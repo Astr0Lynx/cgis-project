@@ -1,0 +1,46 @@
+{
+  "cells": 64000000,
+  "uncompressed_bytes": 256000000,
+  "file_bytes": 2308368,
+  "generate_seconds": 1.2,
+  "steps": [
+    {
+      "step": "upload (streamed)",
+      "seconds": 0.03
+    },
+    {
+      "step": "validate",
+      "queue": "ingest",
+      "seconds": 1.3,
+      "peak_rss_mib": 371.5,
+      "ru_maxrss_children_kib_before": 0
+    },
+    {
+      "step": "publish (COG)",
+      "queue": "ingest",
+      "seconds": 6.39,
+      "peak_rss_mib": 579.1,
+      "ru_maxrss_children_kib_before": 380408
+    },
+    {
+      "step": "native COG download",
+      "bytes": 3337458,
+      "seconds": 0.04,
+      "python_peak_alloc_mib": 0.3
+    },
+    {
+      "step": "reproject to EPSG:32644 COG",
+      "queue": "export",
+      "seconds": 6.81,
+      "peak_rss_mib": 357.0,
+      "ru_maxrss_children_kib_before": 593004,
+      "output": {
+        "width": 7938,
+        "height": 9103,
+        "crs": "EPSG:32644",
+        "layout": "COG"
+      },
+      "size_bytes": 12420067
+    }
+  ]
+}

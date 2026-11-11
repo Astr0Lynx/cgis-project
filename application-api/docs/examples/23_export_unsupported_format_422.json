@@ -1,0 +1,32 @@
+{
+  "name": "export_unsupported_format_422",
+  "request": {
+    "method": "POST",
+    "path": "/api/exports",
+    "body": {
+      "dataset_id": "example-pop-2011",
+      "kind": "full",
+      "format": "PNG"
+    }
+  },
+  "note": null,
+  "response": {
+    "status": 422,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "error": {
+        "code": "UNSUPPORTED_FORMAT",
+        "message": "format 'PNG' is not supported for raster datasets",
+        "details": {
+          "supported": [
+            "GTiff",
+            "COG"
+          ],
+          "dataset_kind": "raster"
+        }
+      }
+    }
+  }
+}

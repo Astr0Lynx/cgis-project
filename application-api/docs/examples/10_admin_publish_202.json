@@ -1,0 +1,35 @@
+{
+  "name": "admin_publish_202",
+  "request": {
+    "method": "POST",
+    "path": "/admin/datasets/example-pop-2011/versions/1/publish",
+    "body": null
+  },
+  "note": null,
+  "response": {
+    "status": 202,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "job_id": "<uuid>",
+      "kind": "publish",
+      "status": "queued",
+      "progress": null,
+      "progress_message": "queued for publication",
+      "dataset_id": "example-pop-2011",
+      "version": 1,
+      "upload_id": "<uuid>",
+      "attempts": 0,
+      "result": null,
+      "error": null,
+      "created_at": "<timestamp>",
+      "updated_at": "<timestamp>",
+      "started_at": null,
+      "finished_at": null,
+      "links": {
+        "self": "/admin/jobs/<uuid>"
+      }
+    }
+  }
+}

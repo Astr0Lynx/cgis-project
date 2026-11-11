@@ -1,0 +1,74 @@
+# Existing Phase 2 e2e suite (tests/e2e) run against the stack WITH the application-api overlay and proposed gateway
+# command: docker compose -f compose.yaml -f infra/compose.db-port.yaml -f application-api/deploy/compose.app-api.yaml -f tests/e2e/compose.e2e.yaml run --rm -T e2e -ra -m 'not persistence and not performance'
+# after: ... run --rm -T ingestion seed (SYNTHETIC fixtures)
+
+ Container cgis-processing-1 Running 
+ Container cgis-gateway-1 Running 
+ Container cgis-viewer-1 Running 
+ Container cgis-db-1 Running 
+ Container cgis-tiles-1 Running 
+ Container cgis-app-api-1 Running 
+ Container cgis-ogc-1 Running 
+ Container cgis-volume-init-1 Starting 
+ Container cgis-app-volume-init-1 Starting 
+ Container cgis-db-1 Waiting 
+ Container cgis-volume-init-1 Started 
+ Container cgis-app-volume-init-1 Started 
+ Container cgis-db-1 Healthy 
+ Container cgis-migrate-1 Starting 
+ Container cgis-migrate-1 Started 
+ Container cgis-migrate-1 Waiting 
+ Container cgis-migrate-1 Waiting 
+ Container cgis-volume-init-1 Waiting 
+ Container cgis-volume-init-1 Waiting 
+ Container cgis-migrate-1 Waiting 
+ Container cgis-volume-init-1 Exited 
+ Container cgis-volume-init-1 Exited 
+ Container cgis-migrate-1 Exited 
+ Container cgis-migrate-1 Exited 
+ Container cgis-migrate-1 Waiting 
+ Container cgis-tiles-1 Waiting 
+ Container cgis-migrate-1 Exited 
+ Container cgis-app-migrate-1 Starting 
+ Container cgis-app-migrate-1 Started 
+ Container cgis-app-volume-init-1 Waiting 
+ Container cgis-app-migrate-1 Waiting 
+ Container cgis-migrate-1 Exited 
+ Container cgis-tiles-1 Healthy 
+ Container cgis-app-volume-init-1 Exited 
+ Container cgis-app-migrate-1 Exited 
+ Container cgis-ogc-1 Waiting 
+ Container cgis-tiles-1 Waiting 
+ Container cgis-processing-1 Waiting 
+ Container cgis-viewer-1 Waiting 
+ Container cgis-app-api-1 Waiting 
+ Container cgis-viewer-1 Healthy 
+ Container cgis-ogc-1 Healthy 
+ Container cgis-tiles-1 Healthy 
+ Container cgis-app-api-1 Healthy 
+ Container cgis-processing-1 Healthy 
+ Container cgis-gateway-1 Waiting 
+ Container cgis-gateway-1 Healthy 
+ Container cgis-e2e-run-99e4c07bd188 Creating 
+ Container cgis-e2e-run-99e4c07bd188 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.2.0, pluggy-1.7.0
+rootdir: /e2e
+configfile: pytest.ini
+testpaths: .
+plugins: anyio-4.16.0
+collected 107 items / 5 deselected / 102 selected
+
+test_10_catalog.py ..........s.                                          [ 11%]
+test_20_ogc_features.py ................                                 [ 27%]
+test_30_tiles.py ...............                                         [ 42%]
+test_40_processing.py ..............                                     [ 55%]
+test_50_negative.py ...............................sssssssss             [ 95%]
+test_60_viewer.py ....                                                   [ 99%]
+test_80_performance.py .                                                 [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] test_10_catalog.py:124: seed outputs are written by run_e2e.sh
+SKIPPED [1] test_50_negative.py:135: written by run_e2e.sh
+SKIPPED [8] test_50_negative.py:145: negative imports are run by run_e2e.sh
+================= 92 passed, 10 skipped, 5 deselected in 5.80s =================

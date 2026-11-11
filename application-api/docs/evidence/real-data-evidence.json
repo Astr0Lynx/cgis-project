@@ -1,0 +1,142 @@
+[
+  {
+    "step": "upload 19 MB GeoTIFF",
+    "seconds": 0.077
+  },
+  {
+    "step": "validate (importer, full pixel scan)",
+    "seconds": 0.507
+  },
+  {
+    "step": "validation summary",
+    "summary": {
+      "crs": "EPSG:4326",
+      "sum": 1211157895.034872,
+      "dtype": "float32",
+      "width": 3508,
+      "height": 3451,
+      "nodata": -99999.0,
+      "bbox_wgs84": [
+        68.18208306817596,
+        6.7495834993281605,
+        97.41541628457595,
+        35.50791671762816
+      ],
+      "valid_count": 4010402
+    }
+  },
+  {
+    "step": "publish (COG conversion + catalog)",
+    "seconds": 2.444
+  },
+  {
+    "step": "native COG download",
+    "seconds": 0.065
+  },
+  {
+    "step": "clip Hyderabad AOI",
+    "seconds": 0.019
+  },
+  {
+    "step": "clip result",
+    "output": {
+      "crs": "EPSG:4326",
+      "mask": "nodata_value",
+      "dtype": "float32",
+      "units": "people_per_cell",
+      "width": 42,
+      "bounds": [
+        78.29874969437596,
+        17.24958345732816,
+        78.64874969297595,
+        17.54958345612816
+      ],
+      "format": "GTiff",
+      "height": 36,
+      "nodata": -99999.0,
+      "resampled": false,
+      "sum_valid": 7260494.762426853,
+      "resampling": "none",
+      "size_bytes": 7483,
+      "count_valid": 1504,
+      "driver_layout": "GTiff",
+      "pixels_in_aoi": 1512,
+      "transform_gdal": [
+        78.29874969437596,
+        0.0083333333,
+        0.0,
+        17.54958345612816,
+        0.0,
+        -0.0083333333
+      ],
+      "count_semantics": "count_valid/sum_valid describe the written file; native_* describe the selected native-grid pixels",
+      "nodata_excluded": 8,
+      "pixel_selection": "pixel_center (all_touched=false)",
+      "native_sum_valid": 7260494.762426853,
+      "native_count_valid": 1504
+    }
+  },
+  {
+    "step": "national reprojection to EPSG:32644 COG (strip-wise)",
+    "seconds": 1.403
+  },
+  {
+    "step": "reprojection result",
+    "output": {
+      "crs": "EPSG:32644",
+      "dtype": "float32",
+      "units": "people_per_cell",
+      "width": 3646,
+      "bounds": [
+        -928200.9396084275,
+        746315.469740726,
+        2339169.5742913308,
+        4055805.1317900424
+      ],
+      "format": "COG",
+      "height": 3693,
+      "layout": "COG",
+      "nodata": -99999.0,
+      "resampled": true,
+      "sum_valid": 1194946642.3709998,
+      "resampling": "nearest",
+      "size_bytes": 17615406,
+      "count_valid": 3955850,
+      "transform_gdal": [
+        -928200.9396084275,
+        896.1520882884691,
+        0.0,
+        4055805.1317900424,
+        0.0,
+        -896.1520882884691
+      ]
+    },
+    "size_bytes": 17615406
+  },
+  {
+    "step": "validate geoBoundaries ADM1",
+    "seconds": 0.462
+  },
+  {
+    "step": "geoBoundaries validation",
+    "status": "completed",
+    "error": null,
+    "summary": {
+      "crs": "EPSG:4326",
+      "bbox_wgs84": [
+        68.09347709896305,
+        6.75436793493344,
+        97.41149826167937,
+        37.077491176566696
+      ],
+      "source_crs": "EPSG:4326",
+      "feature_count": 36
+    }
+  },
+  {
+    "step": "ADM1 clip around Hyderabad",
+    "features": [
+      "Telang\u0101na"
+    ]
+  }
+]
