@@ -4,10 +4,12 @@
 # upgrade), with fresh random secrets; existing lines are never changed. POSIX sh; works in Git Bash.
 set -eu
 cd "$(dirname "$0")/../.."
+# Print 32 random hex characters. Used by render.
 rand() { od -An -N16 -tx1 /dev/urandom | tr -d ' \n'; }
 umask 077
 
-render() {  # render <line>: replace a trailing CHANGE_ME placeholder with a random value
+# Print a .env.example line, replacing a trailing CHANGE_ME with a random value. Used by both branches below.
+render() {
     case "$1" in
         *=CHANGE_ME) printf '%s%s\n' "${1%CHANGE_ME}" "$(rand)" ;;
         *) printf '%s\n' "$1" ;;

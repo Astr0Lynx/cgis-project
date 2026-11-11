@@ -1,7 +1,7 @@
 #!/bin/sh
 # Route-level smoke test through the gateway: every public prefix reaches a ready upstream.
 # Usage: sh infra/scripts/smoke.sh [BASE_URL]   (default http://localhost:8080; needs curl)
-# This checks wiring only. Functional end-to-end tests live in tests/e2e/.
+# This checks wiring only; functional tests: sh tests/run.sh e2e.
 set -u
 BASE="${1:-${PUBLIC_BASE_URL:-http://localhost:8080}}"
 fails=0
@@ -9,7 +9,8 @@ fails=0
 SINK=$(mktemp)
 trap 'rm -f "$SINK"' EXIT
 
-check() {  # check <expected status> <path> <description>
+# Request a path and compare the HTTP status: check <expected> <path> <description>. Used below.
+check() {
     code=$(curl -s -o "$SINK" -w '%{http_code}' --max-time 15 "$BASE$2")
     [ -n "$code" ] || code=000
     if [ "$code" = "$1" ]; then
