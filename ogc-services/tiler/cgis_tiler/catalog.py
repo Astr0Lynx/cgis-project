@@ -33,8 +33,9 @@ _RENDER_JOIN = " LEFT JOIN LATERAL catalog.render_profile_for(c.dataset_id, c.ve
 _LOOKUP_WHERE = " WHERE c.dataset_id = %s AND c.kind = 'raster' AND c.status = 'ready'"
 _LIST_WHERE = " WHERE c.kind = 'raster' AND c.status = 'ready' ORDER BY c.dataset_id"
 
-_HAS_RENDER_SQL = ("SELECT to_regprocedure('catalog.render_profile_for(text,integer)') IS NOT NULL "
-                   "AND has_function_privilege('catalog.render_profile_for(text,integer)', 'EXECUTE')")
+_HAS_RENDER_SQL = ("SELECT CASE WHEN to_regprocedure('catalog.render_profile_for(text,integer)') IS NOT NULL "
+                   "THEN has_function_privilege('catalog.render_profile_for(text,integer)', 'EXECUTE') "
+                   "ELSE false END")
 _RENDER_PROBE_TTL = 60.0
 
 

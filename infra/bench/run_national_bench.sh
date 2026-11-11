@@ -89,6 +89,12 @@ json.dump(j, open('$EV/restart_job.json', 'w'), indent=2, default=str)
 print({k: j.get(k) for k in ('status', 'attempts', 'max_attempts', 'error')}, (j.get('result') or {}).get('count_valid'))
 "
 
+step "headless QGIS opens the downloaded national async clip(s)"
+for f in "$EV"/clip_async_*.tif; do
+    [ -f "$f" ] || continue
+    docker run --rm -e QT_QPA_PLATFORM=offscreen -v "$(pwd):/repo:ro"         qgis/qgis:3.44.15@sha256:9c4afddd8eb4d03275e161b732d57ea402a1a5237eb5766957427530fd38afe0         python3 /repo/infra/bench/qgis_check_tif.py "/repo/$f" EPSG:4326 </dev/null 2>&1 | grep -E '^(PASS|FAIL|INFO|RESULT)'
+done | tee "$EV/qgis_clip.txt"
+
 touch "$EV/.stop-sampler"; wait "$SAMPLER" 2>/dev/null
 step "peak memory per container (docker stats samples)"
 inpy -c "

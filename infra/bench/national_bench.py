@@ -22,6 +22,7 @@ import morecantile
 import psycopg
 
 GRID_ID = "bench-india-grid-12100"
+CLIP_SAVE_DIR = None  # set from --out: downloaded async clips are kept for the QGIS check
 GRID_N = 110                      # 110 x 110 = 12 100 synthetic boundary polygons over India's bbox
 INDIA_BBOX = (68.2, 6.8, 97.4, 35.5)
 
@@ -192,6 +193,9 @@ def processing_bench(http, api, dataset_id) -> dict:
     job, secs, _ = poll(http, api, r.json()["job_id"])
     res = job.get("result") or {}
     dl = http.get(f"{api}/downloads/{job['job_id']}") if job["status"] == "completed" else None
+    if dl is not None and dl.status_code == 200 and CLIP_SAVE_DIR:
+        with open(os.path.join(CLIP_SAVE_DIR, f"clip_async_{dataset_id}.tif"), "wb") as fh:
+            fh.write(dl.content)
     out["clip_async_cog"] = {"status": job["status"], "seconds": secs, "output": res.get("output"),
                              "download_status": dl.status_code if dl else None,
                              "download_bytes": len(dl.content) if dl else None, "error": job.get("error")}
@@ -214,6 +218,8 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--keep-grid", action="store_true")
     args = ap.parse_args(argv)
+    global CLIP_SAVE_DIR
+    CLIP_SAVE_DIR = os.path.dirname(os.path.abspath(args.out))
     gw = args.gateway.rstrip("/")
     ogc, tiles, api = f"{gw}/ogc", f"{gw}/tiles", f"{gw}/api"
     report = {"run_id": uuid.uuid4().hex[:8], "gateway": gw, "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}

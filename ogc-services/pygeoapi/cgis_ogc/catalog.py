@@ -31,10 +31,16 @@ ORDER BY ordinal_position
 # (and on the OGC test stack's stub catalog):
 #   catalog.render_profile_for()  database core/0008: shared display scales (P3)
 #   cgis_app.dataset_access       application-api (Agent 5): per-dataset access level
+# pg_class lookups need no USAGE on the schema (to_regclass may raise without it), so a missing grant
+# surfaces as RestrictedListUnavailable with a clear message instead of an opaque error.
 CAPABILITIES_SQL = """
-SELECT to_regprocedure('catalog.render_profile_for(text,integer)') IS NOT NULL
-         AND has_function_privilege('catalog.render_profile_for(text,integer)', 'EXECUTE'),
-       to_regclass('cgis_app.dataset_access') IS NOT NULL
+SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n
+                           ON n.oid = p.pronamespace
+                          WHERE n.nspname = 'catalog' AND p.proname = 'render_profile_for')
+            THEN has_function_privilege('catalog.render_profile_for(text,integer)', 'EXECUTE')
+            ELSE false END,
+       EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'cgis_app' AND c.relname = 'dataset_access')
 """
 
 RENDER_SQL = """
